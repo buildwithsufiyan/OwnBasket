@@ -1,0 +1,21 @@
+<section class="py-4 my-3">
+    <div class="container">
+        <h3 class="mb-4 fw-extrabold text-dark text-start" style="font-family: 'Poppins', sans-serif;">Curated Collections</h3>
+        <div class="row g-4">
+            {% for cat in all_categories|slice:":3" %}
+            <div class="{% if forloop.first %}col-lg-6{% else %}col-lg-3 col-md-6{% endif %}">
+                <div class="p-4 rounded-4 shadow-sm border text-white d-flex flex-column justify-content-between position-relative overflow-hidden" 
+                     style="background: linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 100%), url('{% if cat.category_image %}{{ cat.category_image.url }}{% else %}https://images.unsplash.com/photo-1542838132-92c53300491e?w=500{% endif %}') center/cover no-repeat; min-height: 250px;">
+                    <div>
+                        <h4 class="fw-bold mb-2 text-white">{{ cat.name }}</h4>
+                        <span class="badge bg-light text-dark text-uppercase small">Fresh Selection</span>
+                    </div>
+                    <div>
+                        <a href="/home/?category={{ cat.slug }}" class="btn btn-warning text-dark fw-bold px-3 py-1.5 rounded-pill">Shop Now</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>

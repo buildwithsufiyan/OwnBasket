@@ -1,0 +1,130 @@
+{% load humanize %}
+<section class="homepage-carousel-section">
+    <div class="container">
+        <div class="homepage-carousel-shell" id="homepageCarousel">
+            <div class="homepage-carousel-track">
+                {% for slide in homepage_carousels %}
+                <article class="homepage-carousel-slide{% if forloop.first %} active{% endif %}" data-duration="{{ slide.slide_duration|default:5000 }}">
+                    {% if slide.redirect_url %}
+                    <a href="{{ slide.redirect_url }}" class="homepage-carousel-link">
+                    {% else %}
+                    <div class="homepage-carousel-link">
+                    {% endif %}
+                        <img src="{{ slide.image.url }}" alt="{{ slide.title|default:'Homepage carousel slide' }}" loading="lazy">
+                        <div class="homepage-carousel-overlay">
+                            <span class="homepage-carousel-badge">Featured Offer</span>
+                            <h2>{{ slide.title|default:"Premium Picks" }}</h2>
+                            <p>Discover hand-picked offers tailored for your next order.</p>
+                        </div>
+                    {% if slide.redirect_url %}
+                    </a>
+                    {% else %}
+                    </div>
+                    {% endif %}
+                </article>
+                {% empty %}
+                <article class="homepage-carousel-slide active">
+                    <div class="homepage-carousel-link homepage-carousel-empty">
+                        <div class="homepage-carousel-overlay">
+                            <span class="homepage-carousel-badge">Admin Controlled</span>
+                            <h2>Carousel ready for your next campaign</h2>
+                            <p>Upload slides from the Django admin to activate a premium auto carousel.</p>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+
+            {% if homepage_carousels|length > 1 %}
+            <button class="homepage-carousel-control homepage-carousel-control-prev" type="button" aria-label="Previous slide">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <button class="homepage-carousel-control homepage-carousel-control-next" type="button" aria-label="Next slide">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+
+            <div class="homepage-carousel-dots" aria-label="Carousel indicators">
+                {% for slide in homepage_carousels %}
+                <button class="homepage-carousel-dot{% if forloop.first %} active{% endif %}" type="button" data-index="{{ forloop.counter0 }}" aria-label="Go to slide {{ forloop.counter }}"></button>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const carousel = document.getElementById('homepageCarousel');
+    if (!carousel) return;
+
+    const track = carousel.querySelector('.homepage-carousel-track');
+    const slides = Array.from(carousel.querySelectorAll('.homepage-carousel-slide'));
+    const dots = Array.from(carousel.querySelectorAll('.homepage-carousel-dot'));
+    const prevButton = carousel.querySelector('.homepage-carousel-control-prev');
+    const nextButton = carousel.querySelector('.homepage-carousel-control-next');
+
+    if (!track || !slides.length) return;
+
+    let activeIndex = 0;
+    let autoplayTimer = null;
+
+    const updateCarousel = function () {
+        const offset = activeIndex * 100;
+        track.style.transform = `translateX(-${offset}%)`;
+
+        slides.forEach(function (slide, index) {
+            slide.classList.toggle('active', index === activeIndex);
+        });
+
+        dots.forEach(function (dot, index) {
+            dot.classList.toggle('active', index === activeIndex);
+        });
+    };
+
+    const getDuration = function () {
+        const currentSlide = slides[activeIndex];
+        const duration = parseInt(currentSlide?.dataset.duration || '5000', 10);
+        return Number.isNaN(duration) ? 5000 : duration;
+    };
+
+    const startAutoplay = function () {
+        if (slides.length < 2) return;
+        clearInterval(autoplayTimer);
+        autoplayTimer = setInterval(function () {
+            activeIndex = (activeIndex + 1) % slides.length;
+            updateCarousel();
+        }, getDuration());
+    };
+
+    const pauseAutoplay = function () {
+        clearInterval(autoplayTimer);
+    };
+
+    const goToSlide = function (index) {
+        activeIndex = (index + slides.length) % slides.length;
+        updateCarousel();
+        startAutoplay();
+    };
+
+    prevButton?.addEventListener('click', function () {
+        goToSlide(activeIndex - 1);
+    });
+
+    nextButton?.addEventListener('click', function () {
+        goToSlide(activeIndex + 1);
+    });
+
+    dots.forEach(function (dot) {
+        dot.addEventListener('click', function () {
+            goToSlide(parseInt(dot.dataset.index, 10));
+        });
+    });
+
+    carousel.addEventListener('mouseenter', pauseAutoplay);
+    carousel.addEventListener('mouseleave', startAutoplay);
+
+    updateCarousel();
+    startAutoplay();
+});
+</script>

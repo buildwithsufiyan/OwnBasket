@@ -1,0 +1,1643 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+{% url 'home' as home_page_url %}
+
+<section class="homepage-carousel-section">
+    <div class="container">
+        <div class="homepage-carousel-shell" id="homepageCarousel">
+            <div class="homepage-carousel-track">
+                {% for slide in homepage_carousels %}
+                <article class="homepage-carousel-slide{% if forloop.first %} active{% endif %}" data-duration="{{ slide.slide_duration|default:5000 }}">
+                    {% if slide.redirect_url %}
+                    <a href="{{ slide.redirect_url }}" class="homepage-carousel-link">
+                    {% else %}
+                    <div class="homepage-carousel-link">
+                    {% endif %}
+                        <img src="{{ slide.image.url }}" alt="{{ slide.title|default:'Homepage carousel slide' }}" loading="lazy">
+                        <div class="homepage-carousel-overlay">
+                            <span class="homepage-carousel-badge">Featured Offer</span>
+                            <h2>{{ slide.title|default:"Premium Picks" }}</h2>
+                            <p>Discover hand-picked offers tailored for your next order.</p>
+                        </div>
+                    {% if slide.redirect_url %}
+                    </a>
+                    {% else %}
+                    </div>
+                    {% endif %}
+                </article>
+                {% empty %}
+                <article class="homepage-carousel-slide active">
+                    <div class="homepage-carousel-link homepage-carousel-empty">
+                        <div class="homepage-carousel-overlay">
+                            <span class="homepage-carousel-badge">Admin Controlled</span>
+                            <h2>Carousel ready for your next campaign</h2>
+                            <p>Upload slides from the Django admin to activate a premium auto carousel.</p>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+
+            {% if homepage_carousels|length > 1 %}
+            <button class="homepage-carousel-control homepage-carousel-control-prev" type="button" aria-label="Previous slide">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <button class="homepage-carousel-control homepage-carousel-control-next" type="button" aria-label="Next slide">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+
+            <div class="homepage-carousel-dots" aria-label="Carousel indicators">
+                {% for slide in homepage_carousels %}
+                <button class="homepage-carousel-dot{% if forloop.first %} active{% endif %}" type="button" data-index="{{ forloop.counter0 }}" aria-label="Go to slide {{ forloop.counter }}"></button>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const carousel = document.getElementById('homepageCarousel');
+    if (!carousel) return;
+
+    const track = carousel.querySelector('.homepage-carousel-track');
+    const slides = Array.from(carousel.querySelectorAll('.homepage-carousel-slide'));
+    const dots = Array.from(carousel.querySelectorAll('.homepage-carousel-dot'));
+    const prevButton = carousel.querySelector('.homepage-carousel-control-prev');
+    const nextButton = carousel.querySelector('.homepage-carousel-control-next');
+
+    if (!track || !slides.length) return;
+
+    let activeIndex = 0;
+    let autoplayTimer = null;
+
+    const updateCarousel = function () {
+        const offset = activeIndex * 100;
+        track.style.transform = `translateX(-${offset}%)`;
+
+        slides.forEach(function (slide, index) {
+            slide.classList.toggle('active', index === activeIndex);
+        });
+
+        dots.forEach(function (dot, index) {
+            dot.classList.toggle('active', index === activeIndex);
+        });
+    };
+
+    const getDuration = function () {
+        const currentSlide = slides[activeIndex];
+        const duration = parseInt(currentSlide?.dataset.duration || '5000', 10);
+        return Number.isNaN(duration) ? 5000 : duration;
+    };
+
+    const startAutoplay = function () {
+        if (slides.length < 2) return;
+        clearInterval(autoplayTimer);
+        autoplayTimer = setInterval(function () {
+            activeIndex = (activeIndex + 1) % slides.length;
+            updateCarousel();
+        }, getDuration());
+    };
+
+    const pauseAutoplay = function () {
+        clearInterval(autoplayTimer);
+    };
+
+    const goToSlide = function (index) {
+        activeIndex = (index + slides.length) % slides.length;
+        updateCarousel();
+        startAutoplay();
+    };
+
+    prevButton?.addEventListener('click', function () {
+        goToSlide(activeIndex - 1);
+    });
+
+    nextButton?.addEventListener('click', function () {
+        goToSlide(activeIndex + 1);
+    });
+
+    dots.forEach(function (dot) {
+        dot.addEventListener('click', function () {
+            goToSlide(parseInt(dot.dataset.index, 10));
+        });
+    });
+
+    carousel.addEventListener('mouseenter', pauseAutoplay);
+    carousel.addEventListener('mouseleave', startAutoplay);
+
+    updateCarousel();
+    startAutoplay();
+});
+</script>
+
+<style>
+.homepage-hero {
+    padding: 3rem 0;
+    background-color: #f8fafc;
+}
+.hero-carousel-shell {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+}
+.hero-carousel-track {
+    display: flex;
+    transition: transform 0.8s ease;
+}
+.hero-carousel-slide {
+    min-width: 100%;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+}
+.hero-carousel-slide.active {
+    opacity: 1;
+}
+.hero-layout {
+    position: relative;
+    min-height: 500px;
+    padding: clamp(2rem, 4vw, 4rem);
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+.hero-layout-overlay-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+.hero-layout-full-content,
+.hero-layout-overlay-content,
+.hero-layout-center-content,
+.hero-layout-split-panel,
+.homepage-hero-inner {
+    position: relative;
+    z-index: 1;
+}
+.hero-layout-overlay-right,
+.hero-layout-overlay-left {
+    justify-content: space-between;
+    gap: 2rem;
+}
+.hero-layout-overlay-right .hero-layout-overlay-content,
+.hero-layout-overlay-left .hero-layout-overlay-content {
+    max-width: 540px;
+}
+.hero-layout-overlay-image,
+.hero-layout-split-image,
+.hero-layout-center-image {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.hero-layout-split {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr;
+    gap: 1.5rem;
+}
+.hero-layout-split-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1rem;
+}
+.hero-visual-image {
+    width: 100%;
+    max-width: 420px;
+    object-fit: cover;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    margin: 0;
+    padding: 0;
+    display: block;
+}
+.hero-visual-placeholder {
+    width: 100%;
+    max-width: 420px;
+    min-height: 280px;
+    border-radius: var(--radius-xl);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 3rem;
+    color: #64748b;
+    background: linear-gradient(135deg, rgba(255,255,255,0.6), rgba(226,232,240,0.8));
+}
+.hero-badge,
+.hero-heading,
+.hero-subheading,
+.hero-cta-btn {
+    position: relative;
+    z-index: 1;
+}
+.hero-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.hero-cta-btn:hover {
+    transform: translateY(-2px);
+    background-color: var(--hero-hover-bg, inherit);
+    color: var(--hero-hover-text, inherit);
+    border-color: var(--hero-hover-border, inherit);
+}
+.hero-btn-outline {
+    background: transparent;
+    color: var(--hero-hover-text, inherit);
+}
+.hero-btn-rounded { border-radius: var(--radius-md); }
+.hero-btn-pill { border-radius: var(--radius-md); }
+.hero-btn-ghost { background: transparent; border-color: transparent; box-shadow: none; }
+.hero-animate { animation-fill-mode: both; animation-duration: var(--hero-anim-duration, 0.8s); animation-delay: var(--hero-anim-delay, 0ms); }
+.hero-animate-fade-in { animation-name: fadeIn; }
+.hero-animate-fade-up { animation-name: fadeUp; }
+.hero-animate-fade-down { animation-name: fadeDown; }
+.hero-animate-slide-left { animation-name: slideLeft; }
+.hero-animate-slide-right { animation-name: slideRight; }
+.hero-animate-zoom-in { animation-name: zoomIn; }
+.hero-animate-zoom-out { animation-name: zoomOut; }
+.hero-animate-bounce { animation-name: bounce; }
+.hero-animate-pulse { animation-name: pulse; }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes fadeUp { from { opacity:0; transform: translateY(16px); } to { opacity:1; transform: translateY(0); } }
+@keyframes fadeDown { from { opacity:0; transform: translateY(-16px); } to { opacity:1; transform: translateY(0); } }
+@keyframes slideLeft { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform: translateX(0); } }
+@keyframes slideRight { from { opacity:0; transform: translateX(-20px); } to { opacity:1; transform: translateX(0); } }
+@keyframes zoomIn { from { opacity:0; transform: scale(0.95); } to { opacity:1; transform: scale(1); } }
+@keyframes zoomOut { from { opacity:0; transform: scale(1.05); } to { opacity:1; transform: scale(1); } }
+@keyframes bounce { 0%, 20%, 53%, 80%, 100% { transform: translate3d(0,0,0); } 40%, 43% { transform: translate3d(0,-8px,0); } 70% { transform: translate3d(0,-5px,0); } 90% { transform: translate3d(0,-2px,0); } }
+@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+.hero-banner-hidden-desktop { display: none !important; }
+.hero-banner-hidden-tablet { display: none !important; }
+.hero-banner-hidden-mobile { display: none !important; }
+@media (max-width: 991px) {
+    .hero-layout-split { grid-template-columns: 1fr; }
+    .hero-layout-overlay-right, .hero-layout-overlay-left { flex-direction: column; }
+}
+@media (max-width: 767px) {
+    .hero-layout-split { grid-template-columns: 1fr; }
+    .hero-layout-overlay-right, .hero-layout-overlay-left { flex-direction: column; }
+}
+@media (min-width: 992px) {
+    .hero-banner-hidden-desktop { display: none !important; }
+}
+@media (min-width: 768px) and (max-width: 991px) {
+    .hero-banner-hidden-tablet { display: none !important; }
+}
+@media (max-width: 767px) {
+    .hero-banner-hidden-mobile { display: none !important; }
+    .homepage-hero { padding: 1.5rem 0; }
+    .hero-layout { min-height: auto; padding: 1.5rem; }
+}
+</style>
+
+<section class="homepage-hero" data-inline-style="background-color: {{ homepage_settings.hero_background_color|default:'#f3f4f6' }};">
+    <div class="container position-relative">
+        <div class="hero-carousel-shell" id="heroBannerCarousel">
+            <div class="hero-carousel-track">
+                {% for slide in banner_carousels %}
+                {% with layout=slide.layout_template|default:'layout_1' %}
+                <article class="hero-carousel-slide{% if forloop.first %} active{% endif %}{% if not slide.show_on_desktop %} hero-banner-hidden-desktop{% endif %}{% if not slide.show_on_tablet %} hero-banner-hidden-tablet{% endif %}{% if not slide.show_on_mobile %} hero-banner-hidden-mobile{% endif %}" data-duration="{{ slide.slide_duration|default:5000 }}" data-slide-id="{{ slide.id }}" data-view-url="{% url 'track_banner_view' slide.id %}">
+                    {% if layout == 'layout_4' %}
+                    <div class="hero-layout hero-layout-full" data-inline-style="{{ slide.background_css_style }}">
+                        {% if slide.enable_overlay %}<div class="hero-layout-overlay-layer" data-inline-style="background-color:{{ slide.background_overlay_color }}; opacity:{{ slide.background_overlay_opacity }};"></div>{% endif %}
+                        <div class="hero-layout-full-content">
+                            {% if slide.show_badge and slide.badge_text %}<span class="hero-badge {{ slide.badge_animation_class }}" data-inline-style="font-family:'{{ slide.badge_font_family }}', sans-serif; font-size:{{ slide.badge_font_size }}; font-weight:{{ slide.badge_font_weight }}; color:{{ slide.badge_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.badge_text }}</span>{% endif %}
+                            {% if slide.show_heading %}<h1 class="hero-heading {{ slide.heading_animation_class }}" data-inline-style="font-family:'{{ slide.heading_font_family }}', sans-serif; font-size:{{ slide.heading_font_size }}; font-weight:{{ slide.heading_font_weight }}; color:{{ slide.heading_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.heading|default:"UPCOMING SOON" }}</h1>{% endif %}
+                            {% if slide.show_description and slide.description %}<p class="hero-subheading {{ slide.description_animation_class }}" data-inline-style="font-family:'{{ slide.description_font_family }}', sans-serif; font-size:{{ slide.description_font_size }}; font-weight:{{ slide.description_font_weight }}; color:{{ slide.description_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.description }}</p>{% endif %}
+                            {% if slide.show_button and slide.button_text %}<a href="{% url 'track_banner_click' slide.id %}?next={{ slide.button_url|default:home_page_url|urlencode }}" class="btn hero-cta-btn hero-btn-{{ slide.button_variant|default:'solid' }} {{ slide.button_animation_class }}" data-inline-style="{{ slide.button_css_style }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.button_text }}</a>{% endif %}
+                        </div>
+                    </div>
+                    {% elif layout == 'layout_5' %}
+                    <div class="hero-layout hero-layout-overlay-right" data-inline-style="{{ slide.background_css_style }}">
+                        {% if slide.enable_overlay %}<div class="hero-layout-overlay-layer" data-inline-style="background-color:{{ slide.background_overlay_color }}; opacity:{{ slide.background_overlay_opacity }};"></div>{% endif %}
+                        {% if slide.show_image %}
+                        <div class="hero-layout-overlay-image">
+                            {% if slide.image %}<img src="{{ slide.image.url }}" alt="{{ slide.heading|default:'Homepage Hero' }}" class="hero-visual-image {{ slide.image_animation_class }}" data-inline-style="--hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{% else %}<div class="hero-visual-placeholder"><i class="bi bi-bag-heart"></i></div>{% endif %}
+                        </div>
+                        {% endif %}
+                        <div class="hero-layout-overlay-content">
+                            {% if slide.show_badge and slide.badge_text %}<span class="hero-badge {{ slide.badge_animation_class }}" data-inline-style="font-family:'{{ slide.badge_font_family }}', sans-serif; font-size:{{ slide.badge_font_size }}; font-weight:{{ slide.badge_font_weight }}; color:{{ slide.badge_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.badge_text }}</span>{% endif %}
+                            {% if slide.show_heading %}<h1 class="hero-heading {{ slide.heading_animation_class }}" data-inline-style="font-family:'{{ slide.heading_font_family }}', sans-serif; font-size:{{ slide.heading_font_size }}; font-weight:{{ slide.heading_font_weight }}; color:{{ slide.heading_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.heading|default:"UPCOMING SOON" }}</h1>{% endif %}
+                            {% if slide.show_description and slide.description %}<p class="hero-subheading {{ slide.description_animation_class }}" data-inline-style="font-family:'{{ slide.description_font_family }}', sans-serif; font-size:{{ slide.description_font_size }}; font-weight:{{ slide.description_font_weight }}; color:{{ slide.description_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.description }}</p>{% endif %}
+                            {% if slide.show_button and slide.button_text %}<a href="{% url 'track_banner_click' slide.id %}?next={{ slide.button_url|default:home_page_url|urlencode }}" class="btn hero-cta-btn hero-btn-{{ slide.button_variant|default:'solid' }} {{ slide.button_animation_class }}" data-inline-style="{{ slide.button_css_style }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.button_text }}</a>{% endif %}
+                        </div>
+                    </div>
+                    {% elif layout == 'layout_6' %}
+                    <div class="hero-layout hero-layout-overlay-left" data-inline-style="{{ slide.background_css_style }}">
+                        {% if slide.enable_overlay %}<div class="hero-layout-overlay-layer" data-inline-style="background-color:{{ slide.background_overlay_color }}; opacity:{{ slide.background_overlay_opacity }};"></div>{% endif %}
+                        {% if slide.show_image %}
+                        <div class="hero-layout-overlay-image">
+                            {% if slide.image %}<img src="{{ slide.image.url }}" alt="{{ slide.heading|default:'Homepage Hero' }}" class="hero-visual-image {{ slide.image_animation_class }}" data-inline-style="--hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{% else %}<div class="hero-visual-placeholder"><i class="bi bi-bag-heart"></i></div>{% endif %}
+                        </div>
+                        {% endif %}
+                        <div class="hero-layout-overlay-content">
+                            {% if slide.show_badge and slide.badge_text %}<span class="hero-badge {{ slide.badge_animation_class }}" data-inline-style="font-family:'{{ slide.badge_font_family }}', sans-serif; font-size:{{ slide.badge_font_size }}; font-weight:{{ slide.badge_font_weight }}; color:{{ slide.badge_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.badge_text }}</span>{% endif %}
+                            {% if slide.show_heading %}<h1 class="hero-heading {{ slide.heading_animation_class }}" data-inline-style="font-family:'{{ slide.heading_font_family }}', sans-serif; font-size:{{ slide.heading_font_size }}; font-weight:{{ slide.heading_font_weight }}; color:{{ slide.heading_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.heading|default:"UPCOMING SOON" }}</h1>{% endif %}
+                            {% if slide.show_description and slide.description %}<p class="hero-subheading {{ slide.description_animation_class }}" data-inline-style="font-family:'{{ slide.description_font_family }}', sans-serif; font-size:{{ slide.description_font_size }}; font-weight:{{ slide.description_font_weight }}; color:{{ slide.description_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.description }}</p>{% endif %}
+                            {% if slide.show_button and slide.button_text %}<a href="{% url 'track_banner_click' slide.id %}?next={{ slide.button_url|default:home_page_url|urlencode }}" class="btn hero-cta-btn hero-btn-{{ slide.button_variant|default:'solid' }} {{ slide.button_animation_class }}" data-inline-style="{{ slide.button_css_style }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.button_text }}</a>{% endif %}
+                        </div>
+                    </div>
+                    {% elif layout == 'layout_7' %}
+                    <div class="hero-layout hero-layout-split" data-inline-style="{{ slide.background_css_style }}">
+                        {% if slide.enable_overlay %}<div class="hero-layout-overlay-layer" data-inline-style="background-color:{{ slide.background_overlay_color }}; opacity:{{ slide.background_overlay_opacity }};"></div>{% endif %}
+                        {% if slide.show_left_content %}
+                        <div class="hero-layout-split-panel hero-layout-split-left">
+                            {% if slide.show_badge and slide.left_badge_text %}<span class="hero-badge {{ slide.badge_animation_class }}" data-inline-style="font-family:'{{ slide.badge_font_family }}', sans-serif; font-size:{{ slide.badge_font_size }}; font-weight:{{ slide.badge_font_weight }}; color:{{ slide.badge_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.left_badge_text }}</span>{% endif %}
+                            {% if slide.show_heading and slide.left_heading %}<h1 class="hero-heading {{ slide.heading_animation_class }}" data-inline-style="font-family:'{{ slide.heading_font_family }}', sans-serif; font-size:{{ slide.heading_font_size }}; font-weight:{{ slide.heading_font_weight }}; color:{{ slide.heading_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.left_heading }}</h1>{% endif %}
+                            {% if slide.show_description and slide.left_description %}<p class="hero-subheading {{ slide.description_animation_class }}" data-inline-style="font-family:'{{ slide.description_font_family }}', sans-serif; font-size:{{ slide.description_font_size }}; font-weight:{{ slide.description_font_weight }}; color:{{ slide.description_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.left_description }}</p>{% endif %}
+                            {% if slide.show_button and slide.left_button_text %}<a href="{% url 'track_banner_click' slide.id %}?next={{ slide.left_button_url|default:home_page_url|urlencode }}" class="btn hero-cta-btn hero-btn-{{ slide.button_variant|default:'solid' }} {{ slide.button_animation_class }}" data-inline-style="{{ slide.button_css_style }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.left_button_text }}</a>{% endif %}
+                        </div>
+                        {% endif %}
+                        {% if slide.show_image %}
+                        <div class="hero-layout-split-image">
+                            {% if slide.image %}<img src="{{ slide.image.url }}" alt="{{ slide.heading|default:'Homepage Hero' }}" class="hero-visual-image {{ slide.image_animation_class }}" data-inline-style="--hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{% else %}<div class="hero-visual-placeholder"><i class="bi bi-bag-heart"></i></div>{% endif %}
+                        </div>
+                        {% endif %}
+                        {% if slide.show_right_content %}
+                        <div class="hero-layout-split-panel hero-layout-split-right">
+                            {% if slide.show_badge and slide.right_badge_text %}<span class="hero-badge {{ slide.badge_animation_class }}" data-inline-style="font-family:'{{ slide.badge_font_family }}', sans-serif; font-size:{{ slide.badge_font_size }}; font-weight:{{ slide.badge_font_weight }}; color:{{ slide.badge_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.right_badge_text }}</span>{% endif %}
+                            {% if slide.show_heading and slide.right_heading %}<h1 class="hero-heading {{ slide.heading_animation_class }}" data-inline-style="font-family:'{{ slide.heading_font_family }}', sans-serif; font-size:{{ slide.heading_font_size }}; font-weight:{{ slide.heading_font_weight }}; color:{{ slide.heading_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.right_heading }}</h1>{% endif %}
+                            {% if slide.show_description and slide.right_description %}<p class="hero-subheading {{ slide.description_animation_class }}" data-inline-style="font-family:'{{ slide.description_font_family }}', sans-serif; font-size:{{ slide.description_font_size }}; font-weight:{{ slide.description_font_weight }}; color:{{ slide.description_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.right_description }}</p>{% endif %}
+                            {% if slide.show_button and slide.right_button_text %}<a href="{% url 'track_banner_click' slide.id %}?next={{ slide.right_button_url|default:home_page_url|urlencode }}" class="btn hero-cta-btn hero-btn-{{ slide.button_variant|default:'solid' }} {{ slide.button_animation_class }}" data-inline-style="{{ slide.button_css_style }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.right_button_text }}</a>{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% elif layout == 'layout_3' %}
+                    <div class="hero-layout hero-layout-center" data-inline-style="{{ slide.background_css_style }}">
+                        {% if slide.enable_overlay %}<div class="hero-layout-overlay-layer" data-inline-style="background-color:{{ slide.background_overlay_color }}; opacity:{{ slide.background_overlay_opacity }};"></div>{% endif %}
+                        <div class="hero-layout-center-content">
+                            {% if slide.show_badge and slide.badge_text %}<span class="hero-badge {{ slide.badge_animation_class }}" data-inline-style="font-family:'{{ slide.badge_font_family }}', sans-serif; font-size:{{ slide.badge_font_size }}; font-weight:{{ slide.badge_font_weight }}; color:{{ slide.badge_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.badge_text }}</span>{% endif %}
+                            {% if slide.show_heading %}<h1 class="hero-heading {{ slide.heading_animation_class }}" data-inline-style="font-family:'{{ slide.heading_font_family }}', sans-serif; font-size:{{ slide.heading_font_size }}; font-weight:{{ slide.heading_font_weight }}; color:{{ slide.heading_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.heading|default:"UPCOMING SOON" }}</h1>{% endif %}
+                            {% if slide.show_description and slide.description %}<p class="hero-subheading {{ slide.description_animation_class }}" data-inline-style="font-family:'{{ slide.description_font_family }}', sans-serif; font-size:{{ slide.description_font_size }}; font-weight:{{ slide.description_font_weight }}; color:{{ slide.description_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.description }}</p>{% endif %}
+                            {% if slide.show_button and slide.button_text %}<a href="{% url 'track_banner_click' slide.id %}?next={{ slide.button_url|default:home_page_url|urlencode }}" class="btn hero-cta-btn hero-btn-{{ slide.button_variant|default:'solid' }} {{ slide.button_animation_class }}" data-inline-style="{{ slide.button_css_style }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.button_text }}</a>{% endif %}
+                        </div>
+                        {% if slide.show_image %}
+                        <div class="hero-layout-center-image">
+                            {% if slide.image %}<img src="{{ slide.image.url }}" alt="{{ slide.heading|default:'Homepage Hero' }}" class="hero-visual-image {{ slide.image_animation_class }}" data-inline-style="--hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{% else %}<div class="hero-visual-placeholder"><i class="bi bi-bag-heart"></i></div>{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="row align-items-center homepage-hero-inner g-4 hero-layout-{{ layout }}" data-inline-style="{{ slide.background_css_style }}">
+                        {% if slide.enable_overlay %}<div class="hero-layout-overlay-layer" data-inline-style="background-color:{{ slide.background_overlay_color }}; opacity:{{ slide.background_overlay_opacity }};"></div>{% endif %}
+                        {% if slide.show_heading or slide.show_description or slide.show_button or slide.show_badge %}
+                        <div class="col-lg-6 hero-text-column{% if layout == 'layout_2' %} order-lg-2{% else %} order-lg-1{% endif %}">
+                            {% if slide.show_badge and slide.badge_text %}<span class="hero-badge {{ slide.badge_animation_class }}" data-inline-style="font-family:'{{ slide.badge_font_family }}', sans-serif; font-size:{{ slide.badge_font_size }}; font-weight:{{ slide.badge_font_weight }}; color:{{ slide.badge_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.badge_text }}</span>{% endif %}
+                            {% if slide.show_heading %}<h1 class="hero-heading {{ slide.heading_animation_class }}" data-inline-style="font-family:'{{ slide.heading_font_family }}', sans-serif; font-size:{{ slide.heading_font_size }}; font-weight:{{ slide.heading_font_weight }}; color:{{ slide.heading_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.heading|default:"UPCOMING SOON" }}</h1>{% endif %}
+                            {% if slide.show_description and slide.description %}<p class="hero-subheading {{ slide.description_animation_class }}" data-inline-style="font-family:'{{ slide.description_font_family }}', sans-serif; font-size:{{ slide.description_font_size }}; font-weight:{{ slide.description_font_weight }}; color:{{ slide.description_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.description }}</p>{% endif %}
+                            {% if slide.show_button and slide.button_text %}<a href="{% url 'track_banner_click' slide.id %}?next={{ slide.button_url|default:home_page_url|urlencode }}" class="btn hero-cta-btn hero-btn-{{ slide.button_variant|default:'solid' }} {{ slide.button_animation_class }}" data-inline-style="{{ slide.button_css_style }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.button_text }}</a>{% endif %}
+                        </div>
+                        {% endif %}
+                        {% if slide.show_image %}
+                        <div class="col-lg-6 hero-image-column{% if layout == 'layout_2' %} order-lg-1{% else %} order-lg-2{% endif %}">
+                            {% if slide.image %}<img src="{{ slide.image.url }}" alt="{{ slide.heading|default:'Homepage Hero' }}" class="hero-visual-image {{ slide.image_animation_class }}" data-inline-style="--hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{% else %}<div class="hero-visual-placeholder"><i class="bi bi-bag-heart"></i></div>{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </article>
+                {% endwith %}
+                {% empty %}
+                <article class="hero-carousel-slide active">
+                    <div class="row align-items-center homepage-hero-inner g-4 hero-layout-right">
+                        <div class="col-lg-6 hero-text-column order-lg-1 text-center text-lg-start d-flex flex-column justify-content-center justify-content-lg-start">
+                            <span class="hero-badge">{{ homepage_settings.hero_badge_text|default:"UP TO 50% OFF" }}</span>
+                            <h1 class="hero-heading">{{ homepage_settings.hero_heading|default:"UPCOMING SOON" }}</h1>
+                            <p class="hero-subheading">{{ homepage_settings.hero_subheading|default:"Your One-Stop Online Shopping Destination" }}</p>
+                            <a href="{{ homepage_settings.resolved_hero_button_link|default:home_page_url }}" class="btn hero-cta-btn">{{ homepage_settings.hero_button_text|default:"Stay Tuned!" }}</a>
+                        </div>
+                        <div class="col-lg-6 hero-image-column order-lg-2 image-right d-flex justify-content-center justify-content-lg-start">
+                            {% if homepage_settings.hero_image %}
+                            <img src="{{ homepage_settings.hero_image.url }}" alt="{{ homepage_settings.hero_heading|default:'Homepage Hero' }}" class="hero-visual-image">
+                            {% else %}
+                            <div class="hero-visual-placeholder">
+                                <i class="bi bi-bag-heart"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+
+            {% if banner_carousels|length > 1 %}
+            <button class="hero-nav hero-nav-prev" type="button" aria-label="Previous slide">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <button class="hero-nav hero-nav-next" type="button" aria-label="Next slide">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+
+            <div class="hero-carousel-dots" aria-label="Carousel indicators">
+                {% for slide in banner_carousels %}
+                <button class="hero-carousel-dot{% if forloop.first %} active{% endif %}" type="button" data-index="{{ forloop.counter0 }}" aria-label="Go to slide {{ forloop.counter }}"></button>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-inline-style]').forEach(function (element) {
+        const inlineStyle = element.getAttribute('data-inline-style');
+
+        if (inlineStyle) {
+            element.style.cssText += inlineStyle;
+        }
+    });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const heroCarousel = document.getElementById('heroBannerCarousel');
+    if (!heroCarousel) return;
+
+    const track = heroCarousel.querySelector('.hero-carousel-track');
+    const slides = Array.from(heroCarousel.querySelectorAll('.hero-carousel-slide'));
+    const dots = Array.from(heroCarousel.querySelectorAll('.hero-carousel-dot'));
+    const prevButton = heroCarousel.querySelector('.hero-nav-prev');
+    const nextButton = heroCarousel.querySelector('.hero-nav-next');
+
+    if (!track || !slides.length) return;
+
+    let activeIndex = 0;
+    let autoplayTimer = null;
+    const trackedSlides = new Set();
+
+    const updateCarousel = function () {
+        const offset = activeIndex * 100;
+        track.style.transform = `translateX(-${offset}%)`;
+        slides.forEach(function (slide, index) {
+            slide.classList.toggle('active', index === activeIndex);
+        });
+        dots.forEach(function (dot, index) {
+            dot.classList.toggle('active', index === activeIndex);
+        });
+    };
+
+    const getDuration = function () {
+        const currentSlide = slides[activeIndex];
+        const duration = parseInt(currentSlide?.dataset.duration || '5000', 10);
+        return Number.isNaN(duration) ? 5000 : duration;
+    };
+
+    const startAutoplay = function () {
+        if (slides.length < 2) return;
+        clearInterval(autoplayTimer);
+        autoplayTimer = setInterval(function () {
+            activeIndex = (activeIndex + 1) % slides.length;
+            updateCarousel();
+        }, getDuration());
+    };
+
+    const pauseAutoplay = function () {
+        clearInterval(autoplayTimer);
+    };
+
+    const goToSlide = function (index) {
+        activeIndex = (index + slides.length) % slides.length;
+        updateCarousel();
+        trackActiveSlideView();
+        startAutoplay();
+    };
+
+    const trackActiveSlideView = function () {
+        const activeSlide = slides[activeIndex];
+        if (!activeSlide) return;
+
+        const slideId = activeSlide.dataset.slideId;
+        const viewUrl = activeSlide.dataset.viewUrl;
+
+        if (!slideId || !viewUrl || trackedSlides.has(slideId)) return;
+        trackedSlides.add(slideId);
+
+        const payload = JSON.stringify({ slide_id: slideId });
+
+        if (navigator.sendBeacon) {
+            const blob = new Blob([payload], { type: 'application/json' });
+            navigator.sendBeacon(viewUrl, blob);
+            return;
+        }
+
+        fetch(viewUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload,
+            keepalive: true,
+        }).catch(function () {});
+    };
+
+    prevButton?.addEventListener('click', function () {
+        goToSlide(activeIndex - 1);
+    });
+
+    nextButton?.addEventListener('click', function () {
+        goToSlide(activeIndex + 1);
+    });
+
+    dots.forEach(function (dot) {
+        dot.addEventListener('click', function () {
+            goToSlide(parseInt(dot.dataset.index, 10));
+        });
+    });
+
+    heroCarousel.addEventListener('mouseenter', pauseAutoplay);
+    heroCarousel.addEventListener('mouseleave', startAutoplay);
+
+    updateCarousel();
+    trackActiveSlideView();
+    startAutoplay();
+});
+</script>
+
+<section class="homepage-features-strip">
+    <div class="container">
+        <div class="row g-3">
+            {% for feature in homepage_features %}
+            <div class="col-lg-3 col-sm-6">
+                <div class="homepage-feature-card">
+                    <div class="homepage-feature-icon">
+                        <i class="bi {{ feature.icon|default:'bi-truck' }}"></i>
+                    </div>
+                    <div>
+                        <div class="homepage-feature-title">{{ feature.title }}</div>
+                        <div class="homepage-feature-description">{{ feature.description|default:"Always here for you" }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% if homepage_settings.show_top_brands %}
+<section class="homepage-top-brands-section">
+    <div class="container">
+        <div class="homepage-section-head">
+            <h2 class="homepage-section-title">Top Brands</h2>
+            <a href="{% url 'products:brand_list' %}" class="homepage-section-link">View All</a>
+        </div>
+        <div class="homepage-brands-grid">
+            {% for brand in top_brands %}
+            <a href="{{ brand.target_url|default:home_page_url }}" class="homepage-brand-item homepage-brand-item-logo-only" aria-label="{{ brand.name }}">
+                <div class="homepage-brand-media">
+                    {% if brand.logo %}
+                    <img src="{{ brand.logo.url }}" alt="{{ brand.name }}">
+                    {% else %}
+                    <i class="bi bi-award"></i>
+                    {% endif %}
+                </div>
+            </a>
+            {% empty %}
+            <div class="text-muted small">No active brands available.</div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if homepage_settings.show_categories %}
+<section class="homepage-categories-section">
+    <div class="container">
+        <div class="homepage-section-head">
+            <h2 class="homepage-section-title">Shop By Categories</h2>
+            <a href="{% url 'products:category_list' %}" class="homepage-section-link">View All</a>
+        </div>
+        <div class="homepage-brands-grid homepage-categories-grid">
+            {% for category in homepage_categories %}
+            <a href="{{ category.target_url|default:home_page_url }}" class="homepage-brand-item homepage-category-item">
+                {% if category.category_image %}
+                <div class="homepage-brand-media homepage-category-media">
+                    <img src="{{ category.category_image.url }}" alt="{{ category.name }}">
+                </div>
+                {% endif %}
+                <span class="homepage-brand-name homepage-category-name">{{ category.name }}</span>
+            </a>
+            {% empty %}
+            <div class="text-muted small">No active categories available.</div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<section class="products-section py-5">
+    <div class="container">
+        <div class="homepage-section-head mb-4">
+            <h2 class="homepage-section-title">
+                {% if search_query %}
+                    Search Results for "{{ search_query }}"
+                {% elif selected_category %}
+                    {{ selected_category.name }}
+                {% elif selected_brand %}
+                    {{ selected_brand.name }}
+                {% else %}
+                    All Products
+                {% endif %}
+            </h2>
+            {% if not search_query %}
+            <a href="{{ home_page_url }}" class="homepage-section-link">View All</a>
+            {% endif %}
+        </div>
+
+        <div class="row g-3">
+            {% for product in products %}
+            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-6">
+                <div class="product-card">
+                    <div class="product-image-wrapper">
+
+    <a href="{% url 'products:product_detail' product.slug %}" class="product-img-link">
+        {% if product.image %}
+        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-card-img">
+        {% else %}
+        <div class="product-no-img">
+            <i class="bi bi-image"></i>
+        </div>
+        {% endif %}
+    </a>
+
+    {% if product.has_display_discount %}
+    <div class="product-discount-badge">
+        {{ product.display_badge }}
+    </div>
+    {% endif %}
+
+</div>
+
+                    <div class="product-card-body">
+                        <h6 class="product-card-name">
+                            <a href="{% url 'products:product_detail' product.slug %}">{{ product.name }}</a>
+                        </h6>
+
+                        <div class="product-rating">
+                            {% with rating=product.rating|floatformat:0 %}
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= rating|add:"0" %}
+                                <i class="bi bi-star-fill"></i>
+                                {% else %}
+                                <i class="bi bi-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                            {% endwith %}
+                            <span class="rating-count">({{ product.reviews_count|default:"0" }})</span>
+                        </div>
+
+                        <div class="product-price-block">
+                            {% if product.display_compare_price %}
+                            <del class="product-old-price">₹{{ product.display_compare_price|intcomma }}</del>
+                            {% endif %}
+                            <span class="product-price">₹{{ product.display_price|intcomma }}</span>
+                        </div>
+                        {% if product.flash_sale_end_at %}
+                        <div class="product-flash-timer" data-countdown="{{ product.flash_sale_end_at|date:'c' }}">
+                            Ends soon
+                        </div>
+                        {% endif %}
+
+                        <form method="POST" action="{% url 'add_to_cart' product.id %}" class="product-card-cart-form">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-add-to-cart-card">
+                                <i class="bi bi-cart-plus"></i> Add to Cart
+                            </button>
+                        </form>
+                        <!-- {% if product.has_display_discount %}
+                        <div class="product-discount-badge">{{ product.display_badge }}</div>
+                        {% endif %} -->
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="empty-products-box text-center py-5">
+                    <i class="bi bi-search"></i>
+                    <h5 class="mt-3 text-muted">No products found</h5>
+                    {% if search_query or selected_category %}
+                    <a href="{{ home_page_url }}" class="btn btn-owncart mt-3">View All Products</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% include 'includes/home_product_section.html' with section_title='Flash Sale' section_products=flash_sale_products section_note='Limited time deals' %}
+{% include 'includes/home_product_section.html' with section_title='Featured Products' section_products=featured_products_section section_note='Admin selected highlights' %}
+
+<style>
+.homepage-hero {
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.hero-carousel-shell {
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-carousel-track {
+    display: flex;
+    transition: transform 0.6s ease;
+}
+
+.hero-carousel-slide {
+    min-width: 100%;
+}
+
+.homepage-hero-inner {
+    min-height: 380px;
+    padding: 44px 0;
+}
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #ffb800;
+    color: #131921;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+}
+
+.hero-heading {
+    font-size: clamp(2rem, 5vw, 3.3rem);
+    line-height: 1.05;
+    font-weight: 900;
+    color: #131921;
+    margin-bottom: 10px;
+}
+
+.hero-subheading {
+    font-size: 14px;
+    color: #667085;
+    max-width: 420px;
+    margin-bottom: 24px;
+}
+
+.hero-cta-btn {
+    background: #ffb800;
+    border: none;
+    color: #131921;
+    font-weight: 800;
+    border-radius: var(--radius-md);
+    padding: 12px 20px;
+    min-height: var(--control-height);
+}
+
+.hero-cta-btn:hover {
+    background: #ff9900;
+    color: #131921;
+}
+
+.hero-image-column {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-text-column {
+    align-items: flex-start;
+}
+
+.hero-layout-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 24px;
+    min-height: 380px;
+    padding: 24px 20px;
+}
+
+.hero-layout-center-content,
+.hero-layout-center-image {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.hero-layout-full {
+    min-height: 380px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    background-size: cover;
+    background-position: center;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    padding: 32px 40px;
+}
+
+.hero-layout-full-content {
+    max-width: 560px;
+    color: #ffffff;
+}
+
+.hero-layout-overlay-right,
+.hero-layout-overlay-left {
+    min-height: 380px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 24px 20px;
+}
+
+.hero-layout-overlay-right {
+    flex-direction: row;
+}
+
+.hero-layout-overlay-left {
+    flex-direction: row-reverse;
+}
+
+.hero-layout-overlay-image {
+    flex: 0 0 46%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero-layout-overlay-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.hero-layout-overlay-content .hero-subheading {
+    max-width: 100%;
+}
+
+.hero-layout-split {
+    min-height: 380px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 24px 20px;
+}
+
+.hero-layout-split-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    min-width: 0;
+}
+
+.hero-layout-split-right {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.hero-layout-split-image {
+    flex: 0 0 240px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero-layout-split-image .hero-visual-image {
+    max-height: 260px;
+}
+
+.hero-visual-image {
+    max-width: 100%;
+    max-height: 250px;
+    object-fit: contain;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    margin: 0;
+    padding: 0;
+    display: block;
+}
+
+.hero-visual-placeholder {
+    width: 200px;
+    height: 200px;
+    border-radius: var(--radius-xl);
+    background: rgba(19, 25, 33, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #d0d5dd;
+    font-size: 88px;
+}
+
+.hero-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(19, 25, 33, 0.08);
+    color: #131921;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-nav-prev {
+    left: 8px;
+}
+
+.hero-nav-next {
+    right: 8px;
+}
+
+.hero-carousel-dots {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 2;
+}
+
+.hero-carousel-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    border: none;
+    background-color: rgba(19, 25, 33, 0.24);
+    padding: 0;
+}
+
+.hero-carousel-dot.active {
+    background-color: var(--owncart-primary);
+}
+
+.homepage-carousel-section {
+    padding: 20px 0 8px;
+    background: #f4f6f9;
+}
+
+.homepage-carousel-shell {
+    position: relative;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    background: #ffffff;
+}
+
+.homepage-carousel-track {
+    display: flex;
+    transition: transform 0.6s ease;
+}
+
+.homepage-carousel-slide {
+    min-width: 100%;
+    position: relative;
+}
+
+.homepage-carousel-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+.homepage-carousel-slide img {
+    width: 100%;
+    height: 360px;
+    object-fit: cover;
+    display: block;
+}
+
+.homepage-carousel-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 40px 44px;
+    background: linear-gradient(90deg, rgba(19,25,33,0.92) 0%, rgba(19,25,33,0.45) 100%);
+    color: #ffffff;
+}
+
+.homepage-carousel-badge {
+    display: inline-flex;
+    width: fit-content;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: rgba(255, 184, 0, 0.92);
+    color: #131921;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 14px;
+}
+
+.homepage-carousel-overlay h2 {
+    font-size: clamp(1.7rem, 3vw, 2.4rem);
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 10px;
+}
+
+.homepage-carousel-overlay p {
+    max-width: 520px;
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.88);
+    margin-bottom: 0;
+}
+
+.homepage-carousel-empty {
+    min-height: 360px;
+    background: linear-gradient(135deg, #131921 0%, #ffb800 100%);
+}
+
+.homepage-carousel-control {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.16);
+    backdrop-filter: blur(8px);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.homepage-carousel-control-prev {
+    left: 16px;
+}
+
+.homepage-carousel-control-next {
+    right: 16px;
+}
+
+.homepage-carousel-dots {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 2;
+}
+
+.homepage-carousel-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    border: none;
+    background-color: rgba(255,255,255,0.7);
+    padding: 0;
+}
+
+.homepage-carousel-dot.active {
+    background-color: var(--owncart-primary);
+}
+
+.homepage-features-strip {
+    background: #ffffff;
+    border-bottom: 1px solid #eaecf0;
+}
+
+.homepage-top-brands-section {
+    padding: 40px 0 8px;
+    background: #ffffff;
+}
+
+.homepage-brands-grid {
+    margin-top: 24px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.homepage-brand-item {
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 170px;
+    padding: 20px 16px;
+    border: 1px solid var(--owncart-border);
+    border-radius: var(--radius-lg);
+    background: #ffffff;
+    box-shadow: var(--shadow-md);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.homepage-brand-item-logo-only {
+    gap: 0;
+    min-height: 160px;
+}
+
+.homepage-brand-item:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255, 184, 0, 0.55);
+    box-shadow: var(--shadow-lg);
+}
+
+.homepage-brand-media {
+    width: 100%;
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.homepage-brand-item-logo-only .homepage-brand-media {
+    height: 100px;
+}
+
+.homepage-brand-media img {
+    max-width: 100%;
+    max-height: 92px;
+    object-fit: contain;
+    display: block;
+    transition: transform 0.2s ease;
+}
+
+.homepage-brand-item-logo-only .homepage-brand-media img {
+    max-width: 78%;
+    max-height: 78px;
+}
+
+.homepage-brand-item-logo-only .homepage-brand-media i {
+    font-size: 2rem;
+    color: #98a2b3;
+}
+
+.homepage-brand-item-logo-only:hover .homepage-brand-media img,
+.homepage-brand-item-logo-only:hover .homepage-brand-media i {
+    transform: scale(1.04);
+}
+
+.homepage-brand-name {
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #344054;
+    line-height: 1.35;
+}
+
+.homepage-feature-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 100%;
+    padding: 18px 6px;
+}
+
+.homepage-feature-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-xl);
+    border: 1px solid rgba(255, 184, 0, 0.5);
+    background: rgba(255, 184, 0, 0.12);
+    color: #ffb800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.homepage-feature-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: #131921;
+    text-transform: uppercase;
+}
+
+.homepage-feature-description {
+    font-size: 11px;
+    color: #98a2b3;
+}
+
+.homepage-categories-section {
+    padding: 46px 0 28px;
+    background: #ffffff;
+}
+
+.homepage-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.homepage-section-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #131921;
+    margin-bottom: 0;
+}
+
+.homepage-section-mini-note {
+    font-size: 13px;
+    font-weight: 700;
+    color: #667085;
+}
+
+.homepage-section-link {
+    font-size: 12px;
+    font-weight: 700;
+    color: #ffb800;
+    text-decoration: none;
+}
+
+.homepage-categories-grid {
+    margin-top: 24px;
+    display: grid;
+}
+
+.homepage-category-item {
+    width: auto;
+    min-width: 0;
+}
+
+.homepage-category-media {
+    height: 92px;
+}
+
+.homepage-category-name {
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #344054;
+    line-height: 1.35;
+}
+
+.products-section {
+    background: var(--owncart-bg);
+}
+
+.product-card {
+    background: #ffffff;
+    border: 1px solid var(--owncart-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: var(--shadow-md);
+}
+
+.product-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* ===========================
+   IMAGE WRAPPER
+=========================== */
+
+.product-image-wrapper{
+    position: relative;
+    overflow: hidden;
+    background: #fafafa;
+}
+
+/* ===========================
+   DISCOUNT BADGE
+=========================== */
+
+.product-discount-badge{
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 6px 12px;
+
+    background: linear-gradient(135deg,#ff5a3d 0%,#d92d20 100%);
+    color: #fff;
+
+    border-radius: 999px;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    text-transform: uppercase;
+
+    box-shadow: 0 8px 18px rgba(217,45,32,.22);
+}
+
+/* ===========================
+   IMAGE
+=========================== */
+
+.product-img-link{
+    display:block;
+    padding:16px;
+}
+
+.product-card-img{
+    width:100%;
+    height:180px;
+    object-fit:contain;
+    transition:.35s ease;
+}
+
+.product-card:hover .product-card-img{
+    transform:scale(1.04);
+}
+
+.product-no-img{
+    height:180px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#d0d5dd;
+    font-size:48px;
+}
+
+/* ===========================
+   BODY
+=========================== */
+
+.product-card-body{
+    padding:16px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    flex:1;
+}
+
+.product-card-name{
+    margin-bottom:0;
+    font-size:13px;
+    font-weight:700;
+    line-height:1.45;
+    min-height: 2.9em;
+}
+
+.product-card-name a{
+    color:#344054;
+    text-decoration:none;
+}
+
+.product-card-name a:hover{
+    color:var(--owncart-primary);
+}
+
+.product-rating{
+    display:flex;
+    align-items:center;
+    gap:2px;
+    color:#ffb800;
+    font-size:12px;
+}
+
+.rating-count{
+    margin-left:4px;
+    color:#98a2b3;
+    font-size:11px;
+    font-weight:600;
+}
+
+.product-price-block{
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+    flex-wrap:wrap;
+}
+
+.product-old-price{
+    font-size:12px;
+    color:#98a2b3;
+}
+
+.product-price{
+    font-size:17px;
+    font-weight:800;
+    color:#d92d20;
+}
+
+/* ===========================
+   BUTTON
+=========================== */
+
+.product-card-cart-form{
+    margin-top:auto;
+}
+.btn-add-to-cart-card {
+    width: 100%;
+    border: none;
+    border-radius: var(--radius-md);
+    min-height: 42px;
+    padding: 10px 14px;
+    background: var(--owncart-primary);
+    color: var(--owncart-dark);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.btn-add-to-cart-card:hover {
+    background: var(--owncart-primary-hover);
+    color: var(--owncart-dark);
+}
+
+.empty-products-box {
+    background: #ffffff;
+    border: 1px dashed #eaecf0;
+    border-radius: var(--radius-xl);
+    padding: 48px;
+}
+
+.empty-products-box i {
+    font-size: 56px;
+    color: #d0d5dd;
+}
+
+@media (min-width: 992px) {
+    .hero-text-column {
+        align-items: flex-start;
+        padding-right: 28px;
+    }
+
+    .hero-image-column {
+        padding-left: 28px;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .homepage-hero-inner {
+        text-align: center;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .hero-text-column,
+    .hero-image-column {
+        align-items: center;
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+        width: 100%;
+    }
+
+    .hero-layout-full {
+        padding: 24px 20px;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .hero-layout-overlay-right,
+    .hero-layout-overlay-left {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .hero-layout-overlay-image {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+
+    .hero-layout-overlay-content {
+        align-items: center;
+    }
+
+    .hero-layout-split {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .hero-layout-split-panel,
+    .hero-layout-split-right {
+        align-items: center;
+        text-align: center;
+        width: 100%;
+    }
+
+    .hero-layout-split-image {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+
+    .hero-subheading {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .hero-nav {
+        display: none;
+    }
+
+    .homepage-promo-board {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .homepage-promo-contact-item {
+        justify-content: center;
+    }
+
+    .homepage-brands-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .homepage-section-title {
+        font-size: 22px;
+    }
+
+    .homepage-categories-grid {
+        gap: 12px;
+    }
+
+    .homepage-brands-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .homepage-brand-item {
+        min-height: 150px;
+        padding: 16px 12px;
+        border-radius: 16px;
+    }
+
+    .homepage-brand-item-logo-only {
+        min-height: 132px;
+    }
+
+    .homepage-brand-media {
+        height: 72px;
+    }
+
+    .homepage-brand-item-logo-only .homepage-brand-media {
+        height: 76px;
+    }
+
+    .homepage-category-item {
+        width: auto;
+    }
+
+    .homepage-category-media {
+        height: 72px;
+    }
+
+    .homepage-brand-media img {
+        max-height: 72px;
+    }
+
+
+    .homepage-brand-item-logo-only .homepage-brand-media img {
+        max-width: 80%;
+        max-height: 58px;
+    }
+    .homepage-feature-card {
+
+    .homepage-feature-card {
+        padding: 10px 0;
+    }
+
+    .homepage-promo-heading {
+        font-size: 22px;
+    }
+
+    .product-card-img,
+    .product-no-img {
+        height: 130px;
+    }
+}
+</style>
+{% endblock %}

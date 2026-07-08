@@ -1,0 +1,65 @@
+{% load humanize %}
+<div class="product-card h-100 bg-white shadow-sm position-relative text-center hover-luxury" style="border: 1px solid #e2d1a6; border-radius: 4px;">
+    {% if product.has_display_discount %}
+        <div class="position-absolute top-0 start-0 m-2 px-2 py-1 small fw-bold" style="background-color: #d4af37; color: #121212; font-size: 11px; letter-spacing: 1px;">
+            SPECIAL OFFER
+        </div>
+    {% endif %}
+    
+    <div class="p-3 bg-light" style="height: 180px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #f3ebd6;">
+        <a href="{% url 'products:product_detail' product.slug %}" class="w-100 h-100 d-flex align-items-center justify-content-center">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid" style="max-height: 100%; object-fit: contain;">
+            {% else %}
+                <div class="text-muted"><i class="bi bi-gift fs-2" style="color: #d4af37;"></i></div>
+            {% endif %}
+        </a>
+    </div>
+    
+    <div class="p-3 d-flex flex-column justify-content-between" style="min-height: 160px; background: #faf8f5;">
+        <div>
+            <h6 class="fs-6 fw-bold mb-2 text-uppercase tracking-wider" style="height: 2.6em; overflow: hidden; font-family: 'Playfair Display', serif; color: #1c1917; line-height: 1.35;">
+                <a href="{% url 'products:product_detail' product.slug %}" class="text-decoration-none text-dark hover-gold">{{ product.name }}</a>
+            </h6>
+            
+            <div class="text-center small mb-2" style="color: #d4af37;">
+                {% with rating=product.rating|default:5|floatformat:0 %}
+                {% for i in "12345" %}
+                    {% if forloop.counter <= rating|add:"0" %}
+                        <i class="bi bi-star-fill"></i>
+                    {% else %}
+                        <i class="bi bi-star"></i>
+                    {% endif %}
+                {% endfor %}
+                {% endwith %}
+            </div>
+        </div>
+        
+        <div>
+            <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
+                {% if product.display_compare_price %}
+                    <del class="text-muted small">₹{{ product.display_compare_price|intcomma }}</del>
+                {% endif %}
+                <span class="fw-bold fs-5" style="color: #c5a850; font-family: 'Playfair Display', serif;">₹{{ product.display_price|intcomma }}</span>
+            </div>
+            
+            <form method="POST" action="{% url 'add_to_cart' product.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn text-uppercase font-monospace btn-sm w-100 py-2" 
+                        style="background-color: #1c1917; color: #d4af37; border: 1px solid #d4af37; border-radius: 0px; font-size: 11px; letter-spacing: 1px; transition: all 0.3s ease;">
+                    Add to Cart
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+<style>
+.hover-luxury:hover {
+    box-shadow: 0 10px 25px rgba(197, 168, 80, 0.25) !important;
+    border-color: #d4af37 !important;
+    transform: translateY(-2px);
+}
+.hover-gold:hover {
+    color: #d4af37 !important;
+}
+</style>

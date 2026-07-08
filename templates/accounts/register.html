@@ -1,0 +1,609 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="auth-shell">
+    <div class="container py-4 py-lg-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-xl-11">
+                <div class="auth-layout-card overflow-hidden">
+                    <div class="row g-0 align-items-stretch">
+                        <div class="col-lg-6">
+                            <div class="auth-brand-panel">
+                                <a href="{% url 'home' %}" class="auth-brand-logo">
+                                    <img src="{% static 'images/logo.png' %}" alt="OwnBasket logo" height="78">
+                                </a>
+                                <span class="auth-brand-badge">Create Account</span>
+                                <h1 class="auth-brand-title">Shop Smart with OwnBasket</h1>
+                                <p class="auth-brand-text">
+                                    Create your account to save favorites, track orders and enjoy a premium shopping experience built for everyday convenience.
+                                </p>
+
+                                <div class="auth-highlight-card">
+                                    <div class="auth-highlight-icon">
+                                        <i class="bi bi-stars"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="auth-highlight-title">Start shopping in minutes</h2>
+                                        <p class="auth-highlight-text mb-0">
+                                            Join OwnBasket and get faster checkout, order history access and a more personalized storefront.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="auth-feature-list">
+                                    <div class="auth-feature-item">
+                                        <i class="bi bi-credit-card-2-front"></i>
+                                        <span>Secure Payments</span>
+                                    </div>
+                                    <div class="auth-feature-item">
+                                        <i class="bi bi-truck"></i>
+                                        <span>Fast Delivery</span>
+                                    </div>
+                                    <div class="auth-feature-item">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                        <span>Easy Returns</span>
+                                    </div>
+                                    <div class="auth-feature-item">
+                                        <i class="bi bi-bag-check"></i>
+                                        <span>Trusted Shopping</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6">
+                            <div class="auth-form-panel">
+                                <div class="auth-panel-inner">
+                                    <div class="auth-header">
+                                        <span class="auth-eyebrow">Register</span>
+                                        <h2 class="auth-title">Create your account</h2>
+                                        <p class="auth-subtitle">Use the same registration flow, now with a cleaner premium layout.</p>
+                                    </div>
+
+                                    {% if messages %}
+                                    {% for message in messages %}
+                                    <div class="alert alert-success alert-dismissible fade show rounded-3 py-3 mb-3" role="alert">
+                                        <i class="bi bi-check-circle-fill me-2"></i>{{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                    {% endfor %}
+                                    {% endif %}
+
+                                    <form method="post" class="auth-form" novalidate id="registerForm">
+                                        {% csrf_token %}
+
+                                        <div class="auth-field-group">
+                                            <label class="auth-label" for="id_username">Username</label>
+                                            <div class="auth-input-wrap">
+                                                <i class="bi bi-person auth-input-icon"></i>
+                                                <input type="text"
+                                                       name="username"
+                                                       id="id_username"
+                                                       class="auth-input {% if form.username.errors %}auth-input-error{% endif %}"
+                                                       placeholder="Choose a username"
+                                                       value="{{ form.username.value|default:'' }}"
+                                                       required autofocus>
+                                            </div>
+                                            {% if form.username.errors %}
+                                            <span class="auth-field-error">{{ form.username.errors.0 }}</span>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="auth-field-group">
+                                            <label class="auth-label" for="id_password1">Password</label>
+                                            <div class="auth-input-wrap">
+                                                <i class="bi bi-lock auth-input-icon"></i>
+                                                <input type="password"
+                                                       name="password1"
+                                                       id="id_password1"
+                                                       class="auth-input {% if form.password1.errors %}auth-input-error{% endif %}"
+                                                       placeholder="Create a strong password"
+                                                       required>
+                                                <button type="button" class="auth-eye-btn" onclick="togglePassword('id_password1', this)">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                            </div>
+                                            {% if form.password1.errors %}
+                                            <span class="auth-field-error">{{ form.password1.errors.0 }}</span>
+                                            {% endif %}
+                                            <p class="auth-field-hint">Min. 8 characters, mix letters, numbers & symbols.</p>
+                                        </div>
+
+                                        <div class="auth-field-group">
+                                            <label class="auth-label" for="id_password2">Confirm Password</label>
+                                            <div class="auth-input-wrap">
+                                                <i class="bi bi-shield-lock auth-input-icon"></i>
+                                                <input type="password"
+                                                       name="password2"
+                                                       id="id_password2"
+                                                       class="auth-input {% if form.password2.errors %}auth-input-error{% endif %}"
+                                                       placeholder="Re-enter your password"
+                                                       required>
+                                                <button type="button" class="auth-eye-btn" onclick="togglePassword('id_password2', this)">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                            </div>
+                                            {% if form.password2.errors %}
+                                            <span class="auth-field-error">{{ form.password2.errors.0 }}</span>
+                                            {% endif %}
+                                        </div>
+
+                                        <button type="submit" class="btn-auth-submit">
+                                            <i class="bi bi-person-check-fill me-2"></i>Create Account
+                                        </button>
+
+                                        <p class="auth-terms-note">
+                                            By registering you agree to our
+                                            <a href="#">Terms & Conditions</a> and
+                                            <a href="#">Privacy Policy</a>.
+                                        </p>
+                                    </form>
+
+                                    <div class="auth-divider">
+                                        <span>Already have an account?</span>
+                                    </div>
+
+                                    <a href="{% url 'login' %}" class="btn-auth-secondary">
+                                        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In Instead
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-shell {
+    min-height: calc(100vh - 120px);
+    display: flex;
+    align-items: center;
+    background:
+        radial-gradient(circle at top right, rgba(255, 184, 0, 0.14), transparent 30%),
+        linear-gradient(135deg, #f8f9fa 0%, #fffaf0 46%, #f4f6f9 100%);
+}
+
+.auth-layout-card {
+    background: #ffffff;
+    border: 1px solid var(--owncart-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+}
+
+.auth-brand-panel {
+    height: 100%;
+    padding: 48px 42px;
+    color: #ffffff;
+    background: linear-gradient(160deg, #131921 0%, #1d2633 58%, #232f3e 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-brand-panel::before,
+.auth-brand-panel::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 184, 0, 0.12);
+}
+
+.auth-brand-panel::before {
+    width: 180px;
+    height: 180px;
+    top: -60px;
+    right: -60px;
+}
+
+.auth-brand-panel::after {
+    width: 220px;
+    height: 220px;
+    left: -80px;
+    bottom: -120px;
+}
+
+.auth-brand-logo,
+.auth-brand-badge,
+.auth-brand-title,
+.auth-brand-text,
+.auth-highlight-card,
+.auth-feature-list {
+    position: relative;
+    z-index: 1;
+}
+
+.auth-brand-logo {
+    display: inline-flex;
+    width: fit-content;
+    margin-bottom: 24px;
+}
+
+.auth-brand-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+    padding: 8px 14px;
+    margin-bottom: 18px;
+    border-radius: 999px;
+    background: rgba(255, 184, 0, 0.14);
+    color: #ffb800;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+.auth-brand-title {
+    font-size: 42px;
+    line-height: 1.12;
+    font-weight: 900;
+    margin-bottom: 16px;
+    max-width: 440px;
+}
+
+.auth-brand-text {
+    max-width: 470px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 15px;
+    line-height: 1.7;
+    margin-bottom: 30px;
+}
+
+.auth-highlight-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    margin-bottom: 28px;
+    border-radius: var(--radius-xl);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
+}
+
+.auth-highlight-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, #ffb800, #ff9900);
+    color: #131921;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.auth-highlight-title {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 6px;
+}
+
+.auth-highlight-text {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.auth-feature-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.auth-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #f8fafc;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.auth-feature-item i {
+    color: #ffb800;
+    font-size: 18px;
+}
+
+.auth-form-panel {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+}
+
+.auth-panel-inner {
+    width: 100%;
+    padding: 46px 42px;
+}
+
+.auth-header {
+    margin-bottom: 28px;
+}
+
+.auth-eyebrow {
+    display: inline-block;
+    margin-bottom: 10px;
+    color: #ff9900;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+.auth-title {
+    font-size: 30px;
+    font-weight: 900;
+    color: #131921;
+    margin-bottom: 8px;
+}
+
+.auth-subtitle {
+    font-size: 14px;
+    color: #667085;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.auth-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.auth-label {
+    font-size: 12px;
+    font-weight: 800;
+    color: #344054;
+    text-transform: uppercase;
+    letter-spacing: 0.45px;
+}
+
+.auth-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.auth-input-icon {
+    position: absolute;
+    left: 16px;
+    font-size: 17px;
+    color: #98a2b3;
+    pointer-events: none;
+}
+
+.auth-input {
+    width: 100%;
+    min-height: var(--control-height);
+    border: 1px solid var(--owncart-border);
+    border-radius: var(--radius-md);
+    padding: 13px 16px 13px 44px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #131921;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    transition: all var(--transition-fast);
+    outline: none;
+    background: #ffffff;
+}
+
+.auth-input:focus {
+    border-color: var(--owncart-primary);
+    box-shadow: 0 0 0 3px rgba(255, 184, 0, 0.12);
+}
+
+.auth-input-error {
+    border-color: #d92d20 !important;
+}
+
+.auth-input::placeholder {
+    color: #c0c7d0;
+}
+
+.auth-eye-btn {
+    position: absolute;
+    right: 16px;
+    background: none;
+    border: none;
+    color: #98a2b3;
+    font-size: 17px;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.15s ease;
+}
+
+.auth-eye-btn:hover {
+    color: #344054;
+}
+
+.auth-field-error {
+    font-size: 12px;
+    font-weight: 600;
+    color: #d92d20;
+}
+
+.auth-field-hint {
+    font-size: 11px;
+    color: #98a2b3;
+    font-weight: 500;
+    margin: 2px 0 0;
+    line-height: 1.4;
+}
+
+.btn-auth-submit {
+    background: #131921;
+    color: #ffb800;
+    font-weight: 800;
+    font-size: 16px;
+    padding: 14px;
+    min-height: var(--control-height);
+    border-radius: var(--radius-md);
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 4px;
+    box-shadow: var(--shadow-md);
+}
+
+.btn-auth-submit:hover {
+    background: #232f3e;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+}
+
+.auth-terms-note {
+    text-align: center;
+    font-size: 12px;
+    color: #98a2b3;
+    font-weight: 500;
+    margin-top: 4px;
+}
+
+.auth-terms-note a {
+    color: var(--owncart-primary);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0 16px;
+    color: #98a2b3;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #eaecf0;
+}
+
+.btn-auth-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    color: #344054;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 13px;
+    min-height: var(--control-height);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    border: 1px solid var(--owncart-border);
+    transition: all var(--transition-fast);
+}
+
+.btn-auth-secondary:hover {
+    background: #f2f4f7;
+    color: #131921;
+    border-color: #d0d5dd;
+    transform: translateY(-1px);
+}
+
+@media (max-width: 991.98px) {
+    .auth-layout-card {
+        border-radius: var(--radius-xl);
+    }
+
+    .auth-brand-panel,
+    .auth-panel-inner {
+        padding: 32px 24px;
+    }
+
+    .auth-brand-title {
+        font-size: 32px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .auth-shell {
+        min-height: auto;
+    }
+
+    .auth-layout-card {
+        border-radius: var(--radius-xl);
+    }
+
+    .auth-brand-panel,
+    .auth-panel-inner {
+        padding: 24px 18px;
+    }
+
+    .auth-feature-list {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-title {
+        font-size: 24px;
+    }
+
+    .auth-brand-title {
+        font-size: 28px;
+    }
+}
+</style>
+
+<script>
+function togglePassword(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'bi bi-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'bi bi-eye';
+    }
+}
+
+(() => {
+    const form = document.getElementById('registerForm');
+    if (!form) return;
+    const getCookieToken = () => document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1] || '';
+    const syncCsrfToken = () => {
+        const hiddenField = form.querySelector('input[name="csrfmiddlewaretoken"]');
+        const cookieToken = getCookieToken();
+        if (hiddenField && cookieToken && hiddenField.value !== cookieToken) {
+            hiddenField.value = cookieToken;
+        }
+        return { hiddenField, cookieToken };
+    };
+
+    syncCsrfToken();
+    form.addEventListener('submit', () => {
+        syncCsrfToken();
+    });
+})();
+</script>
+{% endblock %}
+
+{% block footer_section %}{% endblock %}

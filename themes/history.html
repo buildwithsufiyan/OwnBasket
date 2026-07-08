@@ -1,0 +1,86 @@
+{% extends "admin/base_site.html" %}
+{% load static humanize %}
+
+{% block title %}File History for {{ theme.name }}{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <style>
+        .history-container {
+            margin-top: 2rem;
+        }
+        .file-history-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .file-history-header {
+            background: #f7f7f7;
+            padding: 12px 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .file-history-header h3 { margin: 0; font-size: 1.2rem; font-family: monospace; }
+        .backup-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .backup-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .backup-item:last-child {
+            border-bottom: none;
+        }
+        .backup-item strong {
+            font-size: 1.1rem;
+        }
+        .backup-item .button {
+            margin-left: 10px;
+        }
+        .text-muted {
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <h1>File History & Restore: "{{ theme.name }}"</h1>
+    <p>Here you can see the version history of all modified template files. You can restore any file to a previous version.</p>
+
+    <div class="history-container">
+        {% for file_path, backups in history.items %}
+        <div class="file-history-card">
+            <div class="file-history-header">
+                <h3>{{ file_path }}</h3>
+            </div>
+            <ul class="backup-list">
+                {% for backup in backups %}
+                <li class="backup-item">
+                    <div>
+                        <strong>Version {{ backup.version }}</strong>
+                        <span class="text-muted"> - Created {{ backup.created_at|naturaltime }}</span>
+                        {% if backup.restored_from %}<span class="text-muted"> (Restored from v{{ backup.restored_from.version }})</span>{% endif %}
+                    </div>
+                    <form method="post" action="{% url 'themes:restore_backup' backup.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="button">Restore This Version</button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% empty %}
+        <p>No file modification history found for this theme.</p>
+        {% endfor %}
+    </div>
+    <a href="{% url 'themes:theme_manager' %}" class="button">Back to Theme Manager</a>
+</div>
+{% endblock %}

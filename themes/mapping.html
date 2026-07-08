@@ -1,0 +1,83 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Template Mapping for {{ theme.name }}{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <style>
+        .mapping-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .mapping-table th, .mapping-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .mapping-table th {
+            background-color: #f7f7f7;
+            font-weight: bold;
+        }
+        .mapping-table tr:nth-child(even) {
+            background-color: #fdfdfd;
+        }
+        .mapping-table select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        .submit-row input {
+            background: var(--button-bg);
+            color: var(--button-fg);
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .submit-row input:hover {
+            background: var(--button-hover-bg);
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <h1>Template Mapping for "{{ theme.name }}"</h1>
+    <p>Assign your imported HTML files to the corresponding OwnBasket page types. If a page type is left unassigned, the system will use the default template.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <table class="mapping-table">
+            <thead>
+                <tr>
+                    <th>OwnBasket Page Type</th>
+                    <th>Imported HTML File</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for type_key, type_info in page_types.items %}
+                <tr>
+                    <td><strong>{{ type_info.name }}</strong><br><small class="text-muted">Key: {{ type_key }}</small></td>
+                    <td>
+                        <select name="mapping_{{ type_key }}">
+                            <option value="">-- Use Default Template --</option>
+                            {% for file in html_files %}
+                                <option value="{{ file }}" {% if current_mappings|get_item:type_key == file %}selected{% endif %}>{{ file }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="submit-row" style="margin-top: 20px; padding: 10px; background: #f7f7f7; border-top: 1px solid #ddd;">
+            <input type="submit" value="Save Mappings">
+            <a href="{% url 'themes:theme_manager' %}" class="button cancel-link">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

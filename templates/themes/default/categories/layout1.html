@@ -1,0 +1,28 @@
+<section class="py-4 my-3">
+    <div class="container">
+        <h3 class="mb-4 fw-extrabold text-dark text-start" style="font-family: 'Poppins', sans-serif;">Browse by Category</h3>
+        <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3 justify-content-center">
+            {% for cat in all_categories %}
+            <div class="col text-center">
+                <a href="/home/?category={{ cat.slug }}" class="text-decoration-none group d-inline-block">
+                    <div class="rounded-circle bg-white shadow-sm border d-flex align-items-center justify-content-center mx-auto mb-2 overflow-hidden hover-scale" 
+                         style="width: 100px; height: 100px; transition: transform 0.3s ease;">
+                        {% if cat.category_image %}
+                            <img src="{{ cat.category_image.url }}" alt="{{ cat.name }}" class="img-fluid p-3" style="max-height: 100%; object-fit: contain;">
+                        {% else %}
+                            <i class="bi bi-tag fs-2 text-muted"></i>
+                        {% endif %}
+                    </div>
+                    <span class="fw-bold text-dark small">{{ cat.name }}</span>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+<style>
+.hover-scale:hover {
+    transform: scale(1.08);
+    border-color: var(--owncart-primary) !important;
+}
+</style>

@@ -1,0 +1,22 @@
+<footer class="py-5 bg-dark text-white border-top">
+    <div class="container text-center">
+        <!-- Logo -->
+        <h4 class="fw-bold mb-3">OwnBasket</h4>
+        <!-- Links -->
+        <div class="d-flex justify-content-center gap-4 mb-4">
+            <a href="/" class="text-white-50 text-decoration-none hover-white">Home</a>
+            <a href="{% url 'products:category_list' %}" class="text-white-50 text-decoration-none hover-white">Categories</a>
+            <a href="{% url 'products:brand_list' %}" class="text-white-50 text-decoration-none hover-white">Brands</a>
+            <a href="{% url 'cart:cart_detail' %}" class="text-white-50 text-decoration-none hover-white">Cart</a>
+        </div>
+        <!-- Divider -->
+        <hr class="opacity-10 my-4">
+        <!-- Copyright -->
+        <p class="small text-white-50 m-0">&copy; 2026 OwnBasket E-Commerce. All Rights Reserved. Designed for premium experience.</p>
+    </div>
+</footer>
+<style>
+.hover-white:hover {
+    color: #fff !important;
+}
+</style>

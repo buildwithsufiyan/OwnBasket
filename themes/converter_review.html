@@ -1,0 +1,138 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Template Conversion Review for {{ theme.name }}{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/themes/prism-okaidia.min.css">
+    <style>
+        .suggestion-card {
+            position: relative;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .suggestion-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #f7f7f7;
+            padding: 12px 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .suggestion-header h3 { margin: 0; font-size: 1.1rem; }
+        .suggestion-meta {
+            background: #f7f7f7;
+            padding: 12px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .suggestion-body { padding: 20px; }
+        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .code-block {
+            border: 1px solid #eee;
+            border-radius: 4px;
+            background: #272822; /* Okaidia theme background */
+        }
+        .code-block h4 {
+            margin: 0;
+            padding: 10px 15px;
+            background: #444;
+            color: #f1f1f1;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #555;
+        }
+        .code-block pre { margin: 0; border-radius: 0 0 4px 4px; }
+        .suggestion-actions {
+            padding: 15px 20px;
+            text-align: right;
+            border-top: 1px solid #ddd;
+            background: #f7f7f7;
+        }
+        .suggestion-actions .button { margin-left: 10px; }
+        .confidence-bar {
+            height: 8px;
+            width: 100px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            display: inline-block;
+            overflow: hidden;
+            margin-left: 10px;
+        }
+        .confidence-bar-inner {
+            height: 100%;
+            background: #4caf50;
+        }
+        .no-suggestions { text-align: center; padding: 40px; background: #f9f9f9; border: 1px dashed #ccc; border-radius: 8px; }
+        .bulk-actions {
+            padding: 15px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <h1>Template Conversion Review: "{{ theme.name }}"</h1>
+    <p>Review the automated suggestions to convert your static HTML into dynamic OwnBasket templates. Changes are not applied until you approve them.</p>
+
+    <form method="post" action="{% url 'themes:apply_suggestion' 0 %}">
+        {% csrf_token %}
+        {% if suggestions %}
+            <div class="bulk-actions">
+                <label><input type="checkbox" id="select-all-suggestions"> Select All</label>
+                <button type="submit" name="action" value="reject" class="button">Reject Selected</button>
+                <button type="submit" name="action" value="apply" class="button default">Apply Selected</button>
+            </div>
+
+            {% for suggestion in suggestions %}
+            <div class="suggestion-card">
+                <div class="suggestion-header">
+                    <input type="checkbox" name="suggestions" value="{{ suggestion.id }}" class="suggestion-checkbox">
+                    <h3>{{ suggestion.description }}</h3>
+                </div>
+                <div class="suggestion-meta">
+                    <span>File: <strong>{{ suggestion.file_path }}</strong> (Line ~{{ suggestion.line_number }})</span>
+                    <span>Confidence: {{ suggestion.confidence|floatformat:0 }}%</span>
+                </div>
+                <div class="suggestion-body">
+                    <div class="code-comparison">
+                        <div class="code-block">
+                            <h4>Original HTML</h4>
+                            <pre><code class="language-html">{{ suggestion.original_html|escape }}</code></pre>
+                        </div>
+                        <div class="code-block">
+                            <h4>Suggested Change</h4>
+                            <pre><code class="language-django">{{ suggestion.suggested_code|escape }}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-suggestions">
+                <h2>All Clear!</h2>
+                <p>There are no pending conversion suggestions for this theme.</p>
+                <a href="{% url 'themes:theme_manager' %}" class="button">Back to Theme Manager</a>
+            </div>
+        {% endif %}
+    </form>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+    document.getElementById('select-all-suggestions').addEventListener('change', function(e) {
+        document.querySelectorAll('.suggestion-checkbox').forEach(function(checkbox) {
+            checkbox.checked = e.target.checked;
+        });
+    });
+</script>
+{% endblock %}

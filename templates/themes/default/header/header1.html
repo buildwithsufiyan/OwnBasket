@@ -1,0 +1,902 @@
+{% load static %}
+
+<style>
+    .promo-bar {
+        background: var(--owncart-primary);
+        color: var(--owncart-dark);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+    }
+
+    .own-navbar {
+        position: sticky;
+        top: 0;
+        z-index: 1035;
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(234, 236, 240, 0.95);
+    }
+
+    .own-navbar-shell {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        min-height: 84px;
+    }
+
+    .navbar-brand-custom {
+        display: inline-flex;
+        align-items: center;
+        flex-shrink: 0;
+        text-decoration: none;
+    }
+
+    .navbar-brand-custom img {
+        height: 72px;
+        width: auto;
+        display: block;
+    }
+
+    .navbar-desktop-links {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-left: auto;
+        margin-right: 8px;
+    }
+
+    .navbar-link-pill {
+        text-decoration: none;
+        color: #475467;
+        font-size: 14px;
+        font-weight: 700;
+        padding: 10px 14px;
+        border-radius: var(--radius-lg);
+        transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .navbar-link-pill:hover,
+    .navbar-link-pill.is-active {
+        color: var(--owncart-dark);
+        background: rgba(255, 184, 0, 0.14);
+        transform: translateY(-1px);
+    }
+
+    .navbar-action-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+
+    .navbar-icon-btn {
+        width: 46px;
+        height: 46px;
+        border: 1px solid var(--owncart-border);
+        border-radius: var(--radius-md);
+        background: #ffffff;
+        color: #344054;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        position: relative;
+        transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .navbar-icon-btn:hover,
+    .navbar-icon-btn:focus-visible {
+        color: var(--owncart-dark);
+        border-color: rgba(255, 184, 0, 0.55);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+    }
+
+    .navbar-icon-btn i {
+        font-size: 1.15rem;
+        line-height: 1;
+    }
+
+    .navbar-icon-btn.dropdown-toggle::after {
+        display: none;
+    }
+
+    .navbar-cart-badge {
+        position: absolute;
+        top: -5px;
+        right: -4px;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: var(--owncart-primary);
+        color: var(--owncart-dark);
+        font-size: 10px;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #ffffff;
+    }
+
+    .navbar-search-panel {
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        transform: translateY(-10px);
+        transition: max-height 0.3s ease, opacity 0.25s ease, transform 0.25s ease, padding 0.25s ease;
+        padding: 0;
+    }
+
+    .navbar-search-panel.is-active {
+        max-height: 640px;
+        opacity: 1;
+        overflow: visible;
+        transform: translateY(0);
+        padding: 0 0 18px;
+    }
+
+    .search-wrapper-custom {
+        position: relative;
+        width: 100%;
+    }
+
+    .navbar-search-form {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px;
+        border: 1px solid var(--owncart-border);
+        border-radius: var(--radius-lg);
+        background: #ffffff;
+        box-shadow: var(--shadow-md);
+    }
+
+    .navbar-search-form > i {
+        color: #98a2b3;
+        font-size: 1.1rem;
+    }
+
+    .search-input-custom {
+        border: 0;
+        box-shadow: none !important;
+        padding: 0;
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--owncart-dark);
+        background: transparent;
+    }
+
+    .search-input-custom::placeholder {
+        color: #98a2b3;
+    }
+
+    .btn-search-submit {
+        min-width: 108px;
+    }
+
+    .btn-search-submit i {
+        display: none;
+    }
+
+    .navbar-search-close {
+        width: 42px;
+        height: 42px;
+        border: 0;
+        border-radius: var(--radius-md);
+        background: #f4f6f9;
+        color: #344054;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .navbar-search-close:hover {
+        background: #eaecf0;
+        color: var(--owncart-dark);
+    }
+
+    .navbar-search-close i {
+        font-size: 1.1rem;
+    }
+
+    .navbar-profile-menu {
+        min-width: 220px;
+        padding: 10px;
+        border: 1px solid var(--owncart-border);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .navbar-profile-menu .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-radius: var(--radius-md);
+        padding: 11px 12px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #344054;
+    }
+
+    .navbar-profile-menu .dropdown-item:hover {
+        background: #f9fafb;
+        color: var(--owncart-dark);
+    }
+
+    .mobile-nav-drawer {
+        width: min(86vw, 340px);
+    }
+
+    .mobile-drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .mobile-drawer-title {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: var(--owncart-dark);
+        margin-bottom: 0;
+    }
+
+    .mobile-drawer-links {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .mobile-drawer-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: #344054;
+        font-size: 14px;
+        font-weight: 700;
+        padding: 12px 14px;
+        border-radius: var(--radius-md);
+        background: #ffffff;
+        border: 1px solid var(--owncart-border);
+        transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+    }
+
+    .mobile-drawer-link:hover,
+    .mobile-drawer-link.is-active {
+        color: var(--owncart-dark);
+        border-color: rgba(255, 184, 0, 0.55);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+    }
+
+    .mobile-drawer-meta {
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid var(--owncart-border);
+        color: #667085;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    #searchResults {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: calc(100% + 12px);
+        z-index: 1040;
+        display: none;
+    }
+
+    #searchResults.is-visible {
+        display: block;
+    }
+
+    .live-search-dropdown {
+        background: #ffffff;
+        border: 1px solid var(--owncart-border);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+    }
+
+    .live-search-section + .live-search-section {
+        border-top: 1px solid #f2f4f7;
+    }
+
+    .live-search-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 16px;
+        background: #f9fafb;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.35px;
+        color: #667085;
+    }
+
+    .live-search-list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .live-search-item {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+        padding: 12px 16px;
+        text-decoration: none;
+        color: inherit;
+        transition: background-color 0.2s ease;
+    }
+
+    .live-search-item:hover {
+        background: #fcfcfd;
+    }
+
+    .live-search-item + .live-search-item {
+        border-top: 1px solid #f2f4f7;
+    }
+
+    .live-search-item.is-simple {
+        grid-template-columns: 56px minmax(0, 1fr);
+    }
+
+    .live-search-media {
+        width: 56px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .live-search-media img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        display: block;
+    }
+
+    .live-search-fallback {
+        width: 56px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-md);
+        background: #f8fafc;
+        color: #98a2b3;
+        font-size: 1.2rem;
+    }
+
+    .live-search-copy {
+        min-width: 0;
+    }
+
+    .live-search-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #131921;
+        line-height: 1.4;
+        margin-bottom: 2px;
+    }
+
+    .live-search-meta {
+        font-size: 12px;
+        color: #667085;
+        line-height: 1.4;
+    }
+
+    .live-search-price {
+        font-size: 14px;
+        font-weight: 900;
+        color: #d92d20;
+        white-space: nowrap;
+    }
+
+    .live-search-highlight {
+        background: rgba(255, 184, 0, 0.28);
+        color: inherit;
+        border-radius: 4px;
+        padding: 0 1px;
+    }
+
+    .live-search-empty,
+    .live-search-footer {
+        padding: 16px;
+    }
+
+    .live-search-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 18px 16px;
+        color: #667085;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .live-search-spinner {
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(255, 184, 0, 0.24);
+        border-top-color: #ffb800;
+        border-radius: 50%;
+        animation: liveSearchSpin 0.7s linear infinite;
+    }
+
+    @keyframes liveSearchSpin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .live-search-empty {
+        font-size: 14px;
+        color: #667085;
+        text-align: center;
+    }
+
+    .live-search-footer {
+        border-top: 1px solid #f2f4f7;
+        background: #fcfcfd;
+    }
+
+    .live-search-footer .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    @media (max-width: 991.98px) {
+        .own-navbar-shell {
+            min-height: 74px;
+            gap: 12px;
+        }
+
+        .navbar-brand-custom img {
+            height: 60px;
+        }
+
+        .navbar-action-group {
+            gap: 8px;
+        }
+
+        .navbar-icon-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: var(--radius-md);
+        }
+
+        .navbar-search-panel.is-active {
+            padding-bottom: 14px;
+        }
+
+        .navbar-search-form {
+            padding: 12px;
+            border-radius: var(--radius-lg);
+            gap: 8px;
+        }
+
+        .btn-search-submit {
+            min-width: 92px;
+            padding-left: 14px;
+            padding-right: 14px;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .promo-bar {
+            font-size: 10px;
+        }
+
+        .navbar-brand-custom img {
+            height: 54px;
+        }
+
+        .navbar-search-form {
+            flex-wrap: nowrap;
+        }
+
+        .search-input-custom {
+            font-size: 14px;
+        }
+
+        .btn-search-submit span {
+            display: none;
+        }
+
+        .btn-search-submit i {
+            display: inline-flex;
+        }
+
+        .btn-search-submit {
+            min-width: 44px;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border-radius: var(--radius-md);
+        }
+    }
+</style>
+
+<div class="promo-bar text-center py-2">
+    <span>UP TO 50% OFF on Top Brands | New Arrivals Every Week!</span>
+</div>
+
+<nav class="own-navbar">
+    <div class="container">
+        <div class="own-navbar-shell">
+            <a href="{% url 'home' %}" class="navbar-brand-custom" aria-label="OwnBasket Home">
+                <img src="{% static 'images/logo.png' %}" alt="OwnBasket">
+            </a>
+
+            <div class="navbar-desktop-links d-none d-lg-flex">
+                <a href="{% url 'home' %}" class="navbar-link-pill {% if request.resolver_match.url_name == 'home' and not request.GET.category and not request.GET.brand and not request.GET.q %}is-active{% endif %}">All Products</a>
+                <a href="{% url 'products:brand_list' %}" class="navbar-link-pill {% if request.resolver_match.url_name == 'brand_list' %}is-active{% endif %}">Top Brands</a>
+                <a href="{% url 'products:category_list' %}" class="navbar-link-pill {% if request.resolver_match.url_name == 'category_list' %}is-active{% endif %}">Categories</a>
+                <a href="#footer-contact" class="navbar-link-pill">Contact Us</a>
+            </div>
+
+            <div class="navbar-action-group">
+                <button type="button" class="navbar-icon-btn" data-navbar-search-open aria-label="Open search">
+                    <i class="bi bi-search"></i>
+                </button>
+
+                <a href="{% if user.is_authenticated %}{% url 'cart_detail' %}{% else %}{% url 'login' %}{% endif %}" class="navbar-icon-btn d-none d-lg-inline-flex" aria-label="Open cart">
+                    <i class="bi bi-cart3"></i>
+                    <span class="navbar-cart-badge">{{ cart_count|default:"0" }}</span>
+                </a>
+
+                <div class="dropdown">
+                    <button class="navbar-icon-btn dropdown-toggle" type="button" id="navbarProfileDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open profile menu">
+                        <i class="bi bi-person-circle"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end navbar-profile-menu" aria-labelledby="navbarProfileDropdown">
+                        {% if user.is_authenticated %}
+                        <li><a class="dropdown-item" href="{% url 'account_choice' %}"><i class="bi bi-person"></i>My Profile</a></li>
+                        <li><a class="dropdown-item" href="{% url 'my_orders' %}"><i class="bi bi-bag"></i>My Orders</a></li>
+                        <li><a class="dropdown-item" href="{% url 'wishlist:wishlist' %}"><i class="bi bi-heart"></i>Wishlist</a></li>
+                        <li><hr class="dropdown-divider my-2"></li>
+                        <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i>Logout</a></li>
+                        {% else %}
+                        <li><a class="dropdown-item" href="{% url 'login' %}"><i class="bi bi-box-arrow-in-right"></i>Login</a></li>
+                        <li><a class="dropdown-item" href="{% url 'register' %}"><i class="bi bi-person-plus"></i>Register</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+                <button type="button" class="navbar-icon-btn d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#mobileNavDrawer" aria-controls="mobileNavDrawer" aria-label="Open menu">
+                    <i class="bi bi-list"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="navbar-search-panel" id="navbarSearchPanel">
+            <div class="search-wrapper-custom" data-live-search-url="{% url 'products:search_suggestions_api' %}" data-search-results-url="{% url 'products:search_results' %}">
+                <form action="{% url 'products:search_results' %}" method="GET" class="navbar-search-form">
+                    <i class="bi bi-search"></i>
+                    <input
+                        class="form-control search-input-custom"
+                        type="search"
+                        name="q"
+                        id="searchBox"
+                        placeholder="Search for products, brands and categories..."
+                        value="{{ request.GET.q|default:'' }}"
+                        autocomplete="off">
+                    <button class="btn btn-owncart btn-search-submit" type="submit">
+                        <i class="bi bi-arrow-right"></i>
+                        <span>Search</span>
+                    </button>
+                    <button type="button" class="navbar-search-close" data-navbar-search-close aria-label="Close search">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </form>
+                <div id="searchResults"></div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="offcanvas offcanvas-end mobile-nav-drawer" tabindex="-1" id="mobileNavDrawer" aria-labelledby="mobileNavDrawerLabel">
+    <div class="offcanvas-body p-3 p-sm-4">
+        <div class="mobile-drawer-header">
+            <h5 class="mobile-drawer-title" id="mobileNavDrawerLabel">Menu</h5>
+            <button type="button" class="btn-close shadow-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+
+        <div class="mobile-drawer-links">
+            <a href="{% url 'products:category_list' %}" class="mobile-drawer-link {% if request.resolver_match.url_name == 'category_list' %}is-active{% endif %}">
+                <i class="bi bi-grid"></i>
+                <span>Categories</span>
+            </a>
+            <a href="{% url 'home' %}" class="mobile-drawer-link {% if request.resolver_match.url_name == 'home' and not request.GET.category and not request.GET.brand and not request.GET.q %}is-active{% endif %}">
+                <i class="bi bi-bag"></i>
+                <span>All Products</span>
+            </a>
+            <a href="{% url 'products:brand_list' %}" class="mobile-drawer-link {% if request.resolver_match.url_name == 'brand_list' %}is-active{% endif %}">
+                <i class="bi bi-award"></i>
+                <span>Top Brands</span>
+            </a>
+            <a href="{% if user.is_authenticated %}{% url 'my_orders' %}{% else %}{% url 'login' %}{% endif %}" class="mobile-drawer-link">
+                <i class="bi bi-box-seam"></i>
+                <span>My Orders</span>
+            </a>
+            <a href="{% if user.is_authenticated %}{% url 'wishlist:wishlist' %}{% else %}{% url 'login' %}{% endif %}" class="mobile-drawer-link">
+                <i class="bi bi-heart"></i>
+                <span>Wishlist</span>
+            </a>
+            <a href="#footer-contact" class="mobile-drawer-link" data-bs-dismiss="offcanvas">
+                <i class="bi bi-telephone"></i>
+                <span>Contact Us</span>
+            </a>
+        </div>
+
+        <div class="mobile-drawer-meta">
+            {% if user.is_authenticated %}
+            Signed in as {{ user.username }}
+            {% else %}
+            Sign in to track orders and save wishlist items.
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchPanel = document.getElementById('navbarSearchPanel');
+    const searchInput = document.getElementById('searchBox');
+    const searchResults = document.getElementById('searchResults');
+    const searchWrapper = searchPanel ? searchPanel.querySelector('.search-wrapper-custom') : null;
+    const openButtons = document.querySelectorAll('[data-navbar-search-open]');
+    const closeButton = document.querySelector('[data-navbar-search-close]');
+    const mobileDrawer = document.getElementById('mobileNavDrawer');
+    const liveSearchUrl = searchWrapper ? searchWrapper.dataset.liveSearchUrl : '';
+    const searchResultsUrl = searchWrapper ? searchWrapper.dataset.searchResultsUrl : '';
+    let searchTimer = null;
+    let activeController = null;
+
+    if (!searchPanel) return;
+
+    const openSearch = function () {
+        searchPanel.classList.add('is-active');
+        window.setTimeout(function () {
+            if (searchInput) {
+                searchInput.focus();
+            }
+        }, 180);
+    };
+
+    const closeSearch = function () {
+        searchPanel.classList.remove('is-active');
+        if (searchResults) {
+            searchResults.innerHTML = '';
+            searchResults.classList.remove('is-visible');
+        }
+    };
+
+    const clearSuggestions = function () {
+        if (searchResults) {
+            searchResults.innerHTML = '';
+            searchResults.classList.remove('is-visible');
+        }
+    };
+
+    const escapeHtml = function (value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    };
+
+    const highlightMatch = function (value, query) {
+        const safeValue = escapeHtml(value);
+        if (!query) {
+            return safeValue;
+        }
+
+        const pattern = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'ig');
+        return safeValue.replace(pattern, '<span class="live-search-highlight">$1</span>');
+    };
+
+    const fallbackMedia = function (iconClass) {
+        return `<div class="live-search-fallback"><i class="bi ${iconClass}"></i></div>`;
+    };
+
+    const productItem = function (item, query) {
+        const media = item.image
+            ? `<div class="live-search-media"><img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}"></div>`
+            : fallbackMedia('bi-phone');
+
+        return `
+            <a href="${escapeHtml(item.url)}" class="live-search-item">
+                ${media}
+                <div class="live-search-copy">
+                    <div class="live-search-title">${highlightMatch(item.name, query)}</div>
+                    <div class="live-search-meta">In ${highlightMatch(item.category_name, query)}</div>
+                    <div class="live-search-meta">${highlightMatch(item.brand_name, query)}</div>
+                </div>
+                <div class="live-search-price">${escapeHtml(item.price)}</div>
+            </a>
+        `;
+    };
+
+    const simpleItem = function (item, query, type) {
+        const iconClass = type === 'brand' ? 'bi-award' : 'bi-grid';
+        const label = type === 'brand' ? 'Brand' : 'Category';
+        const media = item.image
+            ? `<div class="live-search-media"><img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}"></div>`
+            : fallbackMedia(iconClass);
+
+        return `
+            <a href="${escapeHtml(item.url)}" class="live-search-item is-simple">
+                ${media}
+                <div class="live-search-copy">
+                    <div class="live-search-meta">${label}</div>
+                    <div class="live-search-title">${highlightMatch(item.name, query)}</div>
+                </div>
+            </a>
+        `;
+    };
+
+    const renderSection = function (title, items, renderer) {
+        if (!items.length) {
+            return '';
+        }
+
+        return `
+            <section class="live-search-section">
+                <div class="live-search-heading">
+                    <span>${title}</span>
+                    <span>${items.length}</span>
+                </div>
+                <div class="live-search-list">
+                    ${items.map(renderer).join('')}
+                </div>
+            </section>
+        `;
+    };
+
+    const renderSuggestions = function (payload) {
+        if (!searchResults) return;
+
+        const query = payload.query || '';
+        const products = payload.products || [];
+        const categories = payload.categories || [];
+        const brands = payload.brands || [];
+
+        if (!payload.has_results) {
+            searchResults.innerHTML = `
+                <div class="live-search-dropdown">
+                    <div class="live-search-empty">No matching products, brands or categories found.</div>
+                    <div class="live-search-footer">
+                        <a href="${searchResultsUrl}?q=${encodeURIComponent(query)}" class="btn btn-owncart-outline">View All Results</a>
+                    </div>
+                </div>
+            `;
+            searchResults.classList.add('is-visible');
+            return;
+        }
+
+        searchResults.innerHTML = `
+            <div class="live-search-dropdown">
+                ${renderSection('Products', products, function (item) { return productItem(item, query); })}
+                ${renderSection('Categories', categories, function (item) { return simpleItem(item, query, 'category'); })}
+                ${renderSection('Brands', brands, function (item) { return simpleItem(item, query, 'brand'); })}
+                <div class="live-search-footer">
+                    <a href="${searchResultsUrl}?q=${encodeURIComponent(query)}" class="btn btn-owncart-outline">View All Results</a>
+                </div>
+            </div>
+        `;
+        searchResults.classList.add('is-visible');
+    };
+
+    const requestSuggestions = function (query) {
+        if (!liveSearchUrl) return;
+
+        if (activeController) {
+            activeController.abort();
+        }
+
+        activeController = new AbortController();
+        searchResults.innerHTML = `
+            <div class="live-search-dropdown">
+                <div class="live-search-loading">
+                    <span class="live-search-spinner" aria-hidden="true"></span>
+                    <span>Searching...</span>
+                </div>
+            </div>
+        `;
+        searchResults.classList.add('is-visible');
+
+        fetch(`${liveSearchUrl}?q=${encodeURIComponent(query)}`, {
+            signal: activeController.signal,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (payload) {
+                renderSuggestions(payload);
+            })
+            .catch(function (error) {
+                if (error.name !== 'AbortError') {
+                    clearSuggestions();
+                }
+            });
+    };
+
+    openButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            if (searchPanel.classList.contains('is-active')) {
+                closeSearch();
+            } else {
+                openSearch();
+            }
+        });
+    });
+
+    if (closeButton) {
+        closeButton.addEventListener('click', closeSearch);
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            const query = this.value.trim();
+
+            window.clearTimeout(searchTimer);
+
+            if (!query) {
+                clearSuggestions();
+                return;
+            }
+
+            searchTimer = window.setTimeout(function () {
+                requestSuggestions(query);
+            }, 300);
+        });
+    }
+
+    if (searchInput && searchInput.value.trim()) {
+        openSearch();
+        requestSuggestions(searchInput.value.trim());
+    }
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeSearch();
+        }
+    });
+
+    document.addEventListener('click', function (event) {
+        if (!searchWrapper) return;
+
+        if (!searchWrapper.contains(event.target) && !Array.from(openButtons).some(function (button) {
+            return button.contains(event.target);
+        })) {
+            clearSuggestions();
+        }
+    });
+
+    if (mobileDrawer) {
+        mobileDrawer.addEventListener('show.bs.offcanvas', closeSearch);
+    }
+});
+</script>

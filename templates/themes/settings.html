@@ -1,0 +1,264 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+    .appearance-container {
+        display: flex;
+        gap: 24px;
+        margin-top: 20px;
+        font-family: 'Inter', -apple-system, sans-serif;
+    }
+    .appearance-sidebar {
+        width: 260px;
+        flex-shrink: 0;
+        background: #1e293b;
+        border-radius: 12px;
+        padding: 20px;
+        color: #f8fafc;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
+    .appearance-sidebar h5 {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #94a3b8;
+        margin-bottom: 20px;
+        font-weight: 800;
+    }
+    .sidebar-menu {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .sidebar-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #cbd5e1;
+        text-decoration: none;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+    .sidebar-link:hover, .sidebar-link.active {
+        background: #334155;
+        color: #fff;
+    }
+    .sidebar-link.active {
+        background: #3b82f6;
+    }
+    .appearance-content {
+        flex: 1;
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+    }
+    .settings-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-top: 24px;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .color-picker-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+    }
+    .color-picker-card {
+        border: 1px solid #e2e8f0;
+        padding: 12px;
+        border-radius: 8px;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .color-picker-card input[type="color"] {
+        width: 48px;
+        height: 48px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        padding: 0;
+        background: none;
+    }
+    .color-picker-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+    }
+    .form-group {
+        margin-bottom: 18px;
+    }
+    .form-label {
+        font-size: 13px;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 6px;
+        display: block;
+    }
+    .form-select {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 14px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .form-select:focus {
+        border-color: #3b82f6;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="appearance-container">
+        <!-- Sidebar Navigation -->
+        <div class="appearance-sidebar">
+            <h5>Appearance</h5>
+            <div class="sidebar-menu">
+                <a href="{% url 'themes:theme_manager' %}" class="sidebar-link">
+                    <i class="bi bi-palette"></i> Theme Manager
+                </a>
+                <a href="{% url 'themes:theme_builder' %}" class="sidebar-link">
+                    <i class="bi bi-tools"></i> Theme Builder
+                </a>
+                <a href="{% url 'themes:theme_settings' %}" class="sidebar-link active">
+                    <i class="bi bi-sliders"></i> Theme Settings
+                </a>
+                <a href="{% url 'themes:import_theme' %}" class="sidebar-link">
+                    <i class="bi bi-cloud-arrow-up"></i> Import Theme
+                </a>
+            </div>
+        </div>
+
+        <!-- Settings Content Panel -->
+        <div class="appearance-content">
+            <h2 class="fw-bold mb-1" style="font-size: 24px; color: #0f172a;">Theme Settings</h2>
+            <p class="text-muted mb-4 small">Configure dynamic styling parameters for the active theme: <strong>{{ theme.name }}</strong>.</p>
+
+            <form method="POST" action="{% url 'themes:theme_settings' %}">
+                {% csrf_token %}
+
+                <!-- Colors Customization -->
+                <h4 class="settings-title"><i class="bi bi-palette-fill"></i> Colors & Theme Styling</h4>
+                <div class="color-picker-grid mb-4">
+                    <div class="color-picker-card">
+                        <input type="color" name="primary_color" value="{{ theme.primary_color }}">
+                        <div>
+                            <span class="color-picker-label">Primary Color</span>
+                        </div>
+                    </div>
+                    <div class="color-picker-card">
+                        <input type="color" name="secondary_color" value="{{ theme.secondary_color }}">
+                        <div>
+                            <span class="color-picker-label">Secondary Color</span>
+                        </div>
+                    </div>
+                    <div class="color-picker-card">
+                        <input type="color" name="accent_color" value="{{ theme.accent_color }}">
+                        <div>
+                            <span class="color-picker-label">Accent Color</span>
+                        </div>
+                    </div>
+                    <div class="color-picker-card">
+                        <input type="color" name="bg_color" value="{{ theme.bg_color }}">
+                        <div>
+                            <span class="color-picker-label">Background Color</span>
+                        </div>
+                    </div>
+                    <div class="color-picker-card">
+                        <input type="color" name="text_color" value="{{ theme.text_color }}">
+                        <div>
+                            <span class="color-picker-label">Text Color</span>
+                        </div>
+                    </div>
+                    <div class="color-picker-card">
+                        <input type="color" name="border_color" value="{{ theme.border_color }}">
+                        <div>
+                            <span class="color-picker-label">Border Color</span>
+                        </div>
+                    </div>
+                    <div class="color-picker-card">
+                        <input type="color" name="button_color" value="{{ theme.button_color }}">
+                        <div>
+                            <span class="color-picker-label">Button Color</span>
+                        </div>
+                    </div>
+                    <div class="color-picker-card">
+                        <input type="color" name="hover_color" value="{{ theme.hover_color }}">
+                        <div>
+                            <span class="color-picker-label">Hover Color</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Typography & Details Section -->
+                <h4 class="settings-title"><i class="bi bi-fonts"></i> Typography & Animation</h4>
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label class="form-label">Font Family (Canva Free Fonts)</label>
+                        <select name="font_family" class="form-select">
+                            {% for code, label in fonts %}
+                                <option value="{{ code }}" {% if theme.font_family == code %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label class="form-label">Border Radius</label>
+                        <select name="border_radius" class="form-select">
+                            {% for code, label in border_radii %}
+                                <option value="{{ code }}" {% if theme.border_radius == code %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label class="form-label">Button Styles</label>
+                        <select name="button_style" class="form-select">
+                            {% for code, label in button_styles %}
+                                <option value="{{ code }}" {% if theme.button_style == code %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label class="form-label">Micro-Animations</label>
+                        <select name="animation_style" class="form-select">
+                            {% for code, label in animations %}
+                                <option value="{{ code }}" {% if theme.animation_style == code %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-top d-flex gap-3">
+                    <button type="submit" class="btn btn-primary px-4 py-2.5 fw-bold" style="background: #3b82f6; border: none; border-radius: 8px;">
+                        Save Settings
+                    </button>
+                    <a href="{% url 'themes:theme_manager' %}" class="btn btn-outline-secondary px-4 py-2.5 fw-bold" style="border-radius: 8px;">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

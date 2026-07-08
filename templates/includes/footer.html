@@ -1,0 +1,215 @@
+<style>
+    .footer-custom {
+        background-color: #131921;
+        color: #eaecf0;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .footer-custom a {
+        color: #98a2b3;
+        text-decoration: none;
+        transition: color 0.15s ease;
+    }
+
+    .footer-custom a:hover {
+        color: var(--owncart-primary);
+    }
+
+    .footer-heading {
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 18px;
+        position: relative;
+    }
+
+    .newsletter-section {
+        background-color: #1e2530;
+        border-radius: var(--radius-xl);
+        padding: 24px;
+        margin-bottom: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .input-subscribe {
+        border: 1px solid #344054;
+        border-radius: var(--radius-md) 0 0 var(--radius-md) !important;
+        min-height: var(--control-height);
+        padding: 12px 18px;
+        font-size: 14px;
+        background-color: #131921;
+        color: white;
+        transition: all 0.2s ease;
+    }
+
+    .input-subscribe:focus {
+        border-color: var(--owncart-primary);
+        box-shadow: 0 0 0 3px rgba(255, 184, 0, 0.1);
+        background-color: #131921;
+        color: white;
+        outline: none;
+    }
+
+    .btn-subscribe {
+        background-color: var(--owncart-primary);
+        border: 1px solid var(--owncart-primary);
+        color: var(--owncart-dark);
+        font-weight: 700;
+        border-radius: 0 var(--radius-md) var(--radius-md) 0 !important;
+        padding: 12px 20px;
+        transition: all var(--transition-fast);
+    }
+
+    .btn-subscribe:hover {
+        background-color: var(--owncart-primary-hover);
+        border-color: var(--owncart-primary-hover);
+    }
+
+    .social-icons-container {
+        display: flex;
+        gap: 12px;
+    }
+
+    .social-icon-btn {
+        background-color: #232f3e;
+        color: #eaecf0;
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        transition: all var(--transition-fast);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .social-icon-btn:hover {
+        background-color: var(--owncart-primary);
+        color: var(--owncart-dark) !important;
+        transform: translateY(-2px);
+    }
+
+    .footer-bottom {
+        border-top: 1px solid #232f3e;
+        padding-top: 25px;
+    }
+
+    .checkmark-list {
+        display: flex;
+        gap: 20px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        list-style: none;
+        padding-left: 0;
+        margin-bottom: 0;
+    }
+
+    .checkmark-item {
+        color: var(--owncart-primary);
+        font-weight: 600;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .footer-links-list {
+        list-style: none;
+        padding-left: 0;
+        margin-bottom: 0;
+    }
+
+    .footer-links-list li {
+        margin-bottom: 12px;
+    }
+
+    .footer-links-list li a {
+        font-size: 14px;
+    }
+</style>
+
+<footer class="footer-custom pt-5 pb-4 mt-auto" id="footer-contact">
+    <div class="container">
+
+        <!-- Newsletter Section -->
+        <div class="newsletter-section">
+            <div class="row align-items-center">
+                <div class="col-lg-6 mb-3 mb-lg-0">
+                    <h5 class="text-white fw-bold mb-1">Subscribe to Our Newsletter</h5>
+                    <p class="text-muted mb-0 small">Get updates on new arrivals and exclusive offers.</p>
+                </div>
+                <div class="col-lg-6">
+                    <form action="#" class="input-group"
+                        onsubmit="event.preventDefault(); alert('Thank you for subscribing!'); this.reset();">
+                        <input type="email" class="form-control input-subscribe" placeholder="Enter your email" required
+                            autocomplete="off">
+                        <button class="btn btn-subscribe" type="submit">Subscribe</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Links Columns -->
+        <div class="row g-4">
+
+            <!-- Quick Links -->
+            <div class="col-md-4 col-sm-6">
+                <h6 class="footer-heading">Quick Links</h6>
+                <ul class="footer-links-list">
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#footer-contact">Contact Us</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms & Conditions</a></li>
+                    <li><a href="#">FAQs</a></li>
+                </ul>
+            </div>
+
+            <!-- Customer Service -->
+            <div class="col-md-4 col-sm-6">
+                <h6 class="footer-heading">Customer Service</h6>
+                <ul class="footer-links-list">
+                    <li><a href="#">Shipping Policy</a></li>
+                    <li><a href="#">Return Policy</a></li>
+                    <li><a href="#">Track Your Order</a></li>
+                    <li><a href="#">Payment Methods</a></li>
+                    <li><a href="#">Help Center</a></li>
+                </ul>
+            </div>
+
+            <!-- Follow Us -->
+            <div class="col-md-4">
+                <h6 class="footer-heading">Follow Us</h6>
+                <div class="social-icons-container mb-3">
+                    <a href="https://linkedin.com" target="_blank" class="social-icon-btn"><i
+                            class="bi bi-linkedin"></i></a>
+                    <a href="https://youtube.com" target="_blank" class="social-icon-btn"><i
+                            class="bi bi-youtube"></i></a>
+                    <a href="https://twitter.com" target="_blank" class="social-icon-btn"><i
+                            class="bi bi-twitter"></i></a>
+                </div>
+                <span class="text-muted small d-block">Social Handle: <strong
+                        class="text-white">/OwnBasket</strong></span>
+            </div>
+
+        </div>
+
+        <!-- Footer Bottom Bar -->
+        <div class="footer-bottom mt-5">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                    <p class="mb-0 small text-muted">© 2026 OwnBasket. All Rights Reserved.</p>
+                </div>
+                <div class="col-md-6">
+                    <ul class="checkmark-list justify-content-center justify-content-md-end">
+                        <li class="checkmark-item"><i class="bi bi-check2-circle"></i> Top Brands</li>
+                        <li class="checkmark-item"><i class="bi bi-check2-circle"></i> Great Prices</li>
+                        <li class="checkmark-item"><i class="bi bi-check2-circle"></i> Better Life</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</footer>

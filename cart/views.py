@@ -1,0 +1,154 @@
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect, render
+
+from .models import Cart, CartItem
+from products.models import Product
+from products.pricing import build_cart_summary, get_coupon_by_code, validate_coupon
+
+
+def _get_user_cart(user):
+    return Cart.objects.get_or_create(id=user.id)[0]
+
+
+def _get_coupon_session_key():
+    return 'active_coupon_code'
+
+
+def _set_coupon_code(request, code):
+    request.session[_get_coupon_session_key()] = (code or '').upper().strip()
+
+
+def _clear_coupon_code(request):
+    request.session.pop(_get_coupon_session_key(), None)
+
+
+def _get_coupon_code(request):
+    return request.session.get(_get_coupon_session_key(), '')
+
+
+@login_required(login_url='login')
+def add_to_cart(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+
+    size = request.POST.get('size')
+    color = request.POST.get('color')
+
+    cart = _get_user_cart(request.user)
+
+    cart_item, item_created = CartItem.objects.get_or_create(
+        cart=cart,
+        product=product,
+        size=size,
+        color=color,
+    )
+
+    if not item_created:
+        cart_item.quantity += 1
+        cart_item.save()
+
+    return redirect('cart_detail')
+
+
+@login_required(login_url='login')
+def cart_detail(request):
+    cart = _get_user_cart(request.user)
+    items = CartItem.objects.filter(cart=cart).select_related('product', 'product__brand', 'product__category')
+    coupon_code = _get_coupon_code(request)
+    summary = build_cart_summary(items, user=request.user, coupon_code=coupon_code)
+
+    return render(
+        request,
+        'cart/cart_detail.html',
+        {
+            'items': summary.items,
+            'summary': summary,
+            'total': summary.grand_total,
+            'cart_count': summary.item_count,
+            'coupon_code': coupon_code,
+        },
+    )
+
+
+@login_required(login_url='login')
+def increase_quantity(request, item_id):
+    item = get_object_or_404(CartItem, id=item_id)
+
+    if item.cart.id != request.user.id:
+        return redirect('cart_detail')
+
+    item.quantity += 1
+    item.save()
+
+    return redirect('cart_detail')
+
+
+@login_required(login_url='login')
+def decrease_quantity(request, item_id):
+    item = get_object_or_404(CartItem, id=item_id)
+
+    if item.cart.id != request.user.id:
+        return redirect('cart_detail')
+
+    if item.quantity > 1:
+        item.quantity -= 1
+        item.save()
+
+    return redirect('cart_detail')
+
+
+@login_required(login_url='login')
+def remove_from_cart(request, item_id):
+    item = get_object_or_404(CartItem, id=item_id)
+
+    if item.cart.id != request.user.id:
+        return redirect('cart_detail')
+
+    item.delete()
+
+    return redirect('cart_detail')
+
+
+@login_required(login_url='login')
+def apply_coupon(request):
+    if request.method != 'POST':
+        return redirect('cart_detail')
+
+    code = (request.POST.get('code') or '').upper().strip()
+    cart = _get_user_cart(request.user)
+    items = CartItem.objects.filter(cart=cart).select_related('product', 'product__brand', 'product__category')
+
+    if not code:
+        _clear_coupon_code(request)
+        messages.error(request, 'Please enter a coupon code.')
+        return redirect('cart_detail')
+
+    summary = build_cart_summary(items, user=request.user, coupon_code=code)
+    if summary.applied_coupon:
+        _set_coupon_code(request, code)
+        messages.success(request, summary.coupon_message)
+    else:
+        _clear_coupon_code(request)
+        coupon = get_coupon_by_code(code)
+        _, message = validate_coupon(
+            coupon,
+            user=request.user,
+            subtotal=summary.subtotal_after_item_discounts,
+            eligible_subtotal=sum(
+                (
+                    line.line_final_total
+                    for line in summary.line_items
+                    if not line.has_item_discount
+                ),
+                0,
+            ),
+        )
+        messages.error(request, message)
+    return redirect('cart_detail')
+
+
+@login_required(login_url='login')
+def remove_coupon(request):
+    _clear_coupon_code(request)
+    messages.success(request, 'Coupon removed successfully.')
+    return redirect('cart_detail')

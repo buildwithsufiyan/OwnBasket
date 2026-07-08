@@ -1,0 +1,33 @@
+<section class="py-4 my-3">
+    <div class="container">
+        <h3 class="mb-4 fw-extrabold text-dark text-start" style="font-family: 'Poppins', sans-serif;">Trending Departments</h3>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+            {% for cat in all_categories|slice:":8" %}
+            <div class="col">
+                <a href="/home/?category={{ cat.slug }}" class="text-decoration-none card border-0 rounded-3 shadow-sm overflow-hidden position-relative group hover-lift" 
+                   style="height: 180px; background: #fafafa;">
+                    {% if cat.category_image %}
+                        <img src="{{ cat.category_image.url }}" alt="{{ cat.name }}" class="card-img w-100 h-100 object-fit-cover opacity-75" style="transition: transform 0.4s ease;">
+                    {% endif %}
+                    <div class="card-img-overlay d-flex flex-column justify-content-end p-3" style="background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.7));">
+                        <h5 class="card-title text-white fw-bold m-0">{{ cat.name }}</h5>
+                        <p class="card-text text-warning small fw-semibold m-0">View Products <i class="bi bi-arrow-right small"></i></p>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+<style>
+.hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+}
+.hover-lift:hover img {
+    transform: scale(1.06);
+}
+</style>

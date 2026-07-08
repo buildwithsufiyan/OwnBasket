@@ -1,0 +1,10 @@
+{
+    "name": "Extract",
+    "slug": "extract",
+    "version": "1.0",
+    "author": "Imported",
+    "description": "A static HTML theme 'Extract' imported into OwnBasket.",
+    "product_detail_layout": "imported-template",
+    "category_layout": "imported-template",
+    "cart_layout": "imported-template"
+}

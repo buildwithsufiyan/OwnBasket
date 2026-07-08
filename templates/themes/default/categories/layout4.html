@@ -1,0 +1,24 @@
+<section class="py-3 bg-white border-bottom">
+    <div class="container">
+        <div class="d-flex align-items-center gap-2 overflow-x-auto pb-2 scrollbar-none" style="white-space: nowrap;">
+            <a href="/home/" class="btn btn-owncart px-4 py-2 rounded-pill {% if not selected_category %}active-pill{% endif %}">
+                All Departments
+            </a>
+            {% for cat in all_categories %}
+            <a href="/home/?category={{ cat.slug }}" 
+               class="btn {% if selected_category.slug == cat.slug %}btn-owncart active-pill{% else %}btn-outline-secondary{% endif %} px-4 py-2 rounded-pill fw-semibold text-decoration-none">
+                {{ cat.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+<style>
+.scrollbar-none::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-none {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+</style>

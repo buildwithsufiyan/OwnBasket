@@ -1,0 +1,302 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="auth-page-wrapper">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-xl-5 col-lg-6 col-md-8">
+
+                <!-- Auth Card -->
+                <div class="auth-card">
+
+                    <!-- Logo & Heading -->
+                    <div class="auth-header text-center">
+                        <div class="auth-logo-mark">
+                            <i class="bi bi-bag-heart-fill"></i>
+                        </div>
+                        <h2 class="auth-title">Welcome Back!</h2>
+                        <p class="auth-subtitle">Sign in to your OwnCart account</p>
+                    </div>
+
+                    <!-- Alerts -->
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show rounded-3 py-3"
+                         role="alert">
+                        <i class="bi bi-info-circle me-2"></i>{{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <!-- Login Form -->
+                    <form method="post" class="auth-form">
+                        {% csrf_token %}
+
+                        <div class="auth-field-group">
+                            <label class="auth-label">Username</label>
+                            <div class="auth-input-wrap">
+                                <i class="bi bi-person auth-input-icon"></i>
+                                <input type="text"
+                                       name="username"
+                                       id="id_username"
+                                       class="auth-input"
+                                       placeholder="Enter your username"
+                                       required
+                                       autofocus>
+                            </div>
+                        </div>
+
+                        <div class="auth-field-group">
+                            <label class="auth-label">Password</label>
+                            <div class="auth-input-wrap">
+                                <i class="bi bi-lock auth-input-icon"></i>
+                                <input type="password"
+                                       name="password"
+                                       id="id_password"
+                                       class="auth-input"
+                                       placeholder="Enter your password"
+                                       required>
+                                <button type="button"
+                                        class="auth-eye-btn"
+                                        onclick="togglePassword('id_password', this)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        {% if form.errors %}
+                        <div class="auth-error-msg">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            Invalid username or password. Please try again.
+                        </div>
+                        {% endif %}
+
+                        <button type="submit" class="btn-auth-submit">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                        </button>
+                    </form>
+
+                    <!-- Divider -->
+                    <div class="auth-divider">
+                        <span>New to OwnCart?</span>
+                    </div>
+
+                    <!-- Register Link -->
+                    <a href="{% url 'register' %}" class="btn-auth-secondary">
+                        <i class="bi bi-person-plus me-2"></i>Create an Account
+                    </a>
+
+                </div>
+
+                <!-- Trust note -->
+                <p class="auth-trust-note text-center mt-4">
+                    <i class="bi bi-shield-lock me-1"></i>
+                    Your data is secure with OwnCart
+                </p>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-page-wrapper {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #fff8e1 100%);
+}
+
+.auth-card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 40px 36px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.06);
+    border: 1px solid #eaecf0;
+}
+
+.auth-header {
+    margin-bottom: 28px;
+}
+
+.auth-logo-mark {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #ffb800, #ff9900);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #131921;
+    margin: 0 auto 16px;
+    box-shadow: 0 8px 24px rgba(255,184,0,0.3);
+}
+
+.auth-title {
+    font-size: 26px;
+    font-weight: 900;
+    color: #131921;
+    margin-bottom: 6px;
+}
+
+.auth-subtitle {
+    font-size: 14px;
+    color: #667085;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+/* Form fields */
+.auth-form { display: flex; flex-direction: column; gap: 18px; }
+
+.auth-field-group { display: flex; flex-direction: column; gap: 6px; }
+
+.auth-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #344054;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.auth-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.auth-input-icon {
+    position: absolute;
+    left: 14px;
+    font-size: 17px;
+    color: #98a2b3;
+    pointer-events: none;
+}
+
+.auth-input {
+    width: 100%;
+    border: 2px solid #eaecf0;
+    border-radius: 12px;
+    padding: 13px 16px 13px 42px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #131921;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    transition: all 0.2s ease;
+    outline: none;
+}
+.auth-input:focus {
+    border-color: var(--owncart-primary);
+    box-shadow: 0 0 0 4px rgba(255,184,0,0.12);
+}
+.auth-input::placeholder { color: #c0c7d0; }
+
+.auth-eye-btn {
+    position: absolute;
+    right: 14px;
+    background: none;
+    border: none;
+    color: #98a2b3;
+    font-size: 17px;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.15s ease;
+}
+.auth-eye-btn:hover { color: #344054; }
+
+.auth-error-msg {
+    background: #fff1f1;
+    color: #d92d20;
+    border: 1px solid #fda29b;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.btn-auth-submit {
+    background: var(--owncart-primary);
+    color: #131921;
+    font-weight: 800;
+    font-size: 16px;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 4px;
+}
+.btn-auth-submit:hover {
+    background: var(--owncart-primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(255,184,0,0.3);
+}
+
+/* Divider */
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 22px 0 14px;
+    color: #98a2b3;
+    font-size: 13px;
+    font-weight: 600;
+}
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #eaecf0;
+}
+
+.btn-auth-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    color: #344054;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 13px;
+    border-radius: 12px;
+    text-decoration: none;
+    border: 1.5px solid #eaecf0;
+    transition: all 0.2s ease;
+}
+.btn-auth-secondary:hover {
+    background: #f2f4f7;
+    color: #131921;
+    border-color: #d0d5dd;
+    transform: translateY(-1px);
+}
+
+.auth-trust-note {
+    font-size: 12px;
+    color: #98a2b3;
+    font-weight: 600;
+}
+</style>
+
+<script>
+function togglePassword(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'bi bi-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'bi bi-eye';
+    }
+}
+</script>
+
+{% endblock %}

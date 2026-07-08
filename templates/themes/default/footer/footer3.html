@@ -1,0 +1,17 @@
+<footer class="py-5" style="background-color: #121212; border-top: 1px solid #d4af37; color: #fff;">
+    <div class="container text-center">
+        <!-- Logo -->
+        <h3 class="mb-4 text-uppercase tracking-widest" style="color: #d4af37; font-family: 'Playfair Display', serif;">OwnBasket</h3>
+        <!-- Links -->
+        <div class="d-flex justify-content-center gap-4 mb-4">
+            <a href="/" class="text-white text-decoration-none hover-gold small text-uppercase">Home</a>
+            {% for cat in all_categories|slice:":3" %}
+                <a href="/home/?category={{ cat.slug }}" class="text-white text-decoration-none hover-gold small text-uppercase">{{ cat.name }}</a>
+            {% endfor %}
+        </div>
+        <!-- Divider -->
+        <hr style="border-top: 1px solid rgba(212, 175, 55, 0.2); margin: 30px 0;">
+        <!-- Copyright -->
+        <p class="small m-0 text-white-50 tracking-wider text-uppercase" style="font-size: 10px;">&copy; 2026 OwnBasket Luxury Portal. Direct Partners & Source.</p>
+    </div>
+</footer>

@@ -1,0 +1,462 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <!-- Page Title -->
+    <h1 class="checkout-page-title mb-5">
+        <i class="bi bi-lock-fill me-2" style="color:var(--owncart-primary);"></i>Secure Checkout
+    </h1>
+
+    <div class="row g-4">
+
+        <!-- LEFT: Checkout Form -->
+        <div class="col-lg-7">
+            <form method="POST" id="checkoutForm">
+                {% csrf_token %}
+
+                <!-- Delivery Details -->
+                <div class="checkout-section-card">
+                    <div class="checkout-section-head">
+                        <div class="checkout-section-num">1</div>
+                        <h5 class="checkout-section-title">Delivery Details</h5>
+                    </div>
+
+                    <div class="checkout-form-grid">
+                        <div class="checkout-field-group full-width">
+                            <label class="checkout-label">Full Name *</label>
+                            <div class="checkout-input-wrap">
+                                <i class="bi bi-person checkout-input-icon"></i>
+                                <input type="text"
+                                       name="full_name"
+                                       class="checkout-input"
+                                       placeholder="Enter your full name"
+                                       required>
+                            </div>
+                        </div>
+
+                        <div class="checkout-field-group">
+                            <label class="checkout-label">Email *</label>
+                            <div class="checkout-input-wrap">
+                                <i class="bi bi-envelope checkout-input-icon"></i>
+                                <input type="email"
+                                       name="email"
+                                       class="checkout-input"
+                                       placeholder="your@email.com"
+                                       required>
+                            </div>
+                        </div>
+
+                        <div class="checkout-field-group">
+                            <label class="checkout-label">Phone</label>
+                            <div class="checkout-input-wrap">
+                                <i class="bi bi-telephone checkout-input-icon"></i>
+                                <input type="tel"
+                                       name="phone"
+                                       class="checkout-input"
+                                       placeholder="+91 00000 00000">
+                            </div>
+                        </div>
+
+                        <div class="checkout-field-group full-width">
+                            <label class="checkout-label">Delivery Address *</label>
+                            <div class="checkout-input-wrap">
+                                <i class="bi bi-geo-alt checkout-input-icon align-self-start mt-3"></i>
+                                <textarea name="address"
+                                          class="checkout-input checkout-textarea"
+                                          placeholder="House No., Street, City, State, Pincode"
+                                          rows="3"
+                                          required></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Method -->
+                <div class="checkout-section-card mt-3">
+                    <div class="checkout-section-head">
+                        <div class="checkout-section-num">2</div>
+                        <h5 class="checkout-section-title">Payment Method</h5>
+                    </div>
+
+                    <div class="payment-options">
+                        <label class="payment-option selected">
+                            <input type="radio" name="payment_method"
+                                   value="COD" checked hidden>
+                            <div class="payment-option-icon">
+                                <i class="bi bi-cash-coin"></i>
+                            </div>
+                            <div>
+                                <div class="payment-option-title">Cash on Delivery</div>
+                                <div class="payment-option-desc">Pay when your order arrives</div>
+                            </div>
+                            <i class="bi bi-check-circle-fill payment-check ms-auto"></i>
+                        </label>
+
+                        <label class="payment-option">
+                            <input type="radio" name="payment_method"
+                                   value="UPI" hidden>
+                            <div class="payment-option-icon">
+                                <i class="bi bi-phone"></i>
+                            </div>
+                            <div>
+                                <div class="payment-option-title">UPI / QR Code</div>
+                                <div class="payment-option-desc">Pay using any UPI app</div>
+                            </div>
+                            <i class="bi bi-check-circle-fill payment-check ms-auto"></i>
+                        </label>
+
+                        <label class="payment-option">
+                            <input type="radio" name="payment_method"
+                                   value="Card" hidden>
+                            <div class="payment-option-icon">
+                                <i class="bi bi-credit-card"></i>
+                            </div>
+                            <div>
+                                <div class="payment-option-title">Credit / Debit Card</div>
+                                <div class="payment-option-desc">Visa, Mastercard, Rupay</div>
+                            </div>
+                            <i class="bi bi-check-circle-fill payment-check ms-auto"></i>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Place Order Button -->
+                <button type="submit" class="btn-place-order mt-4">
+                    <i class="bi bi-bag-check-fill me-2"></i>Place Order Securely
+                </button>
+
+                <!-- Security note -->
+                <div class="checkout-security-note">
+                    <i class="bi bi-shield-lock-fill"></i>
+                    256-bit SSL encryption · Your payment is 100% secure
+                </div>
+            </form>
+        </div>
+
+        <!-- RIGHT: Order Summary -->
+        <div class="col-lg-5">
+            <div class="checkout-summary-card">
+                <h5 class="summary-card-title">
+                    <i class="bi bi-receipt me-2"></i>Order Summary
+                </h5>
+
+                {% if items %}
+                <div class="summary-items">
+                    {% for item in items %}
+                    <div class="summary-item-row">
+                        {% if item.product.image %}
+                        <img src="{{ item.product.image.url }}"
+                             alt="{{ item.product.name }}"
+                             class="summary-item-img">
+                        {% endif %}
+                        <div class="summary-item-info">
+                            <span class="summary-item-name">{{ item.product.name }}</span>
+                            <span class="summary-item-qty">Qty: {{ item.quantity }}</span>
+                        </div>
+                        <span class="summary-item-price">
+                            ₹{{ item.line_pricing.line_final_total|intcomma }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="summary-totals">
+                    <div class="summary-row-line">
+                        <span>Subtotal</span>
+                        <span>₹{{ summary.subtotal_original|intcomma }}</span>
+                    </div>
+                    {% if summary.item_discount_total > 0 %}
+                    <div class="summary-row-line text-danger">
+                        <span>Product Discounts</span>
+                        <span class="fw-bold">-₹{{ summary.item_discount_total|intcomma }}</span>
+                    </div>
+                    {% endif %}
+                    {% if summary.applied_coupon %}
+                    <div class="summary-row-line text-danger">
+                        <span>Coupon ({{ summary.applied_coupon.code }})</span>
+                        <span class="fw-bold">-₹{{ summary.coupon_discount|intcomma }}</span>
+                    </div>
+                    {% endif %}
+                    {% if summary.buy_x_get_y_discount > 0 %}
+                    <div class="summary-row-line text-danger">
+                        <span>Buy X Get Y</span>
+                        <span class="fw-bold">-₹{{ summary.buy_x_get_y_discount|intcomma }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="summary-row-line {% if summary.shipping_amount == 0 %}text-success{% endif %}">
+                        <span><i class="bi bi-truck me-1"></i>Delivery</span>
+                        <span class="fw-bold">{% if summary.shipping_amount == 0 %}FREE{% else %}₹{{ summary.shipping_amount|intcomma }}{% endif %}</span>
+                    </div>
+                    <hr class="my-3">
+                    <div class="summary-row-line total-final">
+                        <span>Grand Total</span>
+                        <span class="total-price-big">₹{{ summary.grand_total|intcomma }}</span>
+                    </div>
+                </div>
+                {% if summary.buy_x_get_y_messages %}
+                <div class="checkout-offer-stack">
+                    {% for offer_message in summary.buy_x_get_y_messages %}
+                    <div class="checkout-offer-chip">{{ offer_message }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endif %}
+
+                <!-- Trust badges -->
+                <div class="checkout-trust-badges mt-4">
+                    <div class="trust-badge-item">
+                        <i class="bi bi-shield-check"></i>
+                        <span>Secure Checkout</span>
+                    </div>
+                    <div class="trust-badge-item">
+                        <i class="bi bi-arrow-repeat"></i>
+                        <span>Easy Returns</span>
+                    </div>
+                    <div class="trust-badge-item">
+                        <i class="bi bi-truck"></i>
+                        <span>Fast Delivery</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+.checkout-page-title {
+    font-size: 1.8rem; font-weight: 900; color: #131921;
+}
+
+/* Section Card */
+.checkout-section-card {
+    background: #fff;
+    border: 1px solid var(--owncart-border);
+    border-radius: var(--radius-xl);
+    padding: 24px;
+    box-shadow: var(--shadow-md);
+}
+
+.checkout-section-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 22px;
+}
+
+.checkout-section-num {
+    width: 30px; height: 30px;
+    background: var(--owncart-primary);
+    color: #131921;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 14px; flex-shrink: 0;
+}
+
+.checkout-section-title {
+    font-size: 16px; font-weight: 800; color: #131921; margin-bottom: 0;
+}
+
+/* Form grid */
+.checkout-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+.full-width { grid-column: 1 / -1; }
+
+.checkout-field-group { display: flex; flex-direction: column; gap: 6px; }
+
+.checkout-label {
+    font-size: 12px; font-weight: 700; color: #344054;
+    text-transform: uppercase; letter-spacing: 0.4px;
+}
+
+.checkout-input-wrap {
+    position: relative; display: flex; align-items: center;
+}
+
+.checkout-input-icon {
+    position: absolute; left: 14px; font-size: 17px;
+    color: #98a2b3; pointer-events: none;
+}
+
+.checkout-input {
+    width: 100%; border: 1px solid var(--owncart-border); border-radius: var(--radius-md);
+    padding: 12px 16px 12px 42px; font-size: 14px; font-weight: 500;
+    color: #131921; font-family: 'Plus Jakarta Sans', sans-serif;
+    min-height: var(--control-height);
+    transition: all var(--transition-fast); outline: none;
+}
+.checkout-input:focus {
+    border-color: var(--owncart-primary);
+    box-shadow: 0 0 0 3px rgba(255,184,0,0.12);
+}
+.checkout-textarea { padding-top: 12px; resize: none; }
+
+/* Payment Options */
+.payment-options { display: flex; flex-direction: column; gap: 10px; }
+
+.payment-option {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid var(--owncart-border);
+    border-radius: var(--radius-xl);
+    padding: 14px 18px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.payment-option:hover { border-color: var(--owncart-primary); }
+.payment-option.selected {
+    border-color: var(--owncart-primary);
+    background: #fff8e1;
+    box-shadow: var(--shadow-sm);
+}
+
+.payment-option-icon {
+    width: 42px; height: 42px;
+    background: #f8f9fa; border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; color: #344054; flex-shrink: 0;
+    border: 1px solid #eaecf0;
+}
+
+.payment-option-title {
+    font-size: 14px; font-weight: 700; color: #131921;
+}
+.payment-option-desc {
+    font-size: 12px; color: #667085; font-weight: 500;
+}
+
+.payment-check {
+    color: #eaecf0; font-size: 20px; transition: color 0.15s ease;
+}
+.payment-option.selected .payment-check { color: var(--owncart-primary); }
+
+/* Place Order Button */
+.btn-place-order {
+    background: var(--owncart-primary); color: #131921;
+    font-weight: 800; font-size: 17px; padding: 16px;
+    border-radius: var(--radius-md); border: none; width: 100%;
+    cursor: pointer; transition: all var(--transition-fast);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-sm);
+}
+.btn-place-order:hover {
+    background: var(--owncart-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.checkout-security-note {
+    text-align: center; font-size: 12px; font-weight: 600;
+    color: #98a2b3; margin-top: 12px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+
+/* Summary Card */
+.checkout-summary-card {
+    background: #fff; border: 1px solid var(--owncart-border);
+    border-radius: var(--radius-xl); padding: 24px;
+    position: sticky; top: 24px;
+    box-shadow: var(--shadow-md);
+}
+
+.summary-card-title {
+    font-size: 17px; font-weight: 800; color: #131921;
+    margin-bottom: 20px; padding-bottom: 14px;
+    border-bottom: 2px solid #f2f4f7;
+    display: flex; align-items: center;
+}
+
+.summary-items { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+
+.summary-item-row {
+    display: flex; align-items: center; gap: 12px;
+}
+
+.summary-item-img {
+    width: 48px; height: 48px; object-fit: contain;
+    border-radius: var(--radius-md); background: #f5f5f5; border: 1px solid var(--owncart-border);
+    flex-shrink: 0; padding: 4px;
+}
+
+.summary-item-info {
+    flex: 1; display: flex; flex-direction: column; gap: 2px;
+}
+
+.summary-item-name {
+    font-size: 13px; font-weight: 700; color: #344054;
+    overflow: hidden; display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+
+.summary-item-qty {
+    font-size: 11px; color: #98a2b3; font-weight: 600;
+}
+
+.summary-item-price {
+    font-size: 14px; font-weight: 800; color: #d92d20; flex-shrink: 0;
+}
+
+.summary-totals { background: #fafafa; border-radius: var(--radius-lg); padding: 16px; }
+
+.summary-row-line {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 14px; font-weight: 600; color: #475467; margin-bottom: 8px;
+}
+.summary-row-line:last-child { margin-bottom: 0; }
+
+.total-final { font-size: 16px; font-weight: 800; color: #131921; }
+.total-price-big { font-size: 22px; font-weight: 900; color: #d92d20; }
+
+.checkout-offer-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.checkout-offer-chip {
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    border-radius: var(--radius-md);
+    padding: 9px 12px;
+    color: #7a4f00;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* Trust Badges */
+.checkout-trust-badges {
+    display: flex; justify-content: space-around;
+    background: #f8f9fa; border-radius: var(--radius-lg); padding: 14px;
+    border: 1px solid var(--owncart-border);
+}
+.trust-badge-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 4px; font-size: 11px; font-weight: 700; color: #667085;
+}
+.trust-badge-item i { font-size: 20px; color: var(--owncart-primary); }
+
+@media (max-width: 576px) {
+    .checkout-form-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<script>
+// Payment option selection toggle
+document.querySelectorAll('.payment-option').forEach(option => {
+    option.addEventListener('click', function() {
+        document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('selected'));
+        this.classList.add('selected');
+        this.querySelector('input[type=radio]').checked = true;
+    });
+});
+</script>
+
+{% endblock %}

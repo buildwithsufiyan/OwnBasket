@@ -1,0 +1,10 @@
+{
+    "name": "Documentation",
+    "slug": "documentation",
+    "version": "1.0",
+    "author": "Imported",
+    "description": "A static HTML theme 'Documentation' imported into OwnBasket.",
+    "product_detail_layout": "imported-template",
+    "category_layout": "imported-template",
+    "cart_layout": "imported-template"
+}

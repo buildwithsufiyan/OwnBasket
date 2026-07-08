@@ -1,0 +1,162 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/visual_editor.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="ve-container">
+    <div class="ve-main-content">
+        {{ block.super }}
+    </div>
+    {% if live_preview_url %}
+    <div class="ve-live-preview">
+        <div class="ve-preview-header">
+            <h3>{{ live_preview_title|default:"Live Preview" }}</h3>
+            <div class="ve-preview-controls">
+                <div class="ve-device-toggle">
+                    <button type="button" data-device="desktop" class="active" title="Desktop"><i class="icon-desktop"></i></button>
+                    <button type="button" data-device="tablet" title="Tablet"><i class="icon-tablet"></i></button>
+                    <button type="button" data-device="mobile" title="Mobile"><i class="icon-mobile"></i></button>
+                </div>
+                <a href="{{ live_preview_url }}" target="_blank" class="ve-open-new-tab" title="Open in new tab">
+                    <i class="icon-external-link"></i>
+                </a>
+            </div>
+        </div>
+        <div class="ve-preview-iframe-wrapper">
+            <iframe id="ve-preview-iframe" src="{{ live_preview_url }}?ve-preview=true" frameborder="0"></iframe>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block admin_change_form_document_ready %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (!document.getElementById('ve-preview-iframe')) {
+        return;
+    }
+
+    const iframe = document.getElementById('ve-preview-iframe');
+    const form = document.getElementById('{{ opts.model_name }}_form');
+    const updateSessionUrl = '{{ live_preview_update_session_url }}';
+
+    let collectedData = {};
+    let debounceTimer;
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    function sendUpdateToSession() {
+        fetch(updateSessionUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify(collectedData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                iframe.contentWindow.location.reload();
+            }
+        })
+        .catch(error => console.error('Error updating preview session:', error));
+    }
+
+    function scheduleUpdate() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(sendUpdateToSession, 500);
+    }
+
+    function collectAndPostData() {
+        const formData = new FormData(form);
+        const newData = {};
+        let hasChanges = false;
+
+        for (let [key, value] of formData.entries()) {
+            // We only care about fields that can be live-previewed
+            const element = form.elements[key];
+            if (element && (
+                element.classList.contains('ve-color-source') ||
+                element.classList.contains('ve-css-size') ||
+                element.classList.contains('ve-css-padding') ||
+                element.classList.contains('ve-dimension-input') ||
+                element.classList.contains('ve-searchable-select') ||
+                element.type === 'select-one' ||
+                element.type === 'text' ||
+                element.type === 'number'
+            )) {
+                newData[key] = value;
+                if (collectedData[key] !== value) {
+                    hasChanges = true;
+                }
+            }
+        }
+
+        if (hasChanges) {
+            collectedData = newData;
+            // For instant feedback on things like color pickers
+            if (event && event.type === 'input') {
+                 postMessageToIframe({ type: 'live-update', field: event.target.name, value: event.target.value });
+            } else {
+                 // For things that require a reload (like font family changes)
+                 scheduleUpdate();
+            }
+        }
+    }
+
+    function postMessageToIframe(message) {
+        if (iframe.contentWindow) {
+            iframe.contentWindow.postMessage(message, '*');
+        }
+    }
+
+    // Device toggles
+    document.querySelectorAll('.ve-device-toggle button').forEach(button => {
+        button.addEventListener('click', function() {
+            document.querySelectorAll('.ve-device-toggle button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            const device = this.dataset.device;
+            const wrapper = document.querySelector('.ve-preview-iframe-wrapper');
+            wrapper.className = 've-preview-iframe-wrapper'; // Reset
+            if (device !== 'desktop') {
+                wrapper.classList.add('ve-preview--' + device);
+            }
+        });
+    });
+
+    // Listen for changes in the form
+    // Using 'input' for real-time feedback on color pickers, sliders etc.
+    // Using 'change' for selects and text inputs after they lose focus.
+    form.addEventListener('input', collectAndPostData);
+    form.addEventListener('change', collectAndPostData);
+
+    // Initial load
+    iframe.addEventListener('load', function() {
+        // On first load, send all data to establish baseline
+        collectAndPostData();
+        sendUpdateToSession();
+    });
+});
+</script>
+{% endblock %}

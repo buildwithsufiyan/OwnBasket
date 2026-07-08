@@ -1,0 +1,51 @@
+{% load static %}
+<header class="py-3 sticky-top w-100 shadow-sm transition-all" 
+        style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.4); z-index: 1030;">
+    <div class="container d-flex align-items-center justify-content-between">
+        
+        <!-- Logo -->
+        <a href="/" class="text-decoration-none fs-3 fw-black text-dark tracking-tighter" style="font-family: 'Outfit', sans-serif;">
+            Own<span class="text-primary">Basket</span>
+        </a>
+        
+        <!-- Center Nav -->
+        <div class="d-none d-lg-flex align-items-center gap-2">
+            <a href="/" class="btn btn-link text-dark text-decoration-none fw-semibold px-3 py-1 rounded-pill">Home</a>
+            {% for cat in all_categories|slice:":4" %}
+                <a href="/home/?category={{ cat.slug }}" class="btn btn-link text-dark text-decoration-none fw-semibold px-3 py-1 rounded-pill">{{ cat.name }}</a>
+            {% endfor %}
+            <a href="{% url 'wishlist:wishlist_detail' %}" class="btn btn-link text-dark text-decoration-none fw-semibold px-3 py-1 rounded-pill">Wishlist</a>
+        </div>
+        
+        <!-- Right Icons -->
+        <div class="d-flex align-items-center gap-2">
+            <!-- Search Icon Toggle -->
+            <button class="btn btn-light rounded-circle p-2" type="button" data-bs-toggle="collapse" data-bs-target="#searchCollapse">
+                <i class="bi bi-search fs-5"></i>
+            </button>
+            
+            <a href="{% url 'cart:cart_detail' %}" class="btn btn-light rounded-circle p-2 position-relative">
+                <i class="bi bi-bag-heart fs-5"></i>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary" style="font-size: 9px;">
+                    {{ cart_count|default:0 }}
+                </span>
+            </a>
+            
+            {% if user.is_authenticated %}
+                <a href="{% url 'accounts:profile' %}" class="btn btn-primary rounded-pill px-4 py-2 text-white">Profile</a>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn btn-outline-dark rounded-pill px-4 py-2">Login</a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Search Dropdown collapse -->
+    <div class="collapse container mt-3" id="searchCollapse">
+        <form action="/home/" method="GET" class="p-3 bg-white rounded-4 shadow-sm border border-light">
+            <div class="input-group">
+                <input type="text" name="q" value="{{ search_query|default:'' }}" class="form-control border-0 bg-light rounded-start-pill px-4" placeholder="Start typing what you are looking for..." style="height: 48px;">
+                <button class="btn btn-primary rounded-end-pill px-4" type="submit">Search</button>
+            </div>
+        </form>
+    </div>
+</header>

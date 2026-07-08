@@ -1,0 +1,95 @@
+.ve-container {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.ve-main-content {
+    flex: 1;
+    max-width: 70%;
+}
+
+.ve-live-preview {
+    flex-shrink: 0;
+    width: 30%;
+    min-width: 380px;
+    position: sticky;
+    top: 80px; /* Adjust based on admin header height */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.ve-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: #f7f7f7;
+    border-bottom: 1px solid #ddd;
+    border-radius: 8px 8px 0 0;
+}
+
+.ve-preview-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.ve-preview-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.ve-device-toggle button {
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 5px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    color: #555;
+}
+
+.ve-device-toggle button:first-child { border-radius: 4px 0 0 4px; }
+.ve-device-toggle button:last-child { border-radius: 0 4px 4px 0; border-left: none; }
+.ve-device-toggle button.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    z-index: 2;
+}
+
+.ve-open-new-tab {
+    font-size: 1.2rem;
+    color: #555;
+}
+
+.ve-preview-iframe-wrapper {
+    position: relative;
+    margin: 15px auto;
+    transition: all 0.3s ease-in-out;
+    width: 100%;
+    height: 70vh;
+    max-height: 800px;
+    border: 1px solid #ccc;
+    background: #f0f0f0;
+}
+
+.ve-preview--tablet {
+    width: 768px;
+    height: 1024px;
+}
+
+.ve-preview--mobile {
+    width: 375px;
+    height: 667px;
+}
+
+#ve-preview-iframe {
+    width: 100%;
+    height: 100%;
+    transform-origin: top left;
+    background: #fff;
+}

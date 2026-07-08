@@ -1,0 +1,821 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+{% endblock %}
+
+{% block content %}
+<section class="brand-detail-page py-4 py-lg-5">
+    <div class="container">
+        <section class="brand-hero-slider-wrap mb-4 mb-lg-5" aria-label="{{ brand.name }} hero promotions">
+            <div class="swiper brand-hero-swiper">
+                <div class="swiper-wrapper">
+                    {% for banner in brand_hero_banners %}
+                    <div class="swiper-slide">
+                        <article class="brand-hero-slide">
+                            <img
+                                data-src="{{ banner.cover_image.url }}"
+                                src="{{ banner.cover_image.url }}"
+                                alt="{{ banner.banner_title|default:brand.name }}"
+                                class="brand-hero-image swiper-lazy"
+                            >
+                            <div class="swiper-lazy-preloader swiper-lazy-preloader-white"></div>
+                            <div class="brand-hero-overlay"></div>
+                            {% if banner.has_content %}
+                            <div class="brand-hero-content">
+                                {% if banner.has_title or banner.has_subtitle %}
+                                <span class="brand-hero-kicker">{{ brand.name }}</span>
+                                {% endif %}
+                                {% if banner.has_title %}
+                                <h1 class="brand-hero-title">{{ banner.banner_title }}</h1>
+                                {% endif %}
+                                {% if banner.has_subtitle %}
+                                <p class="brand-hero-subtitle">
+                                    {{ banner.banner_subtitle }}
+                                </p>
+                                {% endif %}
+                                {% if banner.has_button %}
+                                <div class="brand-hero-actions">
+                                    <a href="{{ banner.resolved_button_url }}" class="btn btn-owncart brand-hero-button">
+                                        {{ banner.resolved_button_text }}
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </article>
+                    </div>
+                    {% empty %}
+                    <div class="swiper-slide">
+                        <article class="brand-hero-slide brand-hero-slide-default">
+                            <div class="brand-hero-default-backdrop"></div>
+                            <div class="brand-hero-overlay"></div>
+                            <div class="brand-hero-content">
+                                <div class="brand-hero-logo-shell">
+                                    {% if brand.logo %}
+                                    <img src="{{ brand.logo.url }}" alt="{{ brand.name }}" class="brand-hero-logo">
+                                    {% else %}
+                                    <span class="brand-hero-logo-fallback">{{ brand.name|first|upper }}</span>
+                                    {% endif %}
+                                </div>
+                                <span class="brand-hero-kicker">Premium Brand Spotlight</span>
+                                <h1 class="brand-hero-title">{{ brand.name }}</h1>
+                                <p class="brand-hero-subtitle">Explore the latest collection from {{ brand.name }}</p>
+                                <div class="brand-hero-actions">
+                                    <a href="#brand-products-grid" class="btn btn-owncart brand-hero-button">Shop Now</a>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="brand-hero-nav brand-hero-nav-prev" aria-label="Previous slide">
+                    <i class="bi bi-chevron-left"></i>
+                </div>
+                <div class="brand-hero-nav brand-hero-nav-next" aria-label="Next slide">
+                    <i class="bi bi-chevron-right"></i>
+                </div>
+                <div class="swiper-pagination brand-hero-pagination"></div>
+            </div>
+        </section>
+
+        <div class="brand-detail-hero card-owncart mb-4">
+            {% if brand.logo %}
+            <div class="brand-detail-media">
+                <img src="{{ brand.logo.url }}" alt="{{ brand.name }}">
+            </div>
+            {% endif %}
+            <div class="brand-detail-copy">
+                <div class="brand-detail-kicker">Brand</div>
+                <h2 class="brand-detail-title">{{ brand.name }}</h2>
+                <p class="brand-detail-subtitle">All products assigned to this brand appear below automatically.</p>
+            </div>
+            <div class="brand-detail-actions">
+                <a href="{% url 'products:brand_list' %}" class="btn btn-owncart-outline">View All Brands</a>
+            </div>
+        </div>
+
+        <section class="brand-filter-panel card-owncart mb-4">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-lg-4">
+                    <label for="brand-search" class="brand-filter-label">Search Products</label>
+                    <input
+                        type="text"
+                        id="brand-search"
+                        name="q"
+                        value="{{ search_query }}"
+                        class="form-control brand-filter-control"
+                        placeholder="Search in {{ brand.name }}"
+                    >
+                </div>
+                <div class="col-md-4 col-lg-2">
+                    <label for="brand-category" class="brand-filter-label">Category</label>
+                    <select id="brand-category" name="category" class="form-select brand-filter-control">
+                        <option value="">All Categories</option>
+                        {% for category in available_categories %}
+                        <option value="{{ category.slug }}" {% if selected_category and selected_category.pk == category.pk %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 col-lg-2">
+                    <label for="brand-subcategory" class="brand-filter-label">Subcategory</label>
+                    <select id="brand-subcategory" name="subcategory" class="form-select brand-filter-control">
+                        <option value="">All Subcategories</option>
+                        {% for subcategory in available_subcategories %}
+                        <option value="{{ subcategory.slug }}" {% if selected_subcategory and selected_subcategory.pk == subcategory.pk %}selected{% endif %}>
+                            {{ subcategory.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 col-lg-2">
+                    <label for="brand-sort" class="brand-filter-label">Sort By</label>
+                    <select id="brand-sort" name="sort" class="form-select brand-filter-control">
+                        <option value="featured" {% if selected_sort == 'featured' %}selected{% endif %}>Featured</option>
+                        <option value="latest" {% if selected_sort == 'latest' %}selected{% endif %}>Latest</option>
+                        <option value="popular" {% if selected_sort == 'popular' %}selected{% endif %}>Popular</option>
+                        <option value="price_low" {% if selected_sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                        <option value="price_high" {% if selected_sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+                        <option value="name_asc" {% if selected_sort == 'name_asc' %}selected{% endif %}>Name: A to Z</option>
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <div class="brand-filter-actions">
+                        <button type="submit" class="btn btn-owncart w-100">Apply</button>
+                        <a href="{% url 'products:brand_detail' brand.pk %}" class="btn btn-owncart-outline w-100">Reset</a>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <div class="brand-products-head mb-4" id="brand-products-grid">
+            <div>
+                <h3 class="brand-products-title">{{ brand.name }} Products</h3>
+                <p class="brand-products-note mb-0">
+                    Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ total_products }} products
+                </p>
+            </div>
+            <span class="brand-products-count">{{ total_products }} items</span>
+        </div>
+
+        <div class="row g-3">
+            {% for product in products %}
+            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-6">
+                <div class="product-card">
+                    <div class="product-image-wrapper">
+                        {% if product.has_display_discount %}
+                        <div class="product-discount-badge">{{ product.display_badge }}</div>
+                        {% endif %}
+                        <a href="{% url 'products:product_detail' product.slug %}" class="product-img-link">
+                            {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-card-img" loading="lazy">
+                            {% else %}
+                            <div class="product-no-img">
+                                <i class="bi bi-image"></i>
+                            </div>
+                            {% endif %}
+                        </a>
+                    </div>
+
+                    <div class="product-card-body">
+                        <h6 class="product-card-name">
+                            <a href="{% url 'products:product_detail' product.slug %}">{{ product.name }}</a>
+                        </h6>
+
+                        <div class="product-rating">
+                            {% with rating=product.rating|floatformat:0 %}
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= rating|add:"0" %}
+                                <i class="bi bi-star-fill"></i>
+                                {% else %}
+                                <i class="bi bi-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                            {% endwith %}
+                            <span class="rating-count">({{ product.reviews_count|default:"0" }})</span>
+                        </div>
+
+                        <div class="product-price-block">
+                            {% if product.display_compare_price %}
+                            <del class="product-old-price">Rs. {{ product.display_compare_price|intcomma }}</del>
+                            {% endif %}
+                            <span class="product-price">Rs. {{ product.display_price|intcomma }}</span>
+                        </div>
+                        {% if product.flash_sale_end_at %}
+                        <div class="product-flash-timer" data-countdown="{{ product.flash_sale_end_at|date:'c' }}">
+                            Ends soon
+                        </div>
+                        {% endif %}
+
+                        <form method="POST" action="{% url 'add_to_cart' product.id %}" class="product-card-cart-form">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-add-to-cart-card">
+                                <i class="bi bi-cart-plus"></i> Add to Cart
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="empty-products-box text-center py-5">
+                    <div class="empty-products-icon"><i class="bi bi-bag-x"></i></div>
+                    <h5 class="mt-3">No products found for {{ brand.name }}</h5>
+                    <p class="text-muted mb-0">Try adjusting the filters or browse all active brands.</p>
+                    <a href="{% url 'products:brand_list' %}" class="btn btn-owncart mt-3">Browse Brands</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <nav class="brand-pagination-wrap mt-4 mt-lg-5" aria-label="{{ brand.name }} product pagination">
+            <div class="brand-pagination">
+                {% if page_obj.has_previous %}
+                <a href="?{% if filter_querystring %}{{ filter_querystring }}&{% endif %}page={{ page_obj.previous_page_number }}" class="brand-pagination-link">
+                    <i class="bi bi-arrow-left"></i>
+                    Previous
+                </a>
+                {% else %}
+                <span class="brand-pagination-link is-disabled">
+                    <i class="bi bi-arrow-left"></i>
+                    Previous
+                </span>
+                {% endif %}
+
+                <div class="brand-pagination-pages">
+                    {% for page_number in page_range %}
+                        {% if page_number == paginator.ELLIPSIS %}
+                        <span class="brand-pagination-ellipsis">{{ page_number }}</span>
+                        {% elif page_number == page_obj.number %}
+                        <span class="brand-pagination-page is-active">{{ page_number }}</span>
+                        {% else %}
+                        <a href="?{% if filter_querystring %}{{ filter_querystring }}&{% endif %}page={{ page_number }}" class="brand-pagination-page">
+                            {{ page_number }}
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                {% if page_obj.has_next %}
+                <a href="?{% if filter_querystring %}{{ filter_querystring }}&{% endif %}page={{ page_obj.next_page_number }}" class="brand-pagination-link">
+                    Next
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+                {% else %}
+                <span class="brand-pagination-link is-disabled">
+                    Next
+                    <i class="bi bi-arrow-right"></i>
+                </span>
+                {% endif %}
+            </div>
+        </nav>
+        {% endif %}
+    </div>
+</section>
+
+<style>
+.brand-detail-page {
+    background:
+        radial-gradient(circle at top right, rgba(255, 184, 0, 0.08), transparent 22%),
+        linear-gradient(180deg, #f8fafc 0%, #f4f6f9 100%);
+    padding: var(--section-space-desktop) 0;
+}
+
+.brand-hero-slider-wrap {
+    position: relative;
+}
+
+.brand-hero-swiper {
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+}
+
+.brand-hero-slide {
+    position: relative;
+    min-height: 360px;
+    display: flex;
+    align-items: center;
+    padding: 34px 44px;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.brand-hero-image,
+.brand-hero-default-backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -3;
+}
+
+.brand-hero-default-backdrop {
+    background:
+        radial-gradient(circle at 20% 20%, rgba(255, 184, 0, 0.35), transparent 28%),
+        radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.12), transparent 20%),
+        linear-gradient(135deg, #131921 0%, #1d3557 50%, #0f172a 100%);
+}
+
+.brand-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(19, 25, 33, 0.10) 0%, rgba(19, 25, 33, 0.05) 24%, rgba(19, 25, 33, 0) 54%);
+    z-index: -2;
+}
+
+.brand-hero-content {
+    max-width: 520px;
+    color: #ffffff;
+    animation: brandHeroContentIn 0.65s ease;
+    text-align: left;
+}
+
+.brand-hero-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(10px);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.brand-hero-title {
+    font-size: clamp(1.85rem, 3.4vw, 3rem);
+    font-weight: 800;
+    line-height: 1.08;
+    margin-bottom: 12px;
+    text-shadow: 0 2px 10px rgba(19, 25, 33, 0.18);
+}
+
+.brand-hero-subtitle {
+    max-width: 500px;
+    margin-bottom: 18px;
+    color: rgba(255, 255, 255, 0.94);
+    font-size: clamp(0.92rem, 1.15vw, 1rem);
+    line-height: 1.6;
+    text-shadow: 0 2px 8px rgba(19, 25, 33, 0.16);
+}
+
+.brand-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.brand-hero-button {
+    min-width: 150px;
+    padding: 13px 26px;
+    box-shadow: var(--shadow-md);
+}
+
+.brand-hero-logo-shell {
+    width: 92px;
+    height: 92px;
+    margin-bottom: 18px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+}
+
+.brand-hero-logo {
+    max-width: 72%;
+    max-height: 72%;
+    object-fit: contain;
+}
+
+.brand-hero-logo-fallback {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #ffffff;
+}
+
+.brand-hero-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    transition: transform 0.25s ease, background 0.25s ease;
+}
+
+.brand-hero-nav:hover {
+    transform: translateY(calc(-50% - 1px));
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.brand-hero-nav-prev {
+    left: 20px;
+}
+
+.brand-hero-nav-next {
+    right: 20px;
+}
+
+.brand-hero-pagination {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 22px !important;
+    z-index: 5;
+}
+
+.brand-hero-pagination .swiper-pagination-bullet {
+    width: 10px;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.42);
+    opacity: 1;
+}
+
+.brand-hero-pagination .swiper-pagination-bullet-active {
+    width: 28px;
+    border-radius: 999px;
+    background: #ffffff;
+}
+
+.brand-detail-hero {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 20px;
+    padding: 22px;
+    border-radius: var(--radius-lg);
+}
+
+.brand-detail-media {
+    width: 110px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.brand-detail-media img {
+    max-width: 100%;
+    max-height: 80px;
+    object-fit: contain;
+}
+
+.brand-detail-kicker {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #ffb800;
+    margin-bottom: 6px;
+}
+
+.brand-detail-title {
+    font-size: clamp(1.9rem, 4vw, 2.5rem);
+    font-weight: 800;
+    color: #131921;
+    margin-bottom: 8px;
+}
+
+.brand-detail-subtitle {
+    margin-bottom: 0;
+    color: #667085;
+}
+
+.brand-filter-panel {
+    padding: 20px;
+    border-radius: var(--radius-lg);
+}
+
+.brand-filter-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #344054;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.brand-filter-control {
+    border-radius: var(--radius-md);
+    border-color: #d0d5dd;
+    min-height: 48px;
+    box-shadow: none;
+}
+
+.brand-filter-control:focus {
+    border-color: rgba(255, 184, 0, 0.8);
+    box-shadow: 0 0 0 0.2rem rgba(255, 184, 0, 0.16);
+}
+
+.brand-filter-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.brand-products-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.brand-products-title {
+    font-size: clamp(1.7rem, 3vw, 2rem);
+    font-weight: 800;
+    color: #131921;
+    margin-bottom: 6px;
+}
+
+.brand-products-note {
+    color: #667085;
+    font-size: 0.95rem;
+}
+
+.brand-products-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 96px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: rgba(255, 184, 0, 0.14);
+    color: #131921;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.brand-pagination-wrap {
+    display: flex;
+    justify-content: center;
+}
+
+.brand-pagination {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 14px 18px;
+    border: 1px solid #e5e7eb;
+    border-radius: var(--radius-xl);
+    background: #ffffff;
+    box-shadow: var(--shadow-md);
+}
+
+.brand-pagination-pages {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.brand-pagination-link,
+.brand-pagination-page,
+.brand-pagination-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 42px;
+    min-height: 42px;
+    padding: 0 14px;
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.92rem;
+}
+
+.brand-pagination-link,
+.brand-pagination-page {
+    background: #f8fafc;
+    color: #344054;
+    border: 1px solid #eaecf0;
+}
+
+.brand-pagination-page.is-active {
+    background: var(--owncart-primary);
+    border-color: var(--owncart-primary);
+    color: #131921;
+}
+
+.brand-pagination-link.is-disabled {
+    opacity: 0.48;
+    cursor: not-allowed;
+    background: #f8fafc;
+    color: #98a2b3;
+    border: 1px solid #eaecf0;
+}
+
+.empty-products-box {
+    background: #ffffff;
+    border: 1px dashed #d0d5dd;
+    border-radius: var(--radius-xl);
+    padding: 56px 24px;
+}
+
+.empty-products-icon {
+    width: 78px;
+    height: 78px;
+    margin: 0 auto;
+    border-radius: var(--radius-xl);
+    background: linear-gradient(135deg, rgba(255, 184, 0, 0.18), rgba(255, 184, 0, 0.06));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #c69200;
+    font-size: 2rem;
+}
+
+@keyframes brandHeroContentIn {
+    from {
+        opacity: 0;
+        transform: translateY(24px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 991.98px) {
+    .brand-detail-page {
+        padding: var(--section-space-tablet) 0;
+    }
+
+    .brand-hero-slide {
+        min-height: 300px;
+        padding: 28px 30px;
+    }
+
+    .brand-detail-hero {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        text-align: center;
+    }
+
+    .brand-products-head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .brand-hero-swiper {
+        border-radius: var(--radius-xl);
+    }
+
+    .brand-hero-slide {
+        min-height: 280px;
+        padding: 24px 22px;
+    }
+
+    .brand-hero-nav {
+        width: 42px;
+        height: 42px;
+    }
+
+    .brand-filter-actions {
+        flex-direction: row;
+    }
+
+    .brand-filter-actions .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .brand-detail-page {
+        padding: var(--section-space-mobile) 0;
+    }
+
+    .brand-hero-slide {
+        min-height: 240px;
+        padding: 18px 18px;
+    }
+
+    .brand-hero-kicker {
+        margin-bottom: 10px;
+        padding: 6px 10px;
+        font-size: 10px;
+    }
+
+    .brand-hero-title {
+        margin-bottom: 10px;
+    }
+
+    .brand-hero-subtitle {
+        margin-bottom: 14px;
+        font-size: 0.86rem;
+        line-height: 1.5;
+    }
+
+    .brand-hero-logo-shell {
+        width: 70px;
+        height: 70px;
+        margin-bottom: 12px;
+        border-radius: var(--radius-xl);
+    }
+
+    .brand-detail-hero {
+        padding: 18px;
+    }
+
+    .brand-detail-media {
+        width: 100px;
+        height: 64px;
+    }
+
+    .brand-detail-media img {
+        max-height: 64px;
+    }
+
+    .brand-products-title {
+        font-size: 22px;
+    }
+
+    .brand-pagination {
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .brand-pagination-link,
+    .brand-pagination-page,
+    .brand-pagination-ellipsis {
+        min-width: 38px;
+        min-height: 38px;
+        padding: 0 12px;
+        font-size: 0.85rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+    (function () {
+        document.addEventListener('DOMContentLoaded', function () {
+            var sliderElement = document.querySelector('.brand-hero-swiper');
+            if (!sliderElement || typeof Swiper === 'undefined') {
+                return;
+            }
+
+            new Swiper(sliderElement, {
+                loop: true,
+                speed: 900,
+                grabCursor: true,
+                preloadImages: false,
+                lazy: {
+                    loadPrevNext: true,
+                    loadOnTransitionStart: true
+                },
+                autoplay: {
+                    delay: 5000,
+                    disableOnInteraction: false,
+                    pauseOnMouseEnter: true
+                },
+                pagination: {
+                    el: '.brand-hero-pagination',
+                    clickable: true
+                },
+                navigation: {
+                    nextEl: '.brand-hero-nav-next',
+                    prevEl: '.brand-hero-nav-prev'
+                },
+                keyboard: {
+                    enabled: true
+                },
+                a11y: {
+                    enabled: true
+                }
+            });
+        });
+    }());
+</script>
+{% endblock %}

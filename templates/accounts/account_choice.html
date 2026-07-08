@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="account-choice-page">
+    <div class="container">
+        <div class="account-choice-card card-owncart">
+            <span class="account-choice-kicker">OwnBasket Account</span>
+            <h1 class="account-choice-title">Continue to your account</h1>
+            <p class="account-choice-subtitle">Choose how you want to continue shopping, track orders, and manage your profile.</p>
+
+            <div class="account-choice-actions">
+                <a href="{% url 'login' %}" class="btn btn-owncart">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    Existing Account
+                </a>
+                <a href="{% url 'register' %}" class="btn btn-owncart-outline">
+                    <i class="bi bi-person-plus"></i>
+                    New User
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.account-choice-page {
+    padding: var(--section-space-desktop) 0;
+    background: var(--owncart-bg);
+}
+
+.account-choice-card {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px;
+    text-align: center;
+}
+
+.account-choice-kicker {
+    display: inline-flex;
+    margin-bottom: 14px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(255, 184, 0, 0.14);
+    color: var(--owncart-dark);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.account-choice-title {
+    font-size: clamp(2rem, 4vw, 2.6rem);
+    font-weight: 800;
+    margin-bottom: 12px;
+}
+
+.account-choice-subtitle {
+    max-width: 520px;
+    margin: 0 auto 24px;
+    color: var(--owncart-muted);
+}
+
+.account-choice-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 991.98px) {
+    .account-choice-page {
+        padding: var(--section-space-tablet) 0;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .account-choice-page {
+        padding: var(--section-space-mobile) 0;
+    }
+
+    .account-choice-card {
+        padding: 24px 18px;
+    }
+
+    .account-choice-actions .btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

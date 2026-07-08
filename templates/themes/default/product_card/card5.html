@@ -1,0 +1,62 @@
+{% load humanize %}
+<div class="product-card h-100 position-relative overflow-hidden text-center hover-glass-card" 
+     style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 16px;">
+    
+    <div class="p-3 position-relative" style="height: 180px; display: flex; align-items: center; justify-content: center;">
+        <a href="{% url 'products:product_detail' product.slug %}" class="w-100 h-100 d-flex align-items-center justify-content-center">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid rounded-4" style="max-height: 100%; object-fit: contain;">
+            {% else %}
+                <div class="text-white"><i class="bi bi-box-seam fs-1"></i></div>
+            {% endif %}
+        </a>
+    </div>
+    
+    <div class="p-3 d-flex flex-column justify-content-between" style="min-height: 160px;">
+        <div>
+            <h6 class="fs-6 fw-extrabold mb-2" style="height: 2.6em; overflow: hidden; color: #1e293b; font-family: 'Outfit', sans-serif;">
+                <a href="{% url 'products:product_detail' product.slug %}" class="text-decoration-none text-dark hover-glass-link">{{ product.name }}</a>
+            </h6>
+            
+            <div class="text-center small mb-2 text-warning">
+                {% with rating=product.rating|default:5|floatformat:0 %}
+                {% for i in "12345" %}
+                    {% if forloop.counter <= rating|add:"0" %}
+                        <i class="bi bi-star-fill text-warning"></i>
+                    {% else %}
+                        <i class="bi bi-star text-white opacity-50"></i>
+                    {% endif %}
+                {% endfor %}
+                {% endwith %}
+            </div>
+        </div>
+        
+        <div>
+            <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
+                {% if product.display_compare_price %}
+                    <del class="text-white opacity-70 small">₹{{ product.display_compare_price|intcomma }}</del>
+                {% endif %}
+                <span class="text-dark fw-extrabold fs-5">₹{{ product.display_price|intcomma }}</span>
+            </div>
+            
+            <form method="POST" action="{% url 'add_to_cart' product.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn w-100 py-2 btn-glass-submit" 
+                        style="background: rgba(255, 255, 255, 0.35); border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 12px; font-weight: 700; color: #1e293b;">
+                    Add to Cart
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+<style>
+.hover-glass-card:hover {
+    background: rgba(255, 255, 255, 0.25) !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.06) !important;
+}
+.btn-glass-submit:hover {
+    background: rgba(255, 255, 255, 0.5) !important;
+}
+</style>

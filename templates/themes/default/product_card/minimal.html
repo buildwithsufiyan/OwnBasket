@@ -1,0 +1,47 @@
+{% load humanize %}
+<div class="product-card border-0 bg-transparent text-start position-relative group-hover-fade" style="box-shadow: none !important;">
+    <div class="position-relative overflow-hidden mb-2 bg-light rounded-2 p-2" style="height: 180px; display: flex; align-items: center; justify-content: center;">
+        <a href="{% url 'products:product_detail' product.slug %}" class="w-100 h-100 d-flex align-items-center justify-content-center">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid" style="max-height: 100%; object-fit: contain; transition: transform 0.4s ease;">
+            {% else %}
+                <div class="text-muted"><i class="bi bi-image fs-1"></i></div>
+            {% endif %}
+        </a>
+        
+        <!-- Hover Add-to-Cart Overlay Button -->
+        <div class="hover-btn-overlay position-absolute bottom-0 end-0 m-2" style="opacity: 0; transition: all 0.3s ease; transform: translateY(10px);">
+            <form method="POST" action="{% url 'add_to_cart' product.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-dark rounded-circle p-2 shadow-sm" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;" title="Add to Cart">
+                    <i class="bi bi-bag-plus fs-5 text-white"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="px-1">
+        <h6 class="fs-6 fw-semibold mb-1 text-dark text-truncate">
+            <a href="{% url 'products:product_detail' product.slug %}" class="text-decoration-none text-dark hover-underline">{{ product.name }}</a>
+        </h6>
+        
+        <div class="d-flex align-items-center justify-content-between">
+            <span class="fw-bold text-dark fs-6">₹{{ product.display_price|intcomma }}</span>
+            {% if product.display_compare_price %}
+                <del class="text-muted small">₹{{ product.display_compare_price|intcomma }}</del>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<style>
+.group-hover-fade:hover .hover-btn-overlay {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+}
+.group-hover-fade:hover img {
+    transform: scale(1.05);
+}
+.hover-underline:hover {
+    text-decoration: underline !important;
+}
+</style>

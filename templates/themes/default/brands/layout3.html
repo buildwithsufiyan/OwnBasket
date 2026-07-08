@@ -1,0 +1,25 @@
+<section class="py-4 my-3">
+    <div class="container">
+        <h4 class="mb-4 text-dark fw-extrabold" style="font-family: 'Poppins', sans-serif;">Shop By Brand Partner</h4>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-4">
+            {% for brand in top_brands %}
+            <div class="col">
+                <div class="card h-100 border rounded-3 p-3 shadow-sm text-center bg-white" style="transition: all 0.3s ease;">
+                    <div class="mb-3 d-flex align-items-center justify-content-center" style="height: 60px;">
+                        {% if brand.logo %}
+                            <img src="{{ brand.logo.url }}" alt="{{ brand.name }}" class="img-fluid" style="max-height: 100%; object-fit: contain;">
+                        {% else %}
+                            <i class="bi bi-patch-check fs-2 text-primary"></i>
+                        {% endif %}
+                    </div>
+                    <h5 class="fw-bold text-dark mb-1">{{ brand.name }}</h5>
+                    <p class="small text-muted mb-3">Official brand items direct source.</p>
+                    <a href="/home/?brand={{ brand.id }}" class="btn btn-owncart-outline btn-sm w-100 rounded-pill">
+                        Browse Products
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>

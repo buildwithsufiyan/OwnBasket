@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <!-- Page Header -->
+    <div class="d-flex align-items-center justify-content-between mb-5">
+        <div>
+            <h1 class="page-heading mb-1">
+                <i class="bi bi-bag-check me-2" style="color:var(--owncart-primary);"></i>My Orders
+            </h1>
+            <p class="text-muted mb-0 small fw-semibold">Track and manage all your orders</p>
+        </div>
+        <a href="{% url 'home' %}" class="btn btn-owncart-outline">
+            <i class="bi bi-shop me-2"></i>Continue Shopping
+        </a>
+    </div>
+
+    {% if orders %}
+
+    <div class="orders-list">
+        {% for order in orders %}
+        <div class="order-card">
+
+            <!-- Order Header -->
+            <div class="order-card-header">
+                <div class="order-meta-group">
+                    <div class="order-meta-item">
+                        <span class="meta-label">Order ID</span>
+                        <span class="meta-value">#{{ order.id }}</span>
+                    </div>
+                    <div class="order-meta-item">
+                        <span class="meta-label">Customer</span>
+                        <span class="meta-value">{{ order.full_name }}</span>
+                    </div>
+                    <div class="order-meta-item">
+                        <span class="meta-label">Order Date</span>
+                        <span class="meta-value">{{ order.created_at|date:"d M Y" }}</span>
+                    </div>
+                    <div class="order-meta-item">
+                        <span class="meta-label">Total Amount</span>
+                        <span class="meta-value order-total-amount">₹{{ order.total_price|intcomma }}</span>
+                    </div>
+                </div>
+
+                <!-- Status Badge + Invoice -->
+                <div class="order-action-group">
+                    <span class="order-status-badge
+                        {% if order.status == 'Delivered' %}status-delivered
+                        {% elif order.status == 'Shipped' %}status-shipped
+                        {% elif order.status == 'Cancelled' %}status-cancelled
+                        {% else %}status-pending{% endif %}">
+                        {% if order.status == 'Delivered' %}
+                            <i class="bi bi-check2-circle me-1"></i>
+                        {% elif order.status == 'Shipped' %}
+                            <i class="bi bi-truck me-1"></i>
+                        {% elif order.status == 'Cancelled' %}
+                            <i class="bi bi-x-circle me-1"></i>
+                        {% else %}
+                            <i class="bi bi-clock me-1"></i>
+                        {% endif %}
+                        {{ order.status }}
+                    </span>
+
+                    <a href="{% url 'invoice_pdf' order.id %}"
+                       class="btn-download-invoice"
+                       target="_blank">
+                        <i class="bi bi-download me-1"></i>Invoice PDF
+                    </a>
+                </div>
+            </div>
+
+            <!-- Order Items (if accessible) -->
+            {% if order.items.all %}
+            <div class="order-items-preview">
+                {% for item in order.items.all|slice:":4" %}
+                <div class="order-item-chip">
+                    {% if item.product.image %}
+                    <img src="{{ item.product.image.url }}"
+                         alt="{{ item.product.name }}"
+                         class="order-item-thumb">
+                    {% endif %}
+                    <span class="order-item-name">{{ item.product.name }}</span>
+                    <span class="order-item-qty">×{{ item.quantity }}</span>
+                </div>
+                {% endfor %}
+                {% if order.items.all|length > 4 %}
+                <div class="order-item-more">
+                    +{{ order.items.all|length|add:"-4" }} more items
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+
+    <!-- Empty Orders State -->
+    <div class="empty-orders-container text-center py-5">
+        <div class="empty-orders-icon">
+            <i class="bi bi-bag-x"></i>
+        </div>
+        <h3 class="mt-4 fw-bold">No orders yet!</h3>
+        <p class="text-muted mb-4 mx-auto" style="max-width:400px;">
+            You haven't placed any orders yet. Start exploring and find something you love!
+        </p>
+        <a href="{% url 'home' %}" class="btn btn-owncart px-5 py-3">
+            <i class="bi bi-shop me-2"></i>Start Shopping
+        </a>
+    </div>
+
+    {% endif %}
+
+</div>
+
+<style>
+.page-heading {
+    font-size: 1.9rem;
+    font-weight: 900;
+    color: #131921;
+}
+
+.orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Order Card */
+.order-card {
+    background: #ffffff;
+    border: 1px solid #eaecf0;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: box-shadow 0.2s ease;
+}
+.order-card:hover {
+    box-shadow: 0 8px 30px rgba(0,0,0,0.05);
+    border-color: #d0d5dd;
+}
+
+.order-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    gap: 16px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid #f2f4f7;
+}
+
+.order-meta-group {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+}
+
+.order-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.meta-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #98a2b3;
+}
+
+.meta-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #344054;
+}
+
+.order-total-amount {
+    color: #d92d20;
+    font-size: 16px;
+}
+
+.order-action-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+/* Status badges */
+.order-status-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 100px;
+}
+.status-delivered { background: #ecfdf3; color: #039855; border: 1px solid #a9efc5; }
+.status-shipped   { background: #eff8ff; color: #026aa2; border: 1px solid #b2ddff; }
+.status-cancelled { background: #fff1f1; color: #d92d20; border: 1px solid #fda29b; }
+.status-pending   { background: #fff8e1; color: #7a4f00; border: 1px solid #ffe082; }
+
+/* Download Invoice btn */
+.btn-download-invoice {
+    display: inline-flex;
+    align-items: center;
+    background: #f8f9fa;
+    color: #344054;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    border: 1.5px solid #eaecf0;
+    transition: all 0.2s ease;
+}
+.btn-download-invoice:hover {
+    background: var(--owncart-primary);
+    color: #131921;
+    border-color: var(--owncart-primary);
+    transform: translateY(-1px);
+}
+
+/* Order items preview chips */
+.order-items-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 24px;
+    background: #fafafa;
+    flex-wrap: wrap;
+}
+
+.order-item-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid #eaecf0;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+}
+
+.order-item-thumb {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: 4px;
+    background: #f5f5f5;
+}
+
+.order-item-name {
+    font-weight: 600;
+    color: #344054;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.order-item-qty {
+    font-weight: 800;
+    color: #667085;
+    font-size: 11px;
+}
+
+.order-item-more {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--owncart-primary);
+    padding: 6px 10px;
+}
+
+/* Empty state */
+.empty-orders-container {
+    background: #fff;
+    border: 1px dashed #eaecf0;
+    border-radius: 20px;
+    padding: 60px 32px;
+}
+.empty-orders-icon {
+    font-size: 80px;
+    color: #e0e0e0;
+    line-height: 1;
+}
+
+@media (max-width: 768px) {
+    .order-card-header { flex-direction: column; align-items: flex-start; }
+    .order-meta-group { gap: 16px; }
+}
+</style>
+
+{% endblock %}

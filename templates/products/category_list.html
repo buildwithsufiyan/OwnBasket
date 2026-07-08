@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="category-page py-5">
+    <div class="container">
+        <div class="category-page-head">
+            <div>
+                <h1 class="category-page-title">Shop By Categories</h1>
+                <p class="category-page-subtitle">Browse all active categories managed from the admin panel.</p>
+            </div>
+            <a href="{% url 'home' %}" class="btn btn-owncart-outline">Back to Home</a>
+        </div>
+
+        <div class="category-cards-grid">
+            {% for category in categories %}
+            <a href="{{ category.target_url }}" class="category-card-item">
+                {% if category.category_image %}
+                <div class="category-card-media">
+                    <img src="{{ category.category_image.url }}" alt="{{ category.name }}">
+                </div>
+                {% endif %}
+                <span class="category-card-name">{{ category.name }}</span>
+            </a>
+            {% empty %}
+            <div class="category-empty-state card-owncart">
+                <h5>No active categories found</h5>
+                <p>Add active categories from the admin panel to show them here.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<style>
+.category-page {
+    background: var(--owncart-bg);
+    padding: var(--section-space-desktop) 0;
+}
+
+.category-page-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.category-page-title {
+    font-size: clamp(1.9rem, 4vw, 2.5rem);
+    font-weight: 800;
+    color: #131921;
+    margin-bottom: 6px;
+}
+
+.category-page-subtitle {
+    margin-bottom: 0;
+    color: #667085;
+}
+
+.category-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.category-card-item {
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 170px;
+    padding: 20px 16px;
+    border: 1px solid var(--owncart-border);
+    border-radius: var(--radius-lg);
+    background: #ffffff;
+    box-shadow: var(--shadow-md);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.category-card-item:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255, 184, 0, 0.55);
+    box-shadow: var(--shadow-lg);
+}
+
+.category-card-media {
+    width: 100%;
+    height: 92px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.category-card-media img {
+    max-width: 100%;
+    max-height: 92px;
+    object-fit: contain;
+    display: block;
+}
+
+.category-card-name {
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #344054;
+    line-height: 1.35;
+}
+
+.category-empty-state {
+    grid-column: 1 / -1;
+    padding: 42px 24px;
+    text-align: center;
+    border-style: dashed;
+}
+
+.category-empty-state i {
+    font-size: 44px;
+    color: #d0d5dd;
+    margin-bottom: 12px;
+}
+
+.category-empty-state h5 {
+    color: #131921;
+    font-weight: 700;
+}
+
+.category-empty-state p {
+    color: #667085;
+    margin-bottom: 0;
+}
+
+@media (max-width: 991.98px) {
+    .category-page {
+        padding: var(--section-space-tablet) 0;
+    }
+
+    .category-cards-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .category-page {
+        padding: var(--section-space-mobile) 0;
+    }
+
+    .category-page-head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .category-cards-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .category-card-item {
+        min-height: 150px;
+        padding: 16px 12px;
+        border-radius: var(--radius-lg);
+    }
+
+    .category-card-media {
+        height: 72px;
+    }
+
+    .category-card-media img {
+        max-height: 72px;
+    }
+}
+</style>
+{% endblock %}
