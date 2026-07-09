@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import HeroSection, HomepageSection
+from .models import HeroSection, HomepageSection, ProductCarouselSection
 
 
 @admin.register(HomepageSection)
@@ -36,3 +36,65 @@ class HeroSectionAdmin(admin.ModelAdmin):
         ),
         ("Call to Action", {"fields": ("button_text", "button_url")}),
     )
+
+
+@admin.register(ProductCarouselSection)
+class ProductCarouselSectionAdmin(admin.ModelAdmin):
+    list_display = ("name", "title", "source_type", "display_order", "is_active")
+    list_editable = ("display_order", "is_active")
+    list_filter = ("source_type", "is_active", "brand", "category")
+    search_fields = ("name", "title", "subtitle")
+    ordering = ("display_order",)
+    autocomplete_fields = ("manual_products", "category", "brand")
+
+    fieldsets = (
+        (
+            "General",
+            {
+                "fields": ("name", "display_order", "is_active"),
+                "description": "Internal name and display settings.",
+            },
+        ),
+        (
+            "Content",
+            {
+                "fields": ("title", "subtitle", "button_text", "button_url"),
+                "description": "Text content for the section.",
+            },
+        ),
+        (
+            "Product Source",
+            {
+                "fields": (
+                    "source_type",
+                    "category",
+                    "brand",
+                    "manual_products",
+                    "products_limit",
+                ),
+                "description": "Choose how to populate products. Some fields are only required for specific source types.",
+            },
+        ),
+        (
+            "Appearance",
+            {
+                "fields": (
+                    "layout_style",
+                    "background_color",
+                    "background_image",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    class Media:
+        js = ("admin/js/product_carousel_admin.js",)
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .select_related("category", "brand")
+            .prefetch_related("manual_products")
+        )
