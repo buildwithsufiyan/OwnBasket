@@ -301,6 +301,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <section class="homepage-hero" data-inline-style="background-color: {{ homepage_settings.hero_background_color|default:'#f3f4f6' }};">
     <div class="container position-relative">
+        {% if hero_section %}
+        <div class="hero-carousel-shell" id="heroBannerCarousel">
+            <div class="hero-carousel-track">
+                <article class="hero-carousel-slide active" data-duration="5000">
+                    <div class="hero-layout hero-layout-full" data-inline-style="background-color: {{ hero_section.background_color|default:'#f4f6f9' }};">
+                        {% if hero_section.background_image %}
+                        <div class="hero-layout-overlay-layer" data-inline-style="background-image:url('{{ hero_section.background_image.url }}'); background-size:cover; background-position:center; opacity:0.18;"></div>
+                        {% endif %}
+                        <div class="hero-layout-full-content">
+                            {% if hero_section.heading %}<h1 class="hero-heading">{{ hero_section.heading }}</h1>{% endif %}
+                            {% if hero_section.subheading %}<p class="hero-subheading">{{ hero_section.subheading }}</p>{% endif %}
+                            {% if hero_section.button_text %}<a href="{{ hero_section.button_url|default:home_page_url }}" class="btn hero-cta-btn">{{ hero_section.button_text }}</a>{% endif %}
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+        {% else %}
         <div class="hero-carousel-shell" id="heroBannerCarousel">
             <div class="hero-carousel-track">
                 {% for slide in banner_carousels %}
@@ -444,6 +462,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
             {% endif %}
         </div>
+        {% endif %}
     </div>
 </section>
 

@@ -16,9 +16,8 @@ from .models import (
     ProductDiscount,
 )
 
-
-MONEY_ZERO = Decimal('0.00')
-STANDARD_SHIPPING_AMOUNT = Decimal('79.00')
+MONEY_ZERO = Decimal("0.00")
+STANDARD_SHIPPING_AMOUNT = Decimal("79.00")
 
 
 @dataclass
@@ -27,9 +26,9 @@ class ProductPricing:
     final_price: Decimal
     discount_amount: Decimal = MONEY_ZERO
     compare_at_price: Decimal | None = None
-    badge_text: str = ''
-    source_type: str = 'none'
-    source_name: str = ''
+    badge_text: str = ""
+    source_type: str = "none"
+    source_name: str = ""
     source_priority: int = 0
     flash_sale_end_at: object = None
 
@@ -42,8 +41,9 @@ class ProductPricing:
         if not self.compare_at_price or self.compare_at_price <= MONEY_ZERO:
             return 0
         return int(
-            ((self.discount_amount / self.compare_at_price) * Decimal('100'))
-            .quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+            ((self.discount_amount / self.compare_at_price) * Decimal("100")).quantize(
+                Decimal("1"), rounding=ROUND_HALF_UP
+            )
         )
 
 
@@ -83,7 +83,9 @@ class CartSummary:
 
     @property
     def total_discount(self):
-        return _money(self.item_discount_total + self.coupon_discount + self.buy_x_get_y_discount)
+        return _money(
+            self.item_discount_total + self.coupon_discount + self.buy_x_get_y_discount
+        )
 
 
 def _money(value):
@@ -91,7 +93,7 @@ def _money(value):
         value = MONEY_ZERO
     if not isinstance(value, Decimal):
         value = Decimal(str(value))
-    return value.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def _is_active_window(rule, at_time):
@@ -109,7 +111,7 @@ def _calculate_discount_amount(discount_type, value, price, max_discount_amount=
     value = _money(value)
 
     if discount_type == DiscountType.PERCENTAGE:
-        discount_amount = price * value / Decimal('100')
+        discount_amount = price * value / Decimal("100")
     else:
         discount_amount = value
 
@@ -132,7 +134,7 @@ def _base_price(product):
 
 def _default_badge(percent):
     if not percent:
-        return ''
+        return ""
     return f"{percent}% OFF"
 
 
@@ -154,26 +156,30 @@ def build_discount_index(products, at_time=None):
 
     flash_product_map = defaultdict(list)
     flash_category_map = defaultdict(list)
-    flash_sales = FlashSale.objects.filter(
-        is_active=True,
-    ).filter(
-        Q(start_at__isnull=True) | Q(start_at__lte=at_time),
-        Q(end_at__gte=at_time),
-    ).prefetch_related('products', 'categories')
+    flash_sales = (
+        FlashSale.objects.filter(
+            is_active=True,
+        )
+        .filter(
+            Q(start_at__isnull=True) | Q(start_at__lte=at_time),
+            Q(end_at__gte=at_time),
+        )
+        .prefetch_related("products", "categories")
+    )
     for sale in flash_sales:
-        for product_id in sale.products.values_list('id', flat=True):
+        for product_id in sale.products.values_list("id", flat=True):
             if product_id in product_ids:
                 flash_product_map[product_id].append(sale)
-        for category_id in sale.categories.values_list('id', flat=True):
+        for category_id in sale.categories.values_list("id", flat=True):
             if category_id in category_ids:
                 flash_category_map[category_id].append(sale)
 
     return {
-        'product_rules_map': product_rules_map,
-        'category_rules_map': category_rules_map,
-        'flash_product_map': flash_product_map,
-        'flash_category_map': flash_category_map,
-        'resolved_at': at_time,
+        "product_rules_map": product_rules_map,
+        "category_rules_map": category_rules_map,
+        "flash_product_map": flash_product_map,
+        "flash_category_map": flash_category_map,
+        "resolved_at": at_time,
     }
 
 
@@ -185,35 +191,39 @@ def resolve_product_pricing(product, discount_index=None):
     product_candidates = []
     category_candidates = []
 
-    if getattr(product, 'discount_price', None) and product.has_active_offer():
+    if getattr(product, "discount_price", None) and product.has_active_offer():
         final_price = _money(product.discount_price)
         manual_discount = _money(base_price - final_price)
         if manual_discount > MONEY_ZERO:
-            product_candidates.append({
-                'final_price': final_price,
-                'discount_amount': manual_discount,
-                'badge_text': 'Offer Price',
-                'source_type': 'product',
-                'source_name': 'Scheduled Product Offer',
-                'priority': 310,
-                'flash_sale_end_at': product.offer_end_at,
-            })
+            product_candidates.append(
+                {
+                    "final_price": final_price,
+                    "discount_amount": manual_discount,
+                    "badge_text": "Offer Price",
+                    "source_type": "product",
+                    "source_name": "Scheduled Product Offer",
+                    "priority": 310,
+                    "flash_sale_end_at": product.offer_end_at,
+                }
+            )
 
     if product.old_price and product.old_price > product.price:
         final_price = _money(product.price)
         manual_discount = _money(base_price - final_price)
         if manual_discount > MONEY_ZERO:
-            product_candidates.append({
-                'final_price': final_price,
-                'discount_amount': manual_discount,
-                'badge_text': 'Sale',
-                'source_type': 'product',
-                'source_name': 'Manual Sale Price',
-                'priority': 300,
-                'flash_sale_end_at': None,
-            })
+            product_candidates.append(
+                {
+                    "final_price": final_price,
+                    "discount_amount": manual_discount,
+                    "badge_text": "Sale",
+                    "source_type": "product",
+                    "source_name": "Manual Sale Price",
+                    "priority": 300,
+                    "flash_sale_end_at": None,
+                }
+            )
 
-    for rule in discount_index['product_rules_map'].get(product.id, []):
+    for rule in discount_index["product_rules_map"].get(product.id, []):
         discount_amount = _calculate_discount_amount(
             rule.discount_type,
             rule.value,
@@ -221,17 +231,19 @@ def resolve_product_pricing(product, discount_index=None):
             rule.max_discount_amount,
         )
         final_price = _money(base_price - discount_amount)
-        product_candidates.append({
-            'final_price': final_price,
-            'discount_amount': discount_amount,
-            'badge_text': rule.badge_text,
-            'source_type': 'product',
-            'source_name': rule.name,
-            'priority': rule.priority or 300,
-            'flash_sale_end_at': None,
-        })
+        product_candidates.append(
+            {
+                "final_price": final_price,
+                "discount_amount": discount_amount,
+                "badge_text": rule.badge_text,
+                "source_type": "product",
+                "source_name": rule.name,
+                "priority": rule.priority or 300,
+                "flash_sale_end_at": None,
+            }
+        )
 
-    for sale in discount_index['flash_product_map'].get(product.id, []):
+    for sale in discount_index["flash_product_map"].get(product.id, []):
         discount_amount = _calculate_discount_amount(
             sale.discount_type,
             sale.value,
@@ -239,17 +251,19 @@ def resolve_product_pricing(product, discount_index=None):
             sale.max_discount_amount,
         )
         final_price = _money(base_price - discount_amount)
-        product_candidates.append({
-            'final_price': final_price,
-            'discount_amount': discount_amount,
-            'badge_text': sale.badge_text or 'Flash Sale',
-            'source_type': 'flash_sale',
-            'source_name': sale.name,
-            'priority': sale.priority or 350,
-            'flash_sale_end_at': sale.end_at,
-        })
+        product_candidates.append(
+            {
+                "final_price": final_price,
+                "discount_amount": discount_amount,
+                "badge_text": sale.badge_text or "Flash Sale",
+                "source_type": "flash_sale",
+                "source_name": sale.name,
+                "priority": sale.priority or 350,
+                "flash_sale_end_at": sale.end_at,
+            }
+        )
 
-    for sale in discount_index['flash_category_map'].get(product.category_id, []):
+    for sale in discount_index["flash_category_map"].get(product.category_id, []):
         discount_amount = _calculate_discount_amount(
             sale.discount_type,
             sale.value,
@@ -257,17 +271,19 @@ def resolve_product_pricing(product, discount_index=None):
             sale.max_discount_amount,
         )
         final_price = _money(base_price - discount_amount)
-        category_candidates.append({
-            'final_price': final_price,
-            'discount_amount': discount_amount,
-            'badge_text': sale.badge_text or 'Flash Sale',
-            'source_type': 'flash_sale',
-            'source_name': sale.name,
-            'priority': sale.priority or 320,
-            'flash_sale_end_at': sale.end_at,
-        })
+        category_candidates.append(
+            {
+                "final_price": final_price,
+                "discount_amount": discount_amount,
+                "badge_text": sale.badge_text or "Flash Sale",
+                "source_type": "flash_sale",
+                "source_name": sale.name,
+                "priority": sale.priority or 320,
+                "flash_sale_end_at": sale.end_at,
+            }
+        )
 
-    for rule in discount_index['category_rules_map'].get(product.category_id, []):
+    for rule in discount_index["category_rules_map"].get(product.category_id, []):
         discount_amount = _calculate_discount_amount(
             rule.discount_type,
             rule.value,
@@ -275,15 +291,17 @@ def resolve_product_pricing(product, discount_index=None):
             rule.max_discount_amount,
         )
         final_price = _money(base_price - discount_amount)
-        category_candidates.append({
-            'final_price': final_price,
-            'discount_amount': discount_amount,
-            'badge_text': rule.badge_text,
-            'source_type': 'category',
-            'source_name': rule.name,
-            'priority': rule.priority or 200,
-            'flash_sale_end_at': None,
-        })
+        category_candidates.append(
+            {
+                "final_price": final_price,
+                "discount_amount": discount_amount,
+                "badge_text": rule.badge_text,
+                "source_type": "category",
+                "source_name": rule.name,
+                "priority": rule.priority or 200,
+                "flash_sale_end_at": None,
+            }
+        )
 
     product_choice = _choose_best_candidate(product_candidates)
     category_choice = _choose_best_candidate(category_candidates)
@@ -295,17 +313,17 @@ def resolve_product_pricing(product, discount_index=None):
             final_price=_money(product.selling_price or product.price),
         )
 
-    compare_at_price = base_price if chosen['final_price'] < base_price else None
+    compare_at_price = base_price if chosen["final_price"] < base_price else None
     pricing = ProductPricing(
         original_price=base_price,
-        final_price=chosen['final_price'],
-        discount_amount=_money(chosen['discount_amount']),
+        final_price=chosen["final_price"],
+        discount_amount=_money(chosen["discount_amount"]),
         compare_at_price=compare_at_price,
-        badge_text=chosen['badge_text'],
-        source_type=chosen['source_type'],
-        source_name=chosen['source_name'],
-        source_priority=chosen['priority'],
-        flash_sale_end_at=chosen['flash_sale_end_at'],
+        badge_text=chosen["badge_text"],
+        source_type=chosen["source_type"],
+        source_name=chosen["source_name"],
+        source_priority=chosen["priority"],
+        flash_sale_end_at=chosen["flash_sale_end_at"],
     )
     if not pricing.badge_text:
         pricing.badge_text = _default_badge(pricing.discount_percent)
@@ -318,9 +336,9 @@ def _choose_best_candidate(candidates):
     return sorted(
         candidates,
         key=lambda candidate: (
-            candidate['discount_amount'],
-            candidate['priority'],
-            candidate['final_price'] * Decimal('-1'),
+            candidate["discount_amount"],
+            candidate["priority"],
+            candidate["final_price"] * Decimal("-1"),
         ),
         reverse=True,
     )[0]
@@ -348,35 +366,52 @@ def _apply_pricing_fields(product, pricing):
 
 
 def get_coupon_by_code(code):
-    normalized_code = (code or '').upper().strip()
+    normalized_code = (code or "").upper().strip()
     if not normalized_code:
         return None
     return Coupon.objects.filter(code=normalized_code).first()
 
 
-def validate_coupon(coupon, user=None, subtotal=MONEY_ZERO, eligible_subtotal=MONEY_ZERO):
+def validate_coupon(
+    coupon, user=None, subtotal=MONEY_ZERO, eligible_subtotal=MONEY_ZERO
+):
     if not coupon:
-        return False, 'Enter a valid coupon code.'
+        return False, "Enter a valid coupon code."
     now = timezone.now()
     if not _is_active_window(coupon, now):
-        return False, 'This coupon is inactive or expired.'
+        return False, "This coupon is inactive or expired."
     subtotal = _money(subtotal)
     eligible_subtotal = _money(eligible_subtotal)
     if subtotal < _money(coupon.min_order_amount):
-        return False, f"Minimum order amount for {coupon.code} is Rs. {coupon.min_order_amount}."
-    if eligible_subtotal <= MONEY_ZERO and not coupon.free_shipping:
-        return False, 'This coupon cannot be applied on already discounted items.'
+        return (
+            False,
+            f"Minimum order amount for {coupon.code} is Rs. {coupon.min_order_amount}.",
+        )
+
+    # A coupon that is NOT for free shipping requires an eligible subtotal to apply a discount to.
+    # A free shipping coupon can still be valid even if the eligible subtotal for discount is zero.
+    if not coupon.free_shipping and eligible_subtotal <= MONEY_ZERO:
+        return False, "This coupon is not applicable to any items in your cart."
+
     if user and coupon.first_order_only:
         from orders.models import Order
 
         if Order.objects.filter(user=user).exists():
-            return False, 'This coupon is only valid on the first order.'
-    if coupon.usage_limit is not None and coupon.redemptions.count() >= coupon.usage_limit:
-        return False, 'This coupon has reached its usage limit.'
+            return False, "This coupon is only valid on the first order."
+    if (
+        coupon.usage_limit is not None
+        and coupon.redemptions.count() >= coupon.usage_limit
+    ):
+        return False, "This coupon has reached its usage limit."
     if user and coupon.usage_per_user is not None:
-        user_redemptions = CouponRedemption.objects.filter(coupon=coupon, user=user).count()
+        user_redemptions = CouponRedemption.objects.filter(
+            coupon=coupon, user=user
+        ).count()
         if user_redemptions >= coupon.usage_per_user:
-            return False, 'You have already used this coupon the maximum number of times.'
+            return (
+                False,
+                "You have already used this coupon the maximum number of times.",
+            )
     return True, f"Coupon {coupon.code} applied successfully."
 
 
@@ -402,15 +437,12 @@ def _matches_offer_target(item, *, product_id=None, category_id=None):
 
 def calculate_buy_x_get_y_discount(items, line_items):
     active_offers = [
-        offer for offer in BuyXGetYOffer.objects.all()
-        if offer.is_currently_active
+        offer for offer in BuyXGetYOffer.objects.all() if offer.is_currently_active
     ]
     if not active_offers:
         return MONEY_ZERO, []
 
-    remaining_quantities = {
-        line.item.id: line.quantity for line in line_items
-    }
+    remaining_quantities = {line.item.id: line.quantity for line in line_items}
     total_discount = MONEY_ZERO
     messages = []
 
@@ -429,7 +461,8 @@ def calculate_buy_x_get_y_discount(items, line_items):
             continue
 
         matching_lines = [
-            line for line in line_items
+            line
+            for line in line_items
             if _matches_offer_target(
                 line.item,
                 product_id=offer.get_product_id,
@@ -465,23 +498,33 @@ def resolve_shipping(subtotal_after_discounts, coupon=None):
         return MONEY_ZERO, MONEY_ZERO, None
 
     if coupon and coupon.free_shipping:
-        return MONEY_ZERO, STANDARD_SHIPPING_AMOUNT, f"Coupon {coupon.code} unlocked free shipping."
+        return (
+            MONEY_ZERO,
+            STANDARD_SHIPPING_AMOUNT,
+            f"Coupon {coupon.code} unlocked free shipping.",
+        )
 
     offers = [
-        offer for offer in FreeShippingOffer.objects.all()
-        if offer.is_currently_active and subtotal_after_discounts >= _money(offer.min_order_amount)
+        offer
+        for offer in FreeShippingOffer.objects.all()
+        if offer.is_currently_active
+        and subtotal_after_discounts >= _money(offer.min_order_amount)
     ]
     if offers:
-        best_offer = sorted(offers, key=lambda offer: offer.min_order_amount, reverse=True)[0]
+        best_offer = sorted(
+            offers, key=lambda offer: offer.min_order_amount, reverse=True
+        )[0]
         return MONEY_ZERO, STANDARD_SHIPPING_AMOUNT, best_offer
 
     return STANDARD_SHIPPING_AMOUNT, MONEY_ZERO, None
 
 
-def build_cart_summary(items, user=None, coupon_code=''):
+def build_cart_summary(items, user=None, coupon_code=""):
     items = list(items)
     products = [item.product for item in items]
-    discount_index = build_discount_index(products) if products else build_discount_index([])
+    discount_index = (
+        build_discount_index(products) if products else build_discount_index([])
+    )
     line_items = []
     subtotal_original = MONEY_ZERO
     item_discount_total = MONEY_ZERO
@@ -515,24 +558,35 @@ def build_cart_summary(items, user=None, coupon_code=''):
         (
             line.line_final_total
             for line in line_items
-            if not line.has_item_discount and _line_matches_coupon(line, coupon)
+            # An item is eligible for a coupon if it has no discount, or if its discount has a priority lower than a coupon (100).
+            if (not line.has_item_discount or line.pricing.source_priority < 100)
+            and _line_matches_coupon(line, coupon)
         ),
         MONEY_ZERO,
     )
-    coupon_is_valid, coupon_message = validate_coupon(
-        coupon,
-        user=user,
-        subtotal=subtotal_after_item_discounts,
-        eligible_subtotal=coupon_eligible_subtotal,
-    ) if coupon_code else (False, '')
+    coupon_is_valid, coupon_message = (
+        validate_coupon(
+            coupon,
+            user=user,
+            subtotal=subtotal_after_item_discounts,
+            eligible_subtotal=coupon_eligible_subtotal,
+        )
+        if coupon_code
+        else (False, "")
+    )
 
     coupon_discount = (
         calculate_coupon_discount(coupon, coupon_eligible_subtotal)
-        if coupon_is_valid else MONEY_ZERO
+        if coupon_is_valid
+        else MONEY_ZERO
     )
-    buy_x_get_y_discount, buy_x_get_y_messages = calculate_buy_x_get_y_discount(items, line_items)
+    buy_x_get_y_discount, buy_x_get_y_messages = calculate_buy_x_get_y_discount(
+        items, line_items
+    )
 
-    discounted_subtotal = _money(subtotal_after_item_discounts - coupon_discount - buy_x_get_y_discount)
+    discounted_subtotal = _money(
+        subtotal_after_item_discounts - coupon_discount - buy_x_get_y_discount
+    )
     shipping_amount, shipping_savings, free_shipping_offer = resolve_shipping(
         discounted_subtotal,
         coupon=coupon if coupon_is_valid else None,
@@ -554,7 +608,7 @@ def build_cart_summary(items, user=None, coupon_code=''):
         shipping_savings=_money(shipping_savings),
         grand_total=grand_total,
         applied_coupon=coupon if coupon_is_valid else None,
-        coupon_message=coupon_message if coupon_is_valid else (coupon_message or ''),
+        coupon_message=coupon_message if coupon_is_valid else (coupon_message or ""),
         applied_free_shipping_offer=free_shipping_offer,
         buy_x_get_y_messages=buy_x_get_y_messages,
     )
