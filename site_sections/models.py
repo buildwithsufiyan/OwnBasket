@@ -44,7 +44,14 @@ class HomepageSection(models.Model):
         """
         Dynamically gets the related concrete section instance (e.g., HeroSection).
         """
-        return getattr(self, self.section_type, None)
+        accessor_map = {
+            SectionType.HERO: "herosection",
+            SectionType.PRODUCT_CAROUSEL: "productcarouselsection",
+        }
+        accessor_name = accessor_map.get(self.section_type)
+        if not accessor_name:
+            return None
+        return getattr(self, accessor_name, None)
 
 
 class ProductCarouselSection(HomepageSection):

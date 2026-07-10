@@ -1,0 +1,73 @@
+{% load humanize %}
+
+<article class="bb-product-card">
+    <div class="bb-product-media">
+        <a href="{% url 'products:product_detail' product.slug %}" aria-label="View {{ product.name }}">
+            {% if product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy">
+            {% else %}
+            <span class="bb-product-image-fallback">
+                <i class="bi bi-image"></i>
+            </span>
+            {% endif %}
+        </a>
+
+        <div class="bb-product-badges">
+            {% if product.has_display_discount %}
+            <span class="bb-product-badge bb-product-badge-deal">{{ product.display_badge }}</span>
+            {% endif %}
+            {% if product.flash_sale_product or product.flash_sale_end_at or product.deal_of_the_day %}
+            <span class="bb-product-badge bb-product-badge-sale">Sale</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="bb-product-body">
+        <p class="bb-product-brand">{{ product.brand.name|default:"OwnBasket" }}</p>
+
+        <h3 class="bb-product-title">
+            <a href="{% url 'products:product_detail' product.slug %}">{{ product.name }}</a>
+        </h3>
+
+        <div class="bb-product-rating" aria-label="{{ product.rating|default:'0' }} out of 5 stars">
+            {% with rating=product.rating|default:0|floatformat:0 %}
+            <span class="bb-product-stars" aria-hidden="true">
+                {% for i in "12345" %}
+                    {% if forloop.counter <= rating|add:"0" %}
+                    <i class="bi bi-star-fill"></i>
+                    {% else %}
+                    <i class="bi bi-star"></i>
+                    {% endif %}
+                {% endfor %}
+            </span>
+            {% endwith %}
+            <span class="bb-product-review-count">({{ product.reviews_count|default:"0" }})</span>
+        </div>
+
+        <div class="bb-product-price-row">
+            <span class="bb-product-price">₹{{ product.display_price|intcomma }}</span>
+            {% if product.display_compare_price %}
+            <del class="bb-product-old-price">₹{{ product.display_compare_price|intcomma }}</del>
+            {% endif %}
+        </div>
+
+        {% if product.flash_sale_end_at %}
+        <div class="bb-product-timer" data-countdown="{{ product.flash_sale_end_at|date:'c' }}">
+            Ends soon
+        </div>
+        {% endif %}
+
+        <div class="bb-product-actions">
+            <form method="POST" action="{% url 'add_to_cart' product.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn bb-add-cart-btn">
+                    <i class="bi bi-cart-plus"></i>
+                    <span>Add to Cart</span>
+                </button>
+            </form>
+            <a href="{% if user.is_authenticated %}{% url 'wishlist:add_to_wishlist' product.id %}{% else %}{% url 'login' %}{% endif %}" class="bb-wishlist-btn" aria-label="Add {{ product.name }} to wishlist">
+                <i class="bi bi-heart"></i>
+            </a>
+        </div>
+    </div>
+</article>

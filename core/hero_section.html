@@ -1,0 +1,24 @@
+{% comment %}
+  Template for rendering a Hero Section.
+  Expects a 'section_instance' of type HeroSection in the context.
+{% endcomment %}
+
+{% if section_instance.has_content %}
+<section class="hero-section py-5" style="background-color: {{ section_instance.background_color|default:'#f4f6f9' }}; {% if section_instance.background_image %}background-image: url('{{ section_instance.background_image.url }}'); background-size: cover; background-position: center;{% endif %}">
+  <div class="container text-center">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        {% if section_instance.heading %}
+          <h1 class="display-4">{{ section_instance.heading }}</h1>
+        {% endif %}
+        {% if section_instance.subheading %}
+          <p class="lead">{{ section_instance.subheading }}</p>
+        {% endif %}
+        {% if section_instance.button_text and section_instance.button_url %}
+          <a href="{{ section_instance.button_url }}" class="btn btn-primary btn-lg mt-3">{{ section_instance.button_text }}</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}

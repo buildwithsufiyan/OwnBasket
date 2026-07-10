@@ -1,3 +1,4 @@
+<<<<<<< ours
 {% comment %}
   Template for rendering a Product Carousel Section.
   Expects a 'section_instance' of type ProductCarouselSection in the context.
@@ -32,3 +33,8 @@
   </div>
 </section>
 {% endif %}
+=======
+{% if section_instance.products %}
+    {% include "partials/product_carousel.html" with carousel_id="dynamic-carousel-"|add:section_instance.id title=section_instance.title|default:section_instance.name subtitle=section_instance.subtitle products=section_instance.products %}
+{% endif %}
+>>>>>>> theirs

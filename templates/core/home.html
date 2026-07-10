@@ -1,5 +1,11 @@
 {% extends 'base.html' %}
-{% load humanize %}
+{% load humanize static %}
+
+{% block extra_head %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css">
+<link rel="stylesheet" href="{% static 'css/product-carousels.css' %}">
+{% endblock %}
 
 {% block content %}
 {% url 'home' as home_page_url %}
@@ -652,6 +658,18 @@ document.addEventListener('DOMContentLoaded', function () {
 </section>
 {% endif %}
 
+{% for carousel_section in product_carousel_sections %}
+    {% include "partials/product_carousel.html" with carousel_id=carousel_section.id title=carousel_section.title subtitle=carousel_section.subtitle products=carousel_section.products accent=carousel_section.accent %}
+{% endfor %}
+
+{% for section in homepage_dynamic_sections %}
+    {% with section_instance=section.get_section_instance %}
+        {% if section.section_type == 'product_carousel' and section_instance %}
+            {% include "core/product_carousel_section.html" with section_instance=section_instance %}
+        {% endif %}
+    {% endwith %}
+{% endfor %}
+
 <section class="products-section py-5">
     <div class="container">
         <div class="homepage-section-head mb-4">
@@ -751,9 +769,6 @@ document.addEventListener('DOMContentLoaded', function () {
         </div>
     </div>
 </section>
-
-{% include 'includes/home_product_section.html' with section_title='Flash Sale' section_products=flash_sale_products section_note='Limited time deals' %}
-{% include 'includes/home_product_section.html' with section_title='Featured Products' section_products=featured_products_section section_note='Admin selected highlights' %}
 
 <style>
 .homepage-hero {
@@ -1659,4 +1674,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 }
 </style>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
+<script src="{% static 'js/product-carousels.js' %}"></script>
 {% endblock %}

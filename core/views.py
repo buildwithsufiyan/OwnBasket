@@ -68,6 +68,10 @@ def _home_section_queryset():
     )
 
 
+def _priced_products(queryset, limit=12):
+    return attach_pricing_to_products(queryset[:limit])
+
+
 def home(request):
     category_slug = request.GET.get("category")
     brand_id = request.GET.get("brand")
@@ -137,6 +141,61 @@ def home(request):
         Brand.objects.filter(is_active=True).order_by("display_order", "name", "id")[:4]
     )
     products = attach_pricing_to_products(products)
+    section_products = _home_section_queryset()
+    popular_products = _priced_products(
+        section_products.order_by("-total_views", "-wishlist_count", "-id")
+    )
+    best_rated_products = _priced_products(
+        section_products.order_by("-rating", "-reviews_count", "-id")
+    )
+    featured_products = _priced_products(
+        section_products.filter(featured_product=True).order_by("-created_at", "-id")
+    )
+    latest_products = _priced_products(section_products.order_by("-created_at", "-id"))
+    top_deal_products = _priced_products(
+        section_products.filter(
+            Q(flash_sale_product=True)
+            | Q(deal_of_the_day=True)
+            | Q(discount_price__isnull=False)
+            | Q(old_price__isnull=False)
+            | Q(mrp__isnull=False)
+        )
+        .distinct()
+        .order_by("-flash_sale_product", "-deal_of_the_day", "-created_at", "-id")
+    )
+    product_carousel_sections = [
+        {
+            "id": "popular",
+            "title": "Popular",
+            "subtitle": "Most viewed picks shoppers keep coming back to.",
+            "products": popular_products,
+        },
+        {
+            "id": "best-rated",
+            "title": "Best Rated",
+            "subtitle": "Highly rated products with strong customer feedback.",
+            "products": best_rated_products,
+        },
+        {
+            "id": "featured-products",
+            "title": "Featured Products",
+            "subtitle": "Curated highlights from the catalog.",
+            "products": featured_products,
+        },
+        {
+            "id": "latest-products",
+            "title": "Latest Products",
+            "subtitle": "Fresh arrivals added most recently.",
+            "products": latest_products,
+        },
+        {
+            "id": "top-deals",
+            "title": "Top Deals",
+            "subtitle": "Sale, flash-sale, and deal products in one place.",
+            "products": top_deal_products,
+            "accent": True,
+        },
+    ]
 
     # Fetching dynamic homepage sections
     product_carousel_prefetch = Prefetch(
@@ -225,6 +284,12 @@ def home(request):
         "home_page_url": reverse("home"),
         "homepage_dynamic_sections": homepage_dynamic_sections,
         "hero_section": hero_section,
+        "popular_products": popular_products,
+        "best_rated_products": best_rated_products,
+        "featured_products": featured_products,
+        "latest_products": latest_products,
+        "top_deal_products": top_deal_products,
+        "product_carousel_sections": product_carousel_sections,
     }
     return render(request, "core/home.html", context)
 

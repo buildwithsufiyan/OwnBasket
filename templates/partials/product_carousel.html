@@ -1,0 +1,35 @@
+{% if products %}
+<section class="bb-product-section{% if accent %} bb-product-section-accent{% endif %}" aria-labelledby="{{ carousel_id }}-heading">
+    <div class="container">
+        <div class="bb-section-head">
+            <div>
+                <h2 id="{{ carousel_id }}-heading" class="bb-section-title">{{ title }}</h2>
+                {% if subtitle %}
+                <p class="bb-section-subtitle">{{ subtitle }}</p>
+                {% endif %}
+            </div>
+
+            <div class="bb-carousel-controls" aria-label="{{ title }} controls">
+                <button class="bb-carousel-arrow bb-carousel-prev" type="button" aria-label="Previous {{ title }} products">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <button class="bb-carousel-arrow bb-carousel-next" type="button" aria-label="Next {{ title }} products">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="splide bb-product-carousel" data-product-carousel id="{{ carousel_id }}-carousel">
+            <div class="splide__track">
+                <ul class="splide__list">
+                    {% for product in products %}
+                    <li class="splide__slide">
+                        {% include "partials/product_card.html" with product=product %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
