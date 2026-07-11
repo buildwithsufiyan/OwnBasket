@@ -1,35 +1,33 @@
 {% comment %}
-    File: themes/default/layouts/categories/layout1.html
-    Description: Renders a responsive grid of category cards.
+    File: themes/default/layouts/brands/layout1.html
+    Description: Renders a responsive grid of premium brand cards.
 {% endcomment %}
 
 <div class="section-shell">
     <div class="container">
         <div class="row mb-4">
             <div class="col">
-                <h2 class="h2">Shop By Categories</h2>
-                <p class="text-secondary">Explore our top categories and find what you're looking for.</p>
+                <h2 class="h2">Top Brands</h2>
+                <p class="text-secondary">Discover products from the brands you love.</p>
             </div>
         </div>
 
         <div class="row g-3 g-lg-4">
-            {% for category in categories %}
-            <div class="col-6 col-md-4 col-lg-3">
-                <a href="{{ category.get_absolute_url }}" class="category-card-wrapper"> 
-                     <div class="category-card"> 
-                         <div class="category-card__image"> 
-                             {% if category.image %} 
-                                 <img src="{{ category.image.url }}" alt="{{ category.name }}"> 
-                             {% else %} 
-                                 <i class="bi bi-tag-fill icon-placeholder"></i> 
-                             {% endif %} 
-                         </div> 
-                         <div class="category-card__content"> 
-                             <h3 class="category-card__title">{{ category.name }}</h3> 
-                             <p class="category-card__count">{{ category.products.count }} Products</p> 
-                         </div> 
-                     </div> 
-                 </a>
+            {% for brand in brands %}
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{{ brand.get_absolute_url }}" class="brand-card-wrapper">
+                    <div class="brand-card">
+                        <div class="brand-card__logo">
+                            {% if brand.logo %}
+                                <img src="{{ brand.logo.url }}" alt="{{ brand.name }} Logo">
+                            {% else %}
+                                <i class="bi bi-shield-check icon-placeholder"></i>
+                            {% endif %}
+                        </div>
+                        <h3 class="brand-card__title">{{ brand.name }}</h3>
+                        <p class="brand-card__count">{{ brand.products.count }} Products</p>
+                    </div>
+                </a>
             </div>
             {% endfor %}
         </div>

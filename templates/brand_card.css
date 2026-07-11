@@ -1,0 +1,68 @@
+.brand-card-wrapper {
+    text-decoration: none;
+    display: block;
+    color: inherit;
+    height: 100%;
+}
+
+.brand-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1.5rem;
+    background-color: var(--owncart-bg-card, #ffffff);
+    border: 1px solid var(--owncart-border-card, #eaecf0);
+    border-radius: var(--owncart-card-br, 12px);
+    box-shadow: var(--owncart-card-shadow, 0 4px 6px -1px rgba(0, 0, 0, 0.05));
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100%;
+}
+
+.brand-card-wrapper:hover .brand-card {
+    transform: translateY(-8px);
+    box-shadow: var(--owncart-card-hover-shadow, 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.05));
+}
+
+.brand-card__logo {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: var(--owncart-bg-body, #f4f6f9);
+    border: 1px solid var(--owncart-border-card, #eaecf0);
+}
+
+.brand-card__logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 8px; /* Add some padding so logos don't touch the edges */
+}
+
+.brand-card__logo .icon-placeholder {
+    font-size: 2.5rem;
+    color: var(--owncart-brand-primary, #ffb800);
+}
+
+.brand-card__title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--owncart-text-heading, #212529);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+.brand-card__count {
+    font-size: 0.875rem;
+    color: var(--owncart-text-secondary, #6c757d);
+    margin-top: 0.25rem;
+}
