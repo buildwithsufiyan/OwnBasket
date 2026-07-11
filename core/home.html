@@ -80,26 +80,6 @@ and includes the corresponding template based on its `section_type`.
         {% if section.section_type == 'hero' and section_instance %}
             {% include "site_sections/hero_section.html" with section_instance=section_instance %}
 
-        {% comment %}
-        Render a Product Carousel if the type matches and the instance exists.
-        The view has already attached the `products` list to the `section_instance`.
-        The `product_carousel_section.html` template will only render if `section_instance.products` is not empty.
-        {% endcomment %}
-        {% elif section.section_type == 'product_carousel' and section_instance %}
-            <div class="container my-3 p-3 border bg-warning-subtle">
-                <p><strong>-- DEBUG START (home.html) --</strong></p>
-                <p>Section Type: {{ section.section_type }}</p>
-                <p>Instance: {{ section_instance }}</p>
-                <p>Products Count: {{ section_instance.products|length }}</p>
-                <p><strong>-- DEBUG END --</strong></p>
-            </div>
-            {% include "core/product_carousel_section.html" with section_instance=section_instance %}
-
-        {% comment %}
-        Future section types can be added here with `elif`.
-        e.g., {% elif section.section_type == 'banner' %} ...
-        {% endcomment %}
-
         {% endif %}
     {% endwith %}
 {% endfor %}

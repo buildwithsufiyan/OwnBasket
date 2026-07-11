@@ -1,35 +1,66 @@
+{% load static %}
+{% load humanize %}
+{% load pricing_tags %}
+
 {% if products %}
-<section class="bb-product-section{% if accent %} bb-product-section-accent{% endif %}" aria-labelledby="{{ carousel_id }}-heading">
-    <div class="container">
-        <div class="bb-section-head">
-            <div>
-                <h2 id="{{ carousel_id }}-heading" class="bb-section-title">{{ title }}</h2>
-                {% if subtitle %}
-                <p class="bb-section-subtitle">{{ subtitle }}</p>
-                {% endif %}
-            </div>
-
-            <div class="bb-carousel-controls" aria-label="{{ title }} controls">
-                <button class="bb-carousel-arrow bb-carousel-prev" type="button" aria-label="Previous {{ title }} products">
-                    <i class="bi bi-chevron-left"></i>
+<div class="product-card">
+    <div class="product-card-img-container">
+        <a href="{{ product.get_absolute_url }}" class="product-card-img-link">
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-card-img" loading="lazy">
+        </a>
+        {% if product.discount_percentage > 0 %}
+            <span class="product-card-discount-badge">-{{ product.discount_percentage|floatformat:0 }}%</span>
+        {% endif %}
+        <div class="product-card-actions">
+            <a href="{% url 'wishlist:add_to_wishlist' product.id %}" class="product-card-wishlist-btn" aria-label="Add to Wishlist">
+                <i class="bi bi-heart"></i>
+            </a>
+            <form action="{% url 'cart:add_to_cart' product.id %}" method="post" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="product-card-cart-btn">
+                    <i class="bi bi-cart-plus"></i> Add to Cart
                 </button>
-                <button class="bb-carousel-arrow bb-carousel-next" type="button" aria-label="Next {{ title }} products">
-                    <i class="bi bi-chevron-right"></i>
-                </button>
-            </div>
-        </div>
-
-        <div class="splide bb-product-carousel" data-product-carousel id="{{ carousel_id }}-carousel">
-            <div class="splide__track">
-                <ul class="splide__list">
-                    {% for product in products %}
-                    <li class="splide__slide">
-                        {% include "partials/product_card.html" with product=product %}
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
+            </form>
         </div>
     </div>
-</section>
+    <div class="product-card-body">
+        {% if product.brand %}
+            <p class="product-card-brand">{{ product.brand.name }}</p>
+        {% endif %}
+        <h3 class="product-card-title">
+            <a href="{{ product.get_absolute_url }}">{{ product.name }}</a>
+        </h3>
+        <div class="product-card-rating">
+            {% if product.rating > 0 %}
+                <div class="star-rating">
+                    {% for i in "12345" %}
+                        <i class="bi {% if i|add:0 <= product.rating %}bi-star-fill{% else %}bi-star{% endif %}"></i>
+                    {% endfor %}
+                </div>
+                <span class="rating-count">({{ product.reviews_count }})</span>
+            {% else %}
+                <span class="text-muted small">No reviews yet</span>
+            {% endif %}
+        </div>
+        <div class="product-card-price">
+            <span class="current-price">{{ product.price|currency }}</span>
+            {% if product.old_price and product.old_price > product.price %}
+                <span class="old-price">{{ product.old_price|currency }}</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="product-card-placeholder">
+    <div class="product-card-img-container placeholder-glow">
+        <div class="placeholder" style="width: 100%; aspect-ratio: 1/1;"></div>
+    </div>
+    <div class="product-card-body placeholder-glow">
+        <p class="placeholder col-4"></p>
+        <h3 class="placeholder col-10"></h3>
+        <div class="placeholder col-6"></div>
+        <div class="placeholder col-5"></div>
+    </div>
+</div>
 {% endif %}

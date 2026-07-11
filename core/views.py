@@ -13,11 +13,7 @@ from banners.models import (
     HomepageSettings,
     HomepageFeature,
 )
-from site_sections.models import (
-    HeroSection,
-    HomepageSection,
-    ProductCarouselSection,
-)
+from site_sections.models import HeroSection, HomepageSection
 
 DEFAULT_HOME_FEATURES = [
     {
@@ -141,129 +137,13 @@ def home(request):
         Brand.objects.filter(is_active=True).order_by("display_order", "name", "id")[:4]
     )
     products = attach_pricing_to_products(products)
-    section_products = _home_section_queryset()
-    popular_products = _priced_products(
-        section_products.order_by("-total_views", "-wishlist_count", "-id")
-    )
-    best_rated_products = _priced_products(
-        section_products.order_by("-rating", "-reviews_count", "-id")
-    )
-    featured_products = _priced_products(
-        section_products.filter(featured_product=True).order_by("-created_at", "-id")
-    )
-    latest_products = _priced_products(section_products.order_by("-created_at", "-id"))
-    top_deal_products = _priced_products(
-        section_products.filter(
-            Q(flash_sale_product=True)
-            | Q(deal_of_the_day=True)
-            | Q(discount_price__isnull=False)
-            | Q(old_price__isnull=False)
-            | Q(mrp__isnull=False)
-        )
-        .distinct()
-        .order_by("-flash_sale_product", "-deal_of_the_day", "-created_at", "-id")
-    )
-    product_carousel_sections = [
-        {
-            "id": "popular",
-            "title": "Popular",
-            "subtitle": "Most viewed picks shoppers keep coming back to.",
-            "products": popular_products,
-        },
-        {
-            "id": "best-rated",
-            "title": "Best Rated",
-            "subtitle": "Highly rated products with strong customer feedback.",
-            "products": best_rated_products,
-        },
-        {
-            "id": "featured-products",
-            "title": "Featured Products",
-            "subtitle": "Curated highlights from the catalog.",
-            "products": featured_products,
-        },
-        {
-            "id": "latest-products",
-            "title": "Latest Products",
-            "subtitle": "Fresh arrivals added most recently.",
-            "products": latest_products,
-        },
-        {
-            "id": "top-deals",
-            "title": "Top Deals",
-            "subtitle": "Sale, flash-sale, and deal products in one place.",
-            "products": top_deal_products,
-            "accent": True,
-        },
-    ]
 
     # Fetching dynamic homepage sections
-    product_carousel_prefetch = Prefetch(
-        "productcarouselsection",
-        queryset=ProductCarouselSection.objects.prefetch_related(
-            "manual_products", "category", "brand"
-        ),
-    )
     homepage_dynamic_sections = (
         HomepageSection.objects.filter(is_active=True)
         .select_related("herosection")
-        .prefetch_related(product_carousel_prefetch)
         .order_by("display_order")
     )
-
-    # Attach products to each product carousel section
-    now = timezone.now()
-    for section in homepage_dynamic_sections:
-        instance = section.get_section_instance()
-        if isinstance(instance, ProductCarouselSection):
-            limit = instance.products_limit
-            source_type = instance.source_type
-            qs = Product.objects.none()
-
-            if source_type == ProductCarouselSection.SourceType.MANUAL:
-                # Products are already prefetched via manual_products
-                product_list = list(instance.manual_products.filter(is_active=True))
-                instance.products = attach_pricing_to_products(product_list[:limit])
-                continue
-
-            base_qs = Product.objects.select_related(
-                "brand", "category", "subcategory"
-            ).filter(is_active=True)
-
-            if source_type == ProductCarouselSection.SourceType.FEATURED:
-                qs = base_qs.filter(featured_product=True).order_by(
-                    "-created_at", "-id"
-                )
-            elif source_type == ProductCarouselSection.SourceType.FLASH_SALE:
-                qs = (
-                    base_qs.filter(
-                        Q(flash_sale_product=True)
-                        | Q(discount_price__isnull=False, offer_end_at__gte=now)
-                    )
-                    .distinct()
-                    .order_by("-offer_end_at", "-created_at", "-id")
-                )
-            elif source_type == ProductCarouselSection.SourceType.LATEST:
-                qs = base_qs.order_by("-created_at", "-id")
-            elif source_type == ProductCarouselSection.SourceType.BEST_SELLING:
-                qs = base_qs.order_by("-total_sold", "-id")
-            elif source_type == ProductCarouselSection.SourceType.TRENDING:
-                qs = base_qs.order_by("-total_views", "-id")
-            elif (
-                source_type == ProductCarouselSection.SourceType.CATEGORY
-                and instance.category
-            ):
-                qs = base_qs.filter(category=instance.category).order_by(
-                    "-created_at", "-id"
-                )
-            elif (
-                source_type == ProductCarouselSection.SourceType.BRAND
-                and instance.brand
-            ):
-                qs = base_qs.filter(brand=instance.brand).order_by("-created_at", "-id")
-
-            # Attach prices and set it on the instance
-            instance.products = attach_pricing_to_products(qs[:limit])
 
     # This is for backward compatibility with templates that might still use the old hero_section
     if not any(s.section_type == "hero" for s in homepage_dynamic_sections):
@@ -284,12 +164,6 @@ def home(request):
         "home_page_url": reverse("home"),
         "homepage_dynamic_sections": homepage_dynamic_sections,
         "hero_section": hero_section,
-        "popular_products": popular_products,
-        "best_rated_products": best_rated_products,
-        "featured_products": featured_products,
-        "latest_products": latest_products,
-        "top_deal_products": top_deal_products,
-        "product_carousel_sections": product_carousel_sections,
     }
     return render(request, "core/home.html", context)
 

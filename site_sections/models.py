@@ -7,7 +7,6 @@ from products.models import Brand, Category, Product
 
 class SectionType(models.TextChoices):
     HERO = "hero", _("Hero Section")
-    PRODUCT_CAROUSEL = "product_carousel", _("Product Carousel")
     FEATURED_CATEGORIES = "featured_categories", _("Featured Categories")
     FEATURED_BRANDS = "featured_brands", _("Featured Brands")
     BANNER = "banner", _("Banner Ad")
@@ -46,85 +45,11 @@ class HomepageSection(models.Model):
         """
         accessor_map = {
             SectionType.HERO: "herosection",
-            SectionType.PRODUCT_CAROUSEL: "productcarouselsection",
         }
         accessor_name = accessor_map.get(self.section_type)
         if not accessor_name:
             return None
         return getattr(self, accessor_name, None)
-
-
-class ProductCarouselSection(HomepageSection):
-    """
-    A dynamic product carousel section for the homepage.
-    Can source products manually or based on dynamic rules.
-    """
-
-    class SourceType(models.TextChoices):
-        MANUAL = "manual", _("Manually Selected Products")
-        FEATURED = "featured", _("All Featured Products")
-        FLASH_SALE = "flash_sale", _("All Flash Sale Products")
-        LATEST = "latest", _("Latest Products")
-        BEST_SELLING = "best_selling", _("Best Selling Products")
-        TRENDING = "trending", _("Trending Products (Most Views)")
-        CATEGORY = "category", _("Products from a Category")
-        BRAND = "brand", _("Products from a Brand")
-
-    class LayoutStyle(models.TextChoices):
-        SLIDER = "slider", _("Slider")
-        GRID = "grid", _("Grid")
-
-    title = models.CharField(max_length=150, blank=True)
-    subtitle = models.CharField(max_length=255, blank=True)
-
-    source_type = models.CharField(
-        max_length=20,
-        choices=SourceType.choices,
-        default=SourceType.MANUAL,
-        help_text=_("How to source products for this carousel."),
-    )
-    category = models.ForeignKey(
-        Category,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        help_text=_("Required if source type is 'Category'."),
-    )
-    brand = models.ForeignKey(
-        Brand,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        help_text=_("Required if source type is 'Brand'."),
-    )
-    manual_products = models.ManyToManyField(
-        Product,
-        blank=True,
-        help_text=_("Required if source type is 'Manual'."),
-        related_name="product_carousels",
-    )
-    products_limit = models.PositiveIntegerField(
-        default=8, help_text=_("Maximum number of products to display.")
-    )
-
-    button_text = models.CharField(max_length=50, blank=True)
-    button_url = models.CharField(max_length=255, blank=True)
-
-    background_color = models.CharField(max_length=20, blank=True)
-    background_image = models.ImageField(
-        upload_to="site_sections/carousels/", blank=True, null=True
-    )
-    layout_style = models.CharField(
-        max_length=20, choices=LayoutStyle.choices, default=LayoutStyle.SLIDER
-    )
-
-    class Meta:
-        verbose_name = _("Product Carousel Section")
-        verbose_name_plural = _("Product Carousel Sections")
-
-    def save(self, *args, **kwargs):
-        self.section_type = SectionType.PRODUCT_CAROUSEL
-        super().save(*args, **kwargs)
 
 
 class HeroSection(HomepageSection):

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-{% load theme_tags %}
+{% load theme_tags static %}
 <html>
 
 <head>
@@ -19,6 +19,8 @@
     <!-- Custom Branded Styles -->
     {% theme_styles %}
     {% block extra_head %}{% endblock %}
+    <link rel="stylesheet" href="{% static 'css/components/category_card.css' %}"> 
+    <link rel="stylesheet" href="{% static 'css/components/product_card.css' %}">
 </head>
 
 <body>
