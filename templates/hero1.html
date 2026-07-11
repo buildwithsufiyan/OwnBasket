@@ -1,0 +1,68 @@
+{% comment %}
+    File: themes/default/layouts/hero/hero1.html
+    Description: Renders a premium, full-width, responsive hero slider using Swiper.js.
+{% endcomment %}
+
+{% if banner_carousels %}
+<div class="hero-slider-container">
+    <!-- Swiper -->
+    <div class="swiper hero-slider">
+        <div class="swiper-wrapper">
+            {% for slide in banner_carousels %}
+            <!-- Slide -->
+            <div class="swiper-slide">
+                <div class="hero-slider__background">
+                    {% if slide.image %}
+                        <img data-src="{{ slide.image.url }}" class="swiper-lazy" alt="{{ slide.heading|default:'Hero banner image' }}">
+                        <div class="swiper-lazy-preloader swiper-lazy-preloader-white"></div>
+                    {% endif %}
+                </div>
+                <div class="hero-slider__overlay"></div>
+                <div class="hero-slider__content">
+                    {% if slide.badge_text %}
+                        <span class="hero-slider__badge">{{ slide.badge_text }}</span>
+                    {% endif %}
+                    {% if slide.heading %}
+                        <h1 class="hero-slider__heading">{{ slide.heading }}</h1>
+                    {% endif %}
+                    {% if slide.description %}
+                        <p class="hero-slider__description">{{ slide.description }}</p>
+                    {% endif %}
+                    {% if slide.button_text and slide.button_url %}
+                        <a href="{{ slide.button_url }}" class="btn btn-primary hero-slider__cta">{{ slide.button_text }}</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Add Pagination -->
+        <div class="swiper-pagination"></div>
+
+        <!-- Add Navigation -->
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const swiper = new Swiper('.hero-slider', {
+        loop: true,
+        lazy: true,
+        autoplay: {
+            delay: 5000,
+            disableOnInteraction: false,
+        },
+        pagination: {
+            el: '.swiper-pagination',
+            clickable: true,
+        },
+        navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+        },
+    });
+});
+</script>
+{% endif %}
