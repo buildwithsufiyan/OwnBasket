@@ -1,0 +1,36 @@
+{% comment %}
+    File: templates/components/product_carousel.html
+    Description: Renders a reusable, responsive product carousel.
+    
+    Expects the following context:
+    - title: (str) The main heading for the section.
+    - subtitle: (str, optional) The descriptive text below the heading.
+    - products: (QuerySet) A list of product objects to display.
+    - product_card_template: (str) The resolved path to the product card template.
+{% endcomment %}
+
+<div class="section-shell">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col">
+                <h2 class="h2">{{ title }}</h2>
+                {% if subtitle %}<p class="text-secondary">{{ subtitle }}</p>{% endif %}
+            </div>
+        </div>
+
+        <div class="product-carousel-shell">
+            <div class="swiper product-carousel">
+                <div class="swiper-wrapper">
+                    {% for product in products %}
+                    <div class="swiper-slide">
+                        {% include product_card_template with product=product %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="swiper-pagination"></div>
+            <div class="swiper-button-next" aria-label="Next products"></div>
+            <div class="swiper-button-prev" aria-label="Previous products"></div>
+        </div>
+    </div>
+</div>

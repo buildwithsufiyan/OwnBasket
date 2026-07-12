@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load static theme_tags %}
+
+{% block content %}
+
+    {# Render the Hero Slider #}
+    {% render_hero %}
+
+    {# Render Featured Products Carousel #}
+    {% if featured_products %}
+        {% include "components/product_carousel.html" with title="Featured Products" subtitle="Handpicked for you" products=featured_products %}
+    {% endif %}
+
+    {# Render Shop by Categories Section #}
+    {% render_categories %}
+
+    {# Render Popular Products Carousel #}
+    {% if popular_products %}
+        {% include 'components/product_carousel.html' with title="Popular Products" subtitle="See what's trending" products=popular_products %}
+    {% endif %}
+
+    {# Render Top Brands Section #}
+    {% render_brands %}
+
+    {# Render Latest Products Carousel #}
+    {% if latest_products %}
+        {% include 'components/product_carousel.html' with title="New Arrivals" subtitle="Fresh from the collection" products=latest_products %}
+    {% endif %}
+
+{% endblock content %}

@@ -1,0 +1,102 @@
+/* ==========================================================================
+   Product Carousel Component
+   ========================================================================== */
+
+.product-carousel-shell {
+    position: relative;
+}
+
+.product-carousel {
+    padding: 0 10px; /* Give some space for box-shadow of cards */
+    margin: 0 -10px;
+}
+
+.product-carousel .swiper-slide {
+    height: auto; /* Let the content define the height */
+    display: flex;
+    flex-direction: column;
+}
+
+.product-carousel .swiper-slide > * {
+    height: 100%; /* Ensure the product card wrapper fills the slide */
+}
+
+/* --- Navigation Buttons --- */
+.product-carousel-shell .swiper-button-prev,
+.product-carousel-shell .swiper-button-next {
+    --swiper-navigation-size: 22px;
+    width: 44px;
+    height: 44px;
+    background-color: var(--owncart-bg-card, #fff);
+    border-radius: 50%;
+    box-shadow: var(--owncart-card-shadow, 0 4px 12px rgba(0, 0, 0, 0.08));
+    color: var(--owncart-text-primary, #1a1a1a);
+    transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+    top: 45%; /* Adjust vertical alignment */
+}
+
+.product-carousel-shell .swiper-button-prev:hover,
+.product-carousel-shell .swiper-button-next:hover {
+    background-color: var(--owncart-brand-primary, #ffb800);
+    color: var(--owncart-text-heading, #212529);
+    box-shadow: var(--owncart-card-hover-shadow, 0 8px 16px rgba(0, 0, 0, 0.1));
+}
+
+.product-carousel-shell .swiper-button-prev {
+    left: -15px;
+}
+
+.product-carousel-shell .swiper-button-next {
+    right: -15px;
+}
+
+.product-carousel-shell .swiper-button-disabled {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.5);
+}
+
+/* --- Pagination Dots --- */
+.product-carousel-shell .swiper-pagination {
+    position: static; /* Place it below the slider */
+    margin-top: 1.5rem;
+}
+
+.product-carousel-shell .swiper-pagination-bullet {
+    background-color: var(--owncart-border-card, #eaecf0);
+    opacity: 1;
+    width: 8px;
+    height: 8px;
+    transition: all 0.3s ease;
+}
+
+.product-carousel-shell .swiper-pagination-bullet-active {
+    background-color: var(--owncart-brand-primary, #ffb800);
+    width: 20px;
+    border-radius: 5px;
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 767.98px) {
+    .product-carousel-shell .swiper-button-prev,
+    .product-carousel-shell .swiper-button-next {
+        display: none; /* Hide arrows on mobile for a cleaner touch interface */
+    }
+
+    .product-carousel {
+        padding: 0;
+        margin: 0;
+    }
+}
+
+@media (min-width: 768px) {
+    .product-carousel-shell .swiper-pagination {
+        display: none; /* Hide pagination on larger screens where arrows are present */
+    }
+}
+
+/* Prevent layout shift while swiper initializes */
+.product-carousel:not(.swiper-initialized) .swiper-wrapper {
+    display: flex;
+    overflow-x: auto;
+}

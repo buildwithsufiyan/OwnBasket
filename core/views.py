@@ -145,7 +145,28 @@ def home(request):
         .order_by("display_order")
     )
 
-    # This is for backward compatibility with templates that might still use the old hero_section
+    # ==========================================
+    # Product Carousel Data
+    # ==========================================
+
+    # Featured Products
+    featured_products = _priced_products(
+        _home_section_queryset().filter(featured_product=True)
+    )
+
+    # Popular Products (Most Viewed)
+    popular_products = _priced_products(
+        _home_section_queryset().order_by("-total_views")
+    )
+
+    # Latest Products
+    latest_products = _priced_products(_home_section_queryset().order_by("-created_at"))
+
+    # Best Rated Products
+    best_rated_products = _priced_products(_home_section_queryset().order_by("-rating"))
+
+    # This is for backward compatibility with templates
+    # that might still use the old hero_section
     if not any(s.section_type == "hero" for s in homepage_dynamic_sections):
         hero_section = None
 
@@ -164,7 +185,13 @@ def home(request):
         "home_page_url": reverse("home"),
         "homepage_dynamic_sections": homepage_dynamic_sections,
         "hero_section": hero_section,
+        # Product Carousel
+        "featured_products": featured_products,
+        "popular_products": popular_products,
+        "latest_products": latest_products,
+        "best_rated_products": best_rated_products,
     }
+
     return render(request, "core/home.html", context)
 
 
