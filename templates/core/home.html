@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load humanize static %}
+{% load humanize static carousel_tags %}
 
 {% block extra_head %}
 {{ block.super }}
@@ -10,7 +10,7 @@
 {% block content %}
 {% url 'home' as home_page_url %}
 
-<section class="homepage-carousel-section">
+{% comment %}<section class="homepage-carousel-section">
     <div class="container">
         <div class="homepage-carousel-shell" id="homepageCarousel">
             <div class="homepage-carousel-track">
@@ -138,7 +138,7 @@ document.addEventListener('DOMContentLoaded', function () {
     updateCarousel();
     startAutoplay();
 });
-</script>
+</script>{% endcomment %}
 
 <style>
 .homepage-hero {
@@ -305,6 +305,7 @@ document.addEventListener('DOMContentLoaded', function () {
 }
 </style>
 
+{% if hero_section or banner_carousels %}
 <section class="homepage-hero" data-inline-style="background-color: {{ homepage_settings.hero_background_color|default:'#f3f4f6' }};">
     <div class="container position-relative">
         {% if hero_section %}
@@ -335,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         {% if slide.enable_overlay %}<div class="hero-layout-overlay-layer" data-inline-style="background-color:{{ slide.background_overlay_color }}; opacity:{{ slide.background_overlay_opacity }};"></div>{% endif %}
                         <div class="hero-layout-full-content">
                             {% if slide.show_badge and slide.badge_text %}<span class="hero-badge {{ slide.badge_animation_class }}" data-inline-style="font-family:'{{ slide.badge_font_family }}', sans-serif; font-size:{{ slide.badge_font_size }}; font-weight:{{ slide.badge_font_weight }}; color:{{ slide.badge_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.badge_text }}</span>{% endif %}
-                            {% if slide.show_heading %}<h1 class="hero-heading {{ slide.heading_animation_class }}" data-inline-style="font-family:'{{ slide.heading_font_family }}', sans-serif; font-size:{{ slide.heading_font_size }}; font-weight:{{ slide.heading_font_weight }}; color:{{ slide.heading_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.heading|default:"UPCOMING SOON" }}</h1>{% endif %}
+                            {% if slide.show_heading and slide.heading %}<h1 class="hero-heading {{ slide.heading_animation_class }}" data-inline-style="font-family:'{{ slide.heading_font_family }}', sans-serif; font-size:{{ slide.heading_font_size }}; font-weight:{{ slide.heading_font_weight }}; color:{{ slide.heading_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.heading }}</h1>{% endif %}
                             {% if slide.show_description and slide.description %}<p class="hero-subheading {{ slide.description_animation_class }}" data-inline-style="font-family:'{{ slide.description_font_family }}', sans-serif; font-size:{{ slide.description_font_size }}; font-weight:{{ slide.description_font_weight }}; color:{{ slide.description_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.description }}</p>{% endif %}
                             {% if slide.show_button and slide.button_text %}<a href="{% url 'track_banner_click' slide.id %}?next={{ slide.button_url|default:home_page_url|urlencode }}" class="btn hero-cta-btn hero-btn-{{ slide.button_variant|default:'solid' }} {{ slide.button_animation_class }}" data-inline-style="{{ slide.button_css_style }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.button_text }}</a>{% endif %}
                         </div>
@@ -350,7 +351,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         {% endif %}
                         <div class="hero-layout-overlay-content">
                             {% if slide.show_badge and slide.badge_text %}<span class="hero-badge {{ slide.badge_animation_class }}" data-inline-style="font-family:'{{ slide.badge_font_family }}', sans-serif; font-size:{{ slide.badge_font_size }}; font-weight:{{ slide.badge_font_weight }}; color:{{ slide.badge_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.badge_text }}</span>{% endif %}
-                            {% if slide.show_heading %}<h1 class="hero-heading {{ slide.heading_animation_class }}" data-inline-style="font-family:'{{ slide.heading_font_family }}', sans-serif; font-size:{{ slide.heading_font_size }}; font-weight:{{ slide.heading_font_weight }}; color:{{ slide.heading_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.heading|default:"UPCOMING SOON" }}</h1>{% endif %}
+                            {% if slide.show_heading and slide.heading %}<h1 class="hero-heading {{ slide.heading_animation_class }}" data-inline-style="font-family:'{{ slide.heading_font_family }}', sans-serif; font-size:{{ slide.heading_font_size }}; font-weight:{{ slide.heading_font_weight }}; color:{{ slide.heading_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.heading }}</h1>{% endif %}
                             {% if slide.show_description and slide.description %}<p class="hero-subheading {{ slide.description_animation_class }}" data-inline-style="font-family:'{{ slide.description_font_family }}', sans-serif; font-size:{{ slide.description_font_size }}; font-weight:{{ slide.description_font_weight }}; color:{{ slide.description_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.description }}</p>{% endif %}
                             {% if slide.show_button and slide.button_text %}<a href="{% url 'track_banner_click' slide.id %}?next={{ slide.button_url|default:home_page_url|urlencode }}" class="btn hero-cta-btn hero-btn-{{ slide.button_variant|default:'solid' }} {{ slide.button_animation_class }}" data-inline-style="{{ slide.button_css_style }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.button_text }}</a>{% endif %}
                         </div>
@@ -365,7 +366,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         {% endif %}
                         <div class="hero-layout-overlay-content">
                             {% if slide.show_badge and slide.badge_text %}<span class="hero-badge {{ slide.badge_animation_class }}" data-inline-style="font-family:'{{ slide.badge_font_family }}', sans-serif; font-size:{{ slide.badge_font_size }}; font-weight:{{ slide.badge_font_weight }}; color:{{ slide.badge_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.badge_text }}</span>{% endif %}
-                            {% if slide.show_heading %}<h1 class="hero-heading {{ slide.heading_animation_class }}" data-inline-style="font-family:'{{ slide.heading_font_family }}', sans-serif; font-size:{{ slide.heading_font_size }}; font-weight:{{ slide.heading_font_weight }}; color:{{ slide.heading_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.heading|default:"UPCOMING SOON" }}</h1>{% endif %}
+                            {% if slide.show_heading and slide.heading %}<h1 class="hero-heading {{ slide.heading_animation_class }}" data-inline-style="font-family:'{{ slide.heading_font_family }}', sans-serif; font-size:{{ slide.heading_font_size }}; font-weight:{{ slide.heading_font_weight }}; color:{{ slide.heading_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.heading }}</h1>{% endif %}
                             {% if slide.show_description and slide.description %}<p class="hero-subheading {{ slide.description_animation_class }}" data-inline-style="font-family:'{{ slide.description_font_family }}', sans-serif; font-size:{{ slide.description_font_size }}; font-weight:{{ slide.description_font_weight }}; color:{{ slide.description_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.description }}</p>{% endif %}
                             {% if slide.show_button and slide.button_text %}<a href="{% url 'track_banner_click' slide.id %}?next={{ slide.button_url|default:home_page_url|urlencode }}" class="btn hero-cta-btn hero-btn-{{ slide.button_variant|default:'solid' }} {{ slide.button_animation_class }}" data-inline-style="{{ slide.button_css_style }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.button_text }}</a>{% endif %}
                         </div>
@@ -400,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         {% if slide.enable_overlay %}<div class="hero-layout-overlay-layer" data-inline-style="background-color:{{ slide.background_overlay_color }}; opacity:{{ slide.background_overlay_opacity }};"></div>{% endif %}
                         <div class="hero-layout-center-content">
                             {% if slide.show_badge and slide.badge_text %}<span class="hero-badge {{ slide.badge_animation_class }}" data-inline-style="font-family:'{{ slide.badge_font_family }}', sans-serif; font-size:{{ slide.badge_font_size }}; font-weight:{{ slide.badge_font_weight }}; color:{{ slide.badge_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.badge_text }}</span>{% endif %}
-                            {% if slide.show_heading %}<h1 class="hero-heading {{ slide.heading_animation_class }}" data-inline-style="font-family:'{{ slide.heading_font_family }}', sans-serif; font-size:{{ slide.heading_font_size }}; font-weight:{{ slide.heading_font_weight }}; color:{{ slide.heading_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.heading|default:"UPCOMING SOON" }}</h1>{% endif %}
+                            {% if slide.show_heading and slide.heading %}<h1 class="hero-heading {{ slide.heading_animation_class }}" data-inline-style="font-family:'{{ slide.heading_font_family }}', sans-serif; font-size:{{ slide.heading_font_size }}; font-weight:{{ slide.heading_font_weight }}; color:{{ slide.heading_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.heading }}</h1>{% endif %}
                             {% if slide.show_description and slide.description %}<p class="hero-subheading {{ slide.description_animation_class }}" data-inline-style="font-family:'{{ slide.description_font_family }}', sans-serif; font-size:{{ slide.description_font_size }}; font-weight:{{ slide.description_font_weight }}; color:{{ slide.description_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.description }}</p>{% endif %}
                             {% if slide.show_button and slide.button_text %}<a href="{% url 'track_banner_click' slide.id %}?next={{ slide.button_url|default:home_page_url|urlencode }}" class="btn hero-cta-btn hero-btn-{{ slide.button_variant|default:'solid' }} {{ slide.button_animation_class }}" data-inline-style="{{ slide.button_css_style }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.button_text }}</a>{% endif %}
                         </div>
@@ -413,10 +414,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     {% else %}
                     <div class="row align-items-center homepage-hero-inner g-4 hero-layout-{{ layout }}" data-inline-style="{{ slide.background_css_style }}">
                         {% if slide.enable_overlay %}<div class="hero-layout-overlay-layer" data-inline-style="background-color:{{ slide.background_overlay_color }}; opacity:{{ slide.background_overlay_opacity }};"></div>{% endif %}
-                        {% if slide.show_heading or slide.show_description or slide.show_button or slide.show_badge %}
+                        {% if slide.heading or slide.description or slide.button_text or slide.badge_text %}
                         <div class="col-lg-6 hero-text-column{% if layout == 'layout_2' %} order-lg-2{% else %} order-lg-1{% endif %}">
                             {% if slide.show_badge and slide.badge_text %}<span class="hero-badge {{ slide.badge_animation_class }}" data-inline-style="font-family:'{{ slide.badge_font_family }}', sans-serif; font-size:{{ slide.badge_font_size }}; font-weight:{{ slide.badge_font_weight }}; color:{{ slide.badge_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.badge_text }}</span>{% endif %}
-                            {% if slide.show_heading %}<h1 class="hero-heading {{ slide.heading_animation_class }}" data-inline-style="font-family:'{{ slide.heading_font_family }}', sans-serif; font-size:{{ slide.heading_font_size }}; font-weight:{{ slide.heading_font_weight }}; color:{{ slide.heading_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.heading|default:"UPCOMING SOON" }}</h1>{% endif %}
+                            {% if slide.show_heading and slide.heading %}<h1 class="hero-heading {{ slide.heading_animation_class }}" data-inline-style="font-family:'{{ slide.heading_font_family }}', sans-serif; font-size:{{ slide.heading_font_size }}; font-weight:{{ slide.heading_font_weight }}; color:{{ slide.heading_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.heading }}</h1>{% endif %}
                             {% if slide.show_description and slide.description %}<p class="hero-subheading {{ slide.description_animation_class }}" data-inline-style="font-family:'{{ slide.description_font_family }}', sans-serif; font-size:{{ slide.description_font_size }}; font-weight:{{ slide.description_font_weight }}; color:{{ slide.description_text_color }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.description }}</p>{% endif %}
                             {% if slide.show_button and slide.button_text %}<a href="{% url 'track_banner_click' slide.id %}?next={{ slide.button_url|default:home_page_url|urlencode }}" class="btn hero-cta-btn hero-btn-{{ slide.button_variant|default:'solid' }} {{ slide.button_animation_class }}" data-inline-style="{{ slide.button_css_style }}; --hero-anim-duration:{{ slide.animation_duration }}ms; --hero-anim-delay:{{ slide.animation_delay }}ms;">{{ slide.button_text }}</a>{% endif %}
                         </div>
@@ -430,26 +431,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     {% endif %}
                 </article>
                 {% endwith %}
-                {% empty %}
-                <article class="hero-carousel-slide active">
-                    <div class="row align-items-center homepage-hero-inner g-4 hero-layout-right">
-                        <div class="col-lg-6 hero-text-column order-lg-1 text-center text-lg-start d-flex flex-column justify-content-center justify-content-lg-start">
-                            <span class="hero-badge">{{ homepage_settings.hero_badge_text|default:"UP TO 50% OFF" }}</span>
-                            <h1 class="hero-heading">{{ homepage_settings.hero_heading|default:"UPCOMING SOON" }}</h1>
-                            <p class="hero-subheading">{{ homepage_settings.hero_subheading|default:"Your One-Stop Online Shopping Destination" }}</p>
-                            <a href="{{ homepage_settings.resolved_hero_button_link|default:home_page_url }}" class="btn hero-cta-btn">{{ homepage_settings.hero_button_text|default:"Stay Tuned!" }}</a>
-                        </div>
-                        <div class="col-lg-6 hero-image-column order-lg-2 image-right d-flex justify-content-center justify-content-lg-start">
-                            {% if homepage_settings.hero_image %}
-                            <img src="{{ homepage_settings.hero_image.url }}" alt="{{ homepage_settings.hero_heading|default:'Homepage Hero' }}" class="hero-visual-image">
-                            {% else %}
-                            <div class="hero-visual-placeholder">
-                                <i class="bi bi-bag-heart"></i>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </article>
                 {% endfor %}
             </div>
 
@@ -471,6 +452,7 @@ document.addEventListener('DOMContentLoaded', function () {
         {% endif %}
     </div>
 </section>
+{% endif %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -607,7 +589,7 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
 </section>
 
-{% if homepage_settings.show_top_brands %}
+{% if homepage_settings.show_top_brands and top_brands %}
 <section class="homepage-top-brands-section">
     <div class="container">
         <div class="homepage-section-head">
@@ -625,15 +607,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     {% endif %}
                 </div>
             </a>
-            {% empty %}
-            <div class="text-muted small">No active brands available.</div>
             {% endfor %}
         </div>
     </div>
 </section>
 {% endif %}
 
-{% if homepage_settings.show_categories %}
+{% if homepage_settings.show_categories and homepage_categories %}
 <section class="homepage-categories-section">
     <div class="container">
         <div class="homepage-section-head">
@@ -650,8 +630,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 {% endif %}
                 <span class="homepage-brand-name homepage-category-name">{{ category.name }}</span>
             </a>
-            {% empty %}
-            <div class="text-muted small">No active categories available.</div>
             {% endfor %}
         </div>
     </div>
@@ -664,8 +642,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 {% for section in homepage_dynamic_sections %}
     {% with section_instance=section.get_section_instance %}
-        {% if section.section_type == 'product_carousel' and section_instance %}
-            {% include "core/product_carousel_section.html" with section_instance=section_instance %}
+        {% if section.section_type == 'product_carousel' and section_instance and section_instance.products %}
+            {% render_product_carousel section_instance %}
         {% endif %}
     {% endwith %}
 {% endfor %}

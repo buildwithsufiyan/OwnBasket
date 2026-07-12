@@ -12,10 +12,7 @@ from django.conf import settings
 # Configure a file-based logger
 log_file_path = (
     Path(settings.BASE_DIR)
-    / ".."
-    / ".gemini"
-    / "tmp"
-    / "my-ecommerce"
+    / ".tmp"
     / "theme_debug.log"
 )
 log_file_path.parent.mkdir(parents=True, exist_ok=True)

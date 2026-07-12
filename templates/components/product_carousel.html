@@ -1,0 +1,58 @@
+{% load humanize %}
+<section class="pc-section{% if not section.show_on_mobile %} pc-hide-mobile{% endif %}{% if not section.show_on_desktop %} pc-hide-desktop{% endif %}" aria-labelledby="carousel-heading-{{ section.pk }}">
+    <div class="container pc-container">
+        {% if section.title or section.subtitle %}
+            <header class="pc-header">
+                <div class="pc-heading-group">
+                    {% if section.title %}<h2 id="carousel-heading-{{ section.pk }}">{{ section.title }}</h2>{% endif %}
+                    {% if section.title %}<span class="pc-heading-rule" aria-hidden="true"></span>{% endif %}
+                    {% if section.subtitle %}<p class="pc-subtitle">{{ section.subtitle }}</p>{% endif %}
+                </div>
+                {% if section.show_view_all and section.view_all_url %}
+                    <a class="pc-view-all" href="{{ section.view_all_url }}" aria-label="View all products in this section">{{ section.view_all_text|default:"View all" }} <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+                {% endif %}
+            </header>
+        {% endif %}
+
+        <div class="pc-shell">
+            <div class="swiper pc-swiper" data-product-carousel data-autoplay="{{ section.autoplay|yesno:'true,false' }}" data-loop="{{ section.loop|yesno:'true,false' }}" data-speed="{{ section.autoplay_speed }}" data-navigation="{{ section.show_navigation|yesno:'true,false' }}" data-pagination="{{ section.show_pagination|yesno:'true,false' }}">
+                <div class="swiper-wrapper">
+                    {% for product in section.products %}
+                        <div class="swiper-slide">
+                            <article class="pc-card">
+                                <div class="pc-media">
+                                    <a href="{{ product.get_absolute_url }}" aria-label="View {{ product.name }}">
+                                        {% if product.image %}
+                                            <img src="{{ product.image.url }}" alt="{{ product.name }}" width="480" height="480" {% if forloop.counter > 4 %}loading="lazy"{% else %}fetchpriority="high"{% endif %} decoding="async">
+                                        {% else %}
+                                            <span class="pc-image-fallback" aria-label="Product image unavailable"><i class="bi bi-image" aria-hidden="true"></i></span>
+                                        {% endif %}
+                                    </a>
+                                    {% if product.has_display_discount %}<span class="pc-badge">Save {{ product.display_discount_percent }}%</span>{% elif product.active_badges %}<span class="pc-badge">{{ product.active_badges.0 }}</span>{% endif %}
+                                </div>
+                                <div class="pc-body">
+                                    <p class="pc-brand">{{ product.brand.name }}</p>
+                                    <h3><a href="{{ product.get_absolute_url }}">{{ product.name }}</a></h3>
+                                    {% if product.reviews_count %}
+                                        <p class="pc-rating"><span aria-hidden="true"><i class="bi bi-star-fill"></i></span><span class="visually-hidden">Rated {{ product.rating }} out of 5.</span>{{ product.rating }} <span>({{ product.reviews_count }})</span></p>
+                                    {% else %}<p class="pc-rating pc-no-rating">No reviews yet</p>{% endif %}
+                                    <p class="pc-price">{% if product.display_compare_price %}<del>₹{{ product.display_compare_price|intcomma }}</del>{% endif %}<strong>₹{{ product.display_price|intcomma }}</strong></p>
+                                    {% if product.out_of_stock %}
+                                        <button class="pc-cart" type="button" disabled>Out of stock</button>
+                                    {% else %}
+                                        <form method="post" action="{% url 'add_to_cart' product.id %}">{% csrf_token %}<button class="pc-cart" type="submit"><i class="bi bi-bag-plus" aria-hidden="true"></i> Add to cart</button></form>
+                                    {% endif %}
+                                </div>
+                            </article>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% if section.show_navigation %}
+                <button class="pc-prev" type="button" aria-label="Show previous products"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
+                <button class="pc-next" type="button" aria-label="Show next products"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+            {% endif %}
+            {% if section.show_pagination %}<div class="pc-pagination" aria-label="Carousel pagination"></div>{% endif %}
+        </div>
+    </div>
+</section>

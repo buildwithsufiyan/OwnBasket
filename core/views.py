@@ -14,6 +14,7 @@ from banners.models import (
     HomepageFeature,
 )
 from site_sections.models import HeroSection, HomepageSection
+from site_sections.services import get_carousel_products
 
 DEFAULT_HOME_FEATURES = [
     {
@@ -144,6 +145,12 @@ def home(request):
         .select_related("herosection")
         .order_by("display_order")
     )
+    homepage_dynamic_sections = list(homepage_dynamic_sections)
+    for section in homepage_dynamic_sections:
+        if section.section_type == "product_carousel":
+            carousel = section.get_section_instance()
+            if carousel:
+                carousel.products = get_carousel_products(carousel)
 
     # ==========================================
     # Product Carousel Data
