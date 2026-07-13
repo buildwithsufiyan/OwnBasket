@@ -1,0 +1,20 @@
+{% load humanize %}
+<article class="cart-item" data-cart-item>
+  <a class="cart-item-media" href="{% url 'products:product_detail' item.product.slug %}">{% if item.product.image %}<img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" loading="lazy" decoding="async" width="128" height="128" data-cart-image>{% else %}<span><i class="bi bi-image"></i><span class="visually-hidden">No product image</span></span>{% endif %}</a>
+  <div class="cart-item-main">
+    <span class="cart-brand">{{ item.product.brand.name }}</span>
+    <h3><a href="{% url 'products:product_detail' item.product.slug %}">{{ item.product.name }}</a></h3>
+    <div class="cart-item-meta">{% if item.size %}<span>Size <b>{{ item.size }}</b></span>{% endif %}{% if item.color %}<span>Color <b>{{ item.color }}</b></span>{% endif %}{% if item.product.sku %}<span>SKU <b>{{ item.product.sku }}</b></span>{% endif %}</div>
+    <div class="cart-stock {% if item.product.out_of_stock %}is-out{% endif %}"><i class="bi {% if item.product.out_of_stock %}bi-x-circle-fill{% else %}bi-check-circle-fill{% endif %}"></i>{% if item.product.out_of_stock %}Out of stock{% elif item.product.stock <= item.product.low_stock_alert %}Only {{ item.product.stock }} left in stock{% else %}In stock{% endif %}</div>
+    {% if item.product.delivery_text %}<p class="cart-delivery"><i class="bi bi-truck"></i>{{ item.product.delivery_text }}</p>{% endif %}
+  </div>
+  <div class="cart-unit-price"><span class="cart-mobile-label">Price</span><strong>₹{{ item.line_pricing.unit_final_price|intcomma }}</strong>{% if item.line_pricing.unit_original_price > item.line_pricing.unit_final_price %}<del>₹{{ item.line_pricing.unit_original_price|intcomma }}</del>{% if item.line_pricing.pricing.badge_text %}<em>{{ item.line_pricing.pricing.badge_text }}</em>{% endif %}{% endif %}</div>
+  <div class="cart-item-controls">
+    <span class="cart-mobile-label">Quantity</span>
+    <div class="cart-quantity" role="group" aria-label="Quantity for {{ item.product.name }}">
+      <a href="{% url 'decrease_quantity' item.id %}" aria-label="Decrease {{ item.product.name }} quantity" data-cart-action data-quantity-action {% if item.quantity <= 1 %}aria-disabled="true" tabindex="-1"{% endif %}><i class="bi bi-dash"></i></a><output aria-live="polite">{{ item.quantity }}</output><a href="{% url 'increase_quantity' item.id %}" aria-label="Increase {{ item.product.name }} quantity" data-cart-action data-quantity-action {% if item.product.stock and item.quantity >= item.product.stock %}aria-disabled="true" tabindex="-1"{% endif %}><i class="bi bi-plus"></i></a>
+    </div>
+  </div>
+  <div class="cart-line-total"><span class="cart-mobile-label">Item total</span><strong>₹{{ item.line_pricing.line_final_total|intcomma }}</strong></div>
+  <a class="cart-remove" href="{% url 'remove_from_cart' item.id %}" aria-label="Remove {{ item.product.name }} from cart" data-remove-action><i class="bi bi-trash3"></i><span>Remove</span></a>
+</article>

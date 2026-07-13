@@ -1,0 +1,14 @@
+{% load humanize %}
+<aside class="cart-summary" aria-labelledby="summary-title">
+  <div class="cart-summary-card">
+    <h2 id="summary-title">Order summary</h2>
+    <dl class="cart-totals"><div><dt>Items subtotal</dt><dd>₹{{ summary.subtotal_original|intcomma }}</dd></div>{% if summary.item_discount_total > 0 %}<div class="is-saving"><dt>Product discount</dt><dd>−₹{{ summary.item_discount_total|intcomma }}</dd></div>{% endif %}{% if summary.buy_x_get_y_discount > 0 %}<div class="is-saving"><dt>Buy X Get Y</dt><dd>−₹{{ summary.buy_x_get_y_discount|intcomma }}</dd></div>{% endif %}{% if summary.coupon_discount > 0 %}<div class="is-saving"><dt>Coupon discount</dt><dd>−₹{{ summary.coupon_discount|intcomma }}</dd></div>{% endif %}<div><dt>Shipping</dt><dd class="{% if summary.shipping_amount == 0 %}is-free{% endif %}">{% if summary.shipping_amount == 0 %}FREE{% else %}₹{{ summary.shipping_amount|intcomma }}{% endif %}</dd></div></dl>
+    <section class="cart-coupon" aria-labelledby="coupon-title"><div class="cart-coupon-title"><i class="bi bi-ticket-perforated"></i><h3 id="coupon-title">Have a coupon?</h3></div><form method="post" action="{% url 'apply_coupon' %}" data-submit-form>{% csrf_token %}<label class="visually-hidden" for="couponCode">Coupon code</label><input id="couponCode" name="code" value="{{ coupon_code }}" placeholder="Enter coupon code" autocomplete="off" required><button type="submit">Apply</button></form>{% if summary.applied_coupon %}<div class="cart-coupon-active"><span><i class="bi bi-check-circle-fill"></i>{{ summary.applied_coupon.code }} applied</span><a href="{% url 'remove_coupon' %}" data-cart-action>Remove</a></div>{% endif %}</section>
+    {% if summary.buy_x_get_y_messages %}<div class="cart-offers">{% for offer_message in summary.buy_x_get_y_messages %}<p><i class="bi bi-gift"></i>{{ offer_message }}</p>{% endfor %}</div>{% endif %}
+    <div class="cart-grand-total"><span>Total</span><strong>₹{{ summary.grand_total|intcomma }}</strong></div>
+    {% if summary.total_discount > 0 %}<p class="cart-savings"><i class="bi bi-stars"></i>You save ₹{{ summary.total_discount|intcomma }} on this order</p>{% endif %}
+    <a class="cart-checkout" href="{% url 'checkout' %}" data-checkout><i class="bi bi-lock-fill"></i>Proceed to Checkout<i class="bi bi-arrow-right"></i></a>
+    <p class="cart-secure-note"><i class="bi bi-shield-check"></i>Your payment information is encrypted and secure.</p>
+    <div class="cart-payment-types" aria-label="Accepted payment methods"><span>UPI</span><span>Cards</span><span>Net Banking</span>{% if items.0.product.cash_on_delivery %}<span>COD</span>{% endif %}</div>
+  </div>
+</aside>
