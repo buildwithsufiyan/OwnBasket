@@ -17,6 +17,7 @@ from .models import (
     Brand,
     BrandHeroBanner,
     Product,
+    ProductListingSettings,
     ProductVariant,
     ProductImage,
     ProductFeature,
@@ -31,6 +32,15 @@ from .models import (
     FreeShippingOffer,
     ProductDiscount,
 )
+
+
+@admin.register(ProductListingSettings)
+class ProductListingSettingsAdmin(admin.ModelAdmin):
+    list_display = ("products_per_page", "default_sort", "default_view", "enable_filters", "enable_sidebar")
+    fieldsets = (("Listing", {"fields": ("products_per_page", "default_sort", "default_view")}), ("Controls", {"fields": ("enable_filters", "enable_view_toggle", "enable_sidebar", "enable_sticky_filters")}))
+
+    def has_add_permission(self, request):
+        return not ProductListingSettings.objects.exists()
 
 
 @admin.register(Category)

@@ -10,7 +10,8 @@ from django.utils import timezone
 from django.utils.html import conditional_escape
 from django.utils.safestring import mark_safe
 
-from .models import Brand, BrandHeroBanner, Category, Product, SubCategory
+from .models import Brand, BrandHeroBanner, Category, Product, ProductListingSettings, SubCategory
+from .listing import SORT_OPTIONS, build_product_listing
 from .pricing import attach_pricing_to_products
 
 
@@ -181,6 +182,25 @@ def category_list(request):
             'categories': categories,
         }
     )
+
+
+def product_list(request):
+    settings = ProductListingSettings.get_solo()
+    queryset, query, selected_sort, filter_querystring = build_product_listing(request, settings.default_sort)
+    paginator = Paginator(queryset, settings.products_per_page)
+    page_obj = paginator.get_page(request.GET.get("page"))
+    products = attach_pricing_to_products(list(page_obj.object_list))
+    page_obj.object_list = products
+    return render(request, "products/product_list.html", {
+        "products": products, "page_obj": page_obj, "paginator": paginator,
+        "page_range": paginator.get_elided_page_range(page_obj.number), "total_products": paginator.count,
+        "categories": Category.objects.filter(is_active=True).order_by("sort_order", "name", "id"),
+        "brands": Brand.objects.filter(is_active=True).order_by("display_order", "name", "id"),
+        "query": query, "selected_sort": selected_sort, "sort_options": SORT_OPTIONS,
+        "filter_querystring": filter_querystring, "listing_settings": settings,
+        "canonical_url": request.build_absolute_uri(request.path),
+        "selected_brand_ids": request.GET.getlist("brand"),
+    })
 
 
 def category_detail(request, slug):

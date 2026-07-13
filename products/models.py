@@ -518,6 +518,34 @@ class Product(models.Model):
         return badges
 
 
+class ProductListingSettings(models.Model):
+    """Singleton controls for the public shop listing page."""
+    products_per_page = models.PositiveSmallIntegerField(default=24)
+    default_sort = models.CharField(max_length=20, default="default")
+    default_view = models.CharField(
+        max_length=10, choices=(("grid", "Grid"), ("list", "List")), default="grid"
+    )
+    enable_filters = models.BooleanField(default=True)
+    enable_view_toggle = models.BooleanField(default=True)
+    enable_sidebar = models.BooleanField(default=True)
+    enable_sticky_filters = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Product listing settings"
+        verbose_name_plural = "Product listing settings"
+
+    def clean(self):
+        super().clean()
+        if not 8 <= self.products_per_page <= 96:
+            raise ValidationError("Products per page must be between 8 and 96.")
+        if ProductListingSettings.objects.exclude(pk=self.pk).exists():
+            raise ValidationError("Only one product listing settings record is allowed.")
+
+    @classmethod
+    def get_solo(cls):
+        return cls.objects.order_by("pk").first() or cls()
+
+
 class ProductVariant(models.Model):
     product = models.ForeignKey(
         Product,
