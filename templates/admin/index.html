@@ -21,6 +21,17 @@
     box-shadow: var(--shadow-lg);
   }
 
+  .dashboard-stat-card:focus-within,
+  .dashboard-list-item:focus-within {
+    outline: 3px solid rgba(255, 184, 0, 0.45);
+    outline-offset: 2px;
+  }
+
+  .dashboard-stat-card a {
+    color: inherit;
+    text-decoration: none;
+  }
+
   .dashboard-stat-label {
     display: block;
     font-size: 13px;
@@ -176,6 +187,21 @@
       grid-template-columns: 1fr;
     }
   }
+
+  @media (max-width: 680px) {
+    .dashboard-stats-grid { grid-template-columns: 1fr; gap: 12px; }
+    .dashboard-stat-card, .dashboard-panel { padding: 16px; }
+    .dashboard-stat-value { font-size: 30px; }
+    .dashboard-chart-row {
+      grid-template-columns: 54px minmax(80px, 1fr) 64px;
+      gap: 8px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dashboard-list-item { transition: none; }
+    .dashboard-list-item:hover { transform: none; }
+  }
 </style>
 {% endblock %}
 
@@ -202,6 +228,13 @@
       <span class="dashboard-stat-label">Today's Orders</span>
       <div class="dashboard-stat-value">{{ dashboard_stats.today_orders }}</div>
       <p class="dashboard-stat-note">Aaj ke placed orders.</p>
+    </div>
+    <div class="dashboard-stat-card">
+      <a href="{% url 'admin:orders_order_changelist' %}?status__in=Pending%2CProcessing" aria-label="View pending and processing orders">
+        <span class="dashboard-stat-label">Open Orders</span>
+        <div class="dashboard-stat-value">{{ dashboard_stats.open_orders }}</div>
+        <p class="dashboard-stat-note">Pending and processing orders requiring attention.</p>
+      </a>
     </div>
     <div class="dashboard-stat-card">
       <span class="dashboard-stat-label">Today's Revenue</span>
@@ -232,12 +265,12 @@
 
   <div class="dashboard-content-grid">
     <div class="dashboard-panel">
-      <h3>Sales Analytics</h3>
-      <div class="dashboard-chart-stack">
+      <h2>Sales Analytics</h2>
+      <div class="dashboard-chart-stack" role="img" aria-label="Revenue for the last seven days">
         {% for row in sales_analytics %}
         <div class="dashboard-chart-row">
           <span class="dashboard-chart-label">{{ row.label }}</span>
-          <div class="dashboard-chart-bar" style="width:{% if row.revenue %}{{ row.revenue|floatformat:0 }}{% else %}2{% endif %}%; max-width:100%;"></div>
+          <div class="dashboard-chart-bar" style="width:{{ row.bar_percent }}%; max-width:100%;" title="{{ row.bar_percent }}% of the highest revenue day"></div>
           <span class="dashboard-chart-value">Rs. {{ row.revenue|floatformat:0 }}</span>
         </div>
         {% endfor %}
@@ -245,13 +278,13 @@
     </div>
 
     <div class="dashboard-panel">
-      <h3>Best Selling Products</h3>
+      <h2>Best Selling Products</h2>
       <div class="dashboard-list">
         {% for product in best_selling_products %}
         <div class="dashboard-list-item">
           <div>
-            <div class="dashboard-list-title">{{ product.name }}</div>
-            <div class="dashboard-list-meta">{{ product.category.name }} · {{ product.brand.name }}</div>
+            <div class="dashboard-list-title"><a href="{% url 'admin:products_product_change' product.pk %}">{{ product.name }}</a></div>
+            <div class="dashboard-list-meta">{{ product.category.name }} &middot; {{ product.brand.name }}</div>
           </div>
           <span class="dashboard-pill">{{ product.total_sold }} sold</span>
         </div>
@@ -264,7 +297,7 @@
     </div>
 
     <div class="dashboard-panel">
-      <h3>Top Categories</h3>
+      <h2>Top Categories</h2>
       <div class="dashboard-list">
         {% for row in top_categories %}
         <div class="dashboard-list-item">
@@ -283,12 +316,12 @@
     </div>
 
     <div class="dashboard-panel">
-      <h3>Recent Orders</h3>
+      <h2>Recent Orders</h2>
       <div class="dashboard-list">
         {% for order in recent_orders %}
         <div class="dashboard-list-item">
           <div>
-            <div class="dashboard-list-title">#{{ order.id }} · {{ order.full_name }}</div>
+            <div class="dashboard-list-title"><a href="{% url 'admin:orders_order_change' order.pk %}">#{{ order.id }} &middot; {{ order.full_name }}</a></div>
             <div class="dashboard-list-meta">{{ order.created_at|date:"d M Y, h:i A" }}</div>
           </div>
           <span class="dashboard-pill">Rs. {{ order.total_price|floatformat:0 }}</span>

@@ -1,6 +1,8 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from .models import Cart, CartItem
 from products.models import Product
@@ -25,6 +27,17 @@ def _clear_coupon_code(request):
 
 def _get_coupon_code(request):
     return request.session.get(_get_coupon_session_key(), '')
+
+
+def _coupon_return_url(request):
+    return_to = request.POST.get('return_to') or request.GET.get('return_to')
+    if return_to and url_has_allowed_host_and_scheme(
+        return_to,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return return_to
+    return reverse('cart_detail')
 
 
 @login_required(login_url='login')
@@ -121,7 +134,7 @@ def apply_coupon(request):
     if not code:
         _clear_coupon_code(request)
         messages.error(request, 'Please enter a coupon code.')
-        return redirect('cart_detail')
+        return redirect(_coupon_return_url(request))
 
     summary = build_cart_summary(items, user=request.user, coupon_code=code)
     if summary.applied_coupon:
@@ -144,11 +157,11 @@ def apply_coupon(request):
             ),
         )
         messages.error(request, message)
-    return redirect('cart_detail')
+    return redirect(_coupon_return_url(request))
 
 
 @login_required(login_url='login')
 def remove_coupon(request):
     _clear_coupon_code(request)
     messages.success(request, 'Coupon removed successfully.')
-    return redirect('cart_detail')
+    return redirect(_coupon_return_url(request))

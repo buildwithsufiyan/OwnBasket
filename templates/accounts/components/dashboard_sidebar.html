@@ -1,0 +1,11 @@
+<aside class="account-sidebar" id="account-sidebar">
+  <div class="account-user"><span class="account-avatar" aria-hidden="true">{{ request.user.first_name|default:request.user.username|first|upper }}</span><div><strong>{{ request.user.get_full_name|default:request.user.username }}</strong><small>{{ request.user.email|default:"OwnBasket member" }}</small></div></div>
+  <nav aria-label="My account navigation">
+    <a href="{% url 'account_dashboard' %}" {% if account_section == 'dashboard' %}aria-current="page"{% endif %}><i class="bi bi-grid"></i>Overview</a>
+    <a href="{% url 'my_orders' %}" {% if account_section == 'orders' %}aria-current="page"{% endif %}><i class="bi bi-bag"></i>Orders</a>
+    <a href="{% url 'wishlist:wishlist' %}" {% if account_section == 'wishlist' %}aria-current="page"{% endif %}><i class="bi bi-heart"></i>Wishlist</a>
+    <a href="{% url 'account_profile' %}" {% if account_section == 'profile' %}aria-current="page"{% endif %}><i class="bi bi-person"></i>Profile</a>
+    <a href="{% url 'account_settings' %}" {% if account_section == 'settings' %}aria-current="page"{% endif %}><i class="bi bi-gear"></i>Settings</a>
+  </nav>
+  <a class="account-logout" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i>Sign out</a>
+</aside>

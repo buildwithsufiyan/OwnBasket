@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.utils.html import format_html
 
 from .forms import ManagedFontAdminForm
@@ -77,6 +77,9 @@ class ManagedFontAdmin(admin.ModelAdmin):
     list_per_page = 20
     readonly_fields = ('font_preview_panel', 'created_at', 'updated_at')
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('packs')
+
     fieldsets = (
         ('Font Library', {
             'fields': (
@@ -141,10 +144,11 @@ class ManagedFontAdmin(admin.ModelAdmin):
     file_type.short_description = 'File'
 
     def pack_summary(self, obj):
-        pack_names = list(obj.packs.order_by('group', 'sort_order', 'name').values_list('name', flat=True)[:4])
+        packs = sorted(obj.packs.all(), key=lambda pack: (pack.group, pack.sort_order, pack.name, pack.pk))
+        pack_names = [pack.name for pack in packs[:4]]
         if not pack_names:
             return 'No packs'
-        suffix = ' +' if obj.packs.count() > 4 else ''
+        suffix = ' +' if len(packs) > 4 else ''
         return ', '.join(pack_names) + suffix
 
     pack_summary.short_description = 'Packs'
@@ -197,6 +201,9 @@ class ManagedFontPackAdmin(admin.ModelAdmin):
     list_per_page = 20
     prepopulated_fields = {'slug': ('name',)}
     readonly_fields = ('created_at', 'updated_at')
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(_font_count=Count('fonts'))
     fieldsets = (
         ('Pack Details', {
             'fields': (
@@ -216,6 +223,6 @@ class ManagedFontPackAdmin(admin.ModelAdmin):
     )
 
     def font_count(self, obj):
-        return obj.fonts.count()
+        return getattr(obj, '_font_count', obj.fonts.count())
 
     font_count.short_description = 'Fonts'

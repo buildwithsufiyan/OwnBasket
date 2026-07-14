@@ -1,0 +1,16 @@
+<div class="summary-card">
+  <h2>Order summary</h2>
+  <div class="summary-line"><span>Subtotal ({{ summary.item_count }} item{{ summary.item_count|pluralize }})</span><strong>₹{{ summary.subtotal_original }}</strong></div>
+  {% if summary.total_discount > 0 %}<div class="summary-line saving"><span>Total savings</span><strong>−₹{{ summary.total_discount }}</strong></div>{% endif %}
+  <div class="summary-line"><span>Shipping</span><strong>{% if summary.shipping_amount == 0 %}<span class="free">Free</span>{% else %}₹{{ summary.shipping_amount }}{% endif %}</strong></div>
+  {% if summary.applied_coupon %}<div class="coupon-applied"><span><i class="bi bi-tag"></i> {{ summary.applied_coupon.code }}</span><a href="{% url 'remove_coupon' %}?return_to={% url 'checkout' %}" aria-label="Remove coupon {{ summary.applied_coupon.code }}">Remove</a></div>{% else %}
+  <div class="coupon-box">
+    <label for="coupon-code">Have a coupon?</label>
+    <div><input id="coupon-code" name="code" form="coupon-form" autocomplete="off" placeholder="Coupon code"><button type="submit" form="coupon-form">Apply</button></div>
+  </div>
+  {% endif %}
+  <div class="summary-total"><span>Total</span><strong>₹{{ summary.grand_total }}</strong></div>
+  <button type="submit" class="place-order" id="place-order"><i class="bi bi-lock-fill" aria-hidden="true"></i><span>Place order</span><span class="button-spinner" aria-hidden="true"></span></button>
+  <p class="secure-note"><i class="bi bi-shield-lock"></i> Your information is encrypted and secure.</p>
+</div>
+{% if not summary.applied_coupon %}<form id="coupon-form" action="{% url 'apply_coupon' %}" method="post">{% csrf_token %}<input type="hidden" name="return_to" value="{% url 'checkout' %}"></form>{% endif %}

@@ -2,7 +2,7 @@ from collections import OrderedDict
 from datetime import timedelta
 
 from django import template
-from django.db.models import Count, F, Sum
+from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 
@@ -18,19 +18,32 @@ def product_dashboard_stats():
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
+    order_stats = Order.objects.aggregate(
+        today_orders=Count('id', filter=Q(created_at__gte=today_start)),
+        today_revenue=Sum('total_price', filter=Q(created_at__gte=today_start)),
+        monthly_revenue=Sum('total_price', filter=Q(created_at__gte=month_start)),
+        open_orders=Count('id', filter=Q(status__in=('Pending', 'Processing'))),
+    )
+    product_stats = Product.objects.aggregate(
+        total_products=Count('id'),
+        low_stock_products=Count(
+            'id', filter=Q(stock__gt=0, stock__lte=F('low_stock_alert'))
+        ),
+        out_of_stock_products=Count('id', filter=Q(stock__lte=0)),
+    )
     return {
-        'today_orders': Order.objects.filter(created_at__gte=today_start).count(),
-        'today_revenue': Order.objects.filter(created_at__gte=today_start).aggregate(total=Sum('total_price'))['total'] or 0,
-        'monthly_revenue': Order.objects.filter(created_at__gte=month_start).aggregate(total=Sum('total_price'))['total'] or 0,
-        'total_products': Product.objects.count(),
-        'low_stock_products': Product.objects.filter(stock__gt=0, stock__lte=F('low_stock_alert')).count(),
-        'out_of_stock_products': Product.objects.filter(stock__lte=0).count(),
+        **order_stats,
+        **product_stats,
+        'today_revenue': order_stats['today_revenue'] or 0,
+        'monthly_revenue': order_stats['monthly_revenue'] or 0,
     }
 
 
 @register.simple_tag
 def dashboard_best_selling_products(limit=5):
-    return Product.objects.order_by('-total_sold', '-total_views', 'name')[:limit]
+    return Product.objects.select_related('category', 'brand').order_by(
+        '-total_sold', '-total_views', 'name'
+    )[:limit]
 
 
 @register.simple_tag
@@ -72,4 +85,8 @@ def dashboard_sales_analytics(days=7):
         if day in labels:
             labels[day]['orders'] = row['total_orders'] or 0
             labels[day]['revenue'] = row['total_revenue'] or 0
-    return list(labels.values())
+    rows = list(labels.values())
+    maximum = max((row['revenue'] or 0 for row in rows), default=0)
+    for row in rows:
+        row['bar_percent'] = round((row['revenue'] / maximum) * 100, 1) if maximum else 0
+    return rows

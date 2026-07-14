@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.db.models import Count
+from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
@@ -20,6 +22,7 @@ from .models import (
     ProductListingSettings,
     ProductVariant,
     ProductImage,
+    ProductReview,
     ProductFeature,
     ProductSpecification,
     SubCategory,
@@ -34,6 +37,16 @@ from .models import (
 )
 
 
+@admin.action(description='Activate selected records')
+def activate_selected(modeladmin, request, queryset):
+    modeladmin.message_user(request, f'{queryset.update(is_active=True)} record(s) activated.')
+
+
+@admin.action(description='Deactivate selected records')
+def deactivate_selected(modeladmin, request, queryset):
+    modeladmin.message_user(request, f'{queryset.update(is_active=False)} record(s) deactivated.')
+
+
 @admin.register(ProductListingSettings)
 class ProductListingSettingsAdmin(admin.ModelAdmin):
     list_display = ("products_per_page", "default_sort", "default_view", "enable_filters", "enable_sidebar")
@@ -46,11 +59,13 @@ class ProductListingSettingsAdmin(admin.ModelAdmin):
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     form = CategoryAdminForm
+    actions = (activate_selected, deactivate_selected)
     list_display = ('name', 'image_preview', 'is_active', 'sort_order')
     list_editable = ('is_active', 'sort_order')
     list_filter = ('is_active',)
     search_fields = ('name', 'slug')
     ordering = ('sort_order', 'name', 'id')
+    list_per_page = 30
     prepopulated_fields = {
         'slug': ('name',)
     }
@@ -79,6 +94,7 @@ class CategoryAdmin(admin.ModelAdmin):
 @admin.register(SubCategory)
 class SubCategoryAdmin(admin.ModelAdmin):
     form = SubCategoryAdminForm
+    actions = (activate_selected, deactivate_selected)
     list_display = ('name', 'category', 'is_active', 'sort_order')
     list_editable = ('is_active', 'sort_order')
     list_filter = ('is_active', 'category')
@@ -107,6 +123,7 @@ class BrandHeroBannerInline(admin.StackedInline):
 @admin.register(Brand)
 class BrandAdmin(admin.ModelAdmin):
     form = BrandAdminForm
+    actions = (activate_selected, deactivate_selected)
     list_display = ('name', 'logo_preview', 'is_active', 'display_order')
     list_editable = ('is_active', 'display_order')
     list_filter = ('is_active',)
@@ -181,6 +198,7 @@ class BrandHeroBannerAdmin(VisualEditorAdminMixin, admin.ModelAdmin):
 @admin.register(Warehouse)
 class WarehouseAdmin(admin.ModelAdmin):
     form = WarehouseAdminForm
+    actions = (activate_selected, deactivate_selected)
     list_display = ('name', 'code', 'city', 'is_active')
     list_editable = ('is_active',)
     search_fields = ('name', 'code', 'city')
@@ -210,6 +228,7 @@ class ProductSpecificationInline(admin.TabularInline):
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     form = ProductAdminForm
+    actions = (activate_selected, deactivate_selected)
     list_display = (
         'name',
         'sku',
@@ -239,6 +258,8 @@ class ProductAdmin(admin.ModelAdmin):
         'allow_backorder',
     )
     list_editable = ('is_active',)
+    list_per_page = 30
+    date_hierarchy = 'created_at'
 
     search_fields = ('name', 'slug', 'brand__name', 'category__name')
     autocomplete_fields = ('brand', 'category', 'subcategory', 'warehouse')
@@ -369,6 +390,7 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(ProductDiscount)
 class ProductDiscountAdmin(admin.ModelAdmin):
+    actions = (activate_selected, deactivate_selected)
     list_display = (
         'name',
         'product',
@@ -386,6 +408,7 @@ class ProductDiscountAdmin(admin.ModelAdmin):
 
 @admin.register(CategoryDiscount)
 class CategoryDiscountAdmin(admin.ModelAdmin):
+    actions = (activate_selected, deactivate_selected)
     list_display = (
         'name',
         'category',
@@ -403,6 +426,7 @@ class CategoryDiscountAdmin(admin.ModelAdmin):
 
 @admin.register(FlashSale)
 class FlashSaleAdmin(admin.ModelAdmin):
+    actions = (activate_selected, deactivate_selected)
     list_display = (
         'name',
         'discount_type',
@@ -419,6 +443,7 @@ class FlashSaleAdmin(admin.ModelAdmin):
 
 @admin.register(Coupon)
 class CouponAdmin(admin.ModelAdmin):
+    actions = (activate_selected, deactivate_selected)
     list_display = (
         'code',
         'title',
@@ -429,13 +454,27 @@ class CouponAdmin(admin.ModelAdmin):
         'is_active',
         'start_at',
         'end_at',
+        'redemption_count',
     )
     list_filter = ('is_active', 'discount_type', 'free_shipping')
     search_fields = ('code', 'title')
+    date_hierarchy = 'created_at'
+    readonly_fields = ('created_at', 'redemption_count')
+    autocomplete_fields = ('category', 'brand')
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('category', 'brand').annotate(
+            _redemption_count=Count('redemptions')
+        )
+
+    @admin.display(description='Uses', ordering='_redemption_count')
+    def redemption_count(self, obj):
+        return getattr(obj, '_redemption_count', obj.redemptions.count())
 
 
 @admin.register(FreeShippingOffer)
 class FreeShippingOfferAdmin(admin.ModelAdmin):
+    actions = (activate_selected, deactivate_selected)
     list_display = ('name', 'min_order_amount', 'is_active', 'start_at', 'end_at')
     list_filter = ('is_active',)
     search_fields = ('name',)
@@ -443,6 +482,7 @@ class FreeShippingOfferAdmin(admin.ModelAdmin):
 
 @admin.register(BuyXGetYOffer)
 class BuyXGetYOfferAdmin(admin.ModelAdmin):
+    actions = (activate_selected, deactivate_selected)
     list_display = (
         'name',
         'buy_product',
@@ -466,3 +506,74 @@ class CouponRedemptionAdmin(admin.ModelAdmin):
     list_filter = ('coupon',)
     search_fields = ('coupon__code', 'user__username', 'user__email')
     autocomplete_fields = ('coupon', 'user', 'order')
+    readonly_fields = ('coupon', 'user', 'order', 'used_at')
+    date_hierarchy = 'used_at'
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('coupon', 'user', 'order')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.action(description='Approve selected reviews', permissions=('moderate',))
+def approve_reviews(modeladmin, request, queryset):
+    count = 0
+    for review in queryset.select_related('product'):
+        review.moderation_status = ProductReview.ModerationStatus.APPROVED
+        review.moderated_by = request.user
+        review.moderated_at = timezone.now()
+        review.save(update_fields=('moderation_status', 'moderated_by', 'moderated_at', 'updated_at'))
+        count += 1
+    modeladmin.message_user(request, f'{count} review(s) approved.')
+
+
+@admin.action(description='Reject selected reviews', permissions=('moderate',))
+def reject_reviews(modeladmin, request, queryset):
+    count = 0
+    for review in queryset.select_related('product'):
+        review.moderation_status = ProductReview.ModerationStatus.REJECTED
+        review.moderated_by = request.user
+        review.moderated_at = timezone.now()
+        review.save(update_fields=('moderation_status', 'moderated_by', 'moderated_at', 'updated_at'))
+        count += 1
+    modeladmin.message_user(request, f'{count} review(s) rejected.')
+
+
+@admin.register(ProductReview)
+class ProductReviewAdmin(admin.ModelAdmin):
+    actions = (approve_reviews, reject_reviews)
+    list_display = ('product', 'customer', 'rating_display', 'moderation_status', 'created_at', 'moderated_by')
+    list_filter = ('moderation_status', 'rating', 'created_at')
+    search_fields = ('product__name', 'user__username', 'user__email', 'title', 'body')
+    autocomplete_fields = ('product', 'user')
+    readonly_fields = ('created_at', 'updated_at', 'moderated_by', 'moderated_at')
+    date_hierarchy = 'created_at'
+    list_select_related = ('product', 'user', 'moderated_by')
+    list_per_page = 30
+
+    def has_moderate_permission(self, request):
+        return request.user.has_perm('products.moderate_productreview')
+
+    fieldsets = (
+        ('Customer review', {'fields': ('product', 'user', 'rating', 'title', 'body')}),
+        ('Moderation', {'fields': ('moderation_status', 'moderation_notes', 'moderated_by', 'moderated_at')}),
+        ('Timestamps', {'fields': ('created_at', 'updated_at'), 'classes': ('collapse',)}),
+    )
+
+    @admin.display(description='Customer', ordering='user__username')
+    def customer(self, obj):
+        return obj.user.get_full_name() or obj.user.get_username()
+
+    @admin.display(description='Rating', ordering='rating')
+    def rating_display(self, obj):
+        return f'{obj.rating}/5'
+
+    def save_model(self, request, obj, form, change):
+        if 'moderation_status' in form.changed_data:
+            obj.moderated_by = request.user
+            obj.moderated_at = timezone.now()
+        super().save_model(request, obj, form, change)

@@ -19,6 +19,16 @@ def duplicate_selected_banners(modeladmin, request, queryset):
         banner.duplicate()
 
 
+@admin.action(description='Activate selected content')
+def activate_selected(modeladmin, request, queryset):
+    modeladmin.message_user(request, f'{queryset.update(is_active=True)} record(s) activated.')
+
+
+@admin.action(description='Deactivate selected content')
+def deactivate_selected(modeladmin, request, queryset):
+    modeladmin.message_user(request, f'{queryset.update(is_active=False)} record(s) deactivated.')
+
+
 @admin.register(HomepageCarousel)
 class HomepageCarouselAdmin(VisualEditorAdminMixin, admin.ModelAdmin):
     form = HomepageCarouselAdminForm
@@ -26,6 +36,7 @@ class HomepageCarouselAdmin(VisualEditorAdminMixin, admin.ModelAdmin):
     visual_editor_title = 'Homepage Banner Preview'
     visual_editor_description = 'Preview how the homepage banner image and title will appear.'
     visual_editor_file_fields = ('image',)
+    actions = (activate_selected, deactivate_selected)
     list_display = ('preview_image', 'title', 'redirect_url', 'display_order', 'is_active', 'slide_duration', 'created_at')
     list_editable = ('display_order', 'is_active', 'slide_duration')
     list_filter = ('is_active',)
@@ -64,7 +75,7 @@ class BannerCarouselAdmin(VisualEditorAdminMixin, admin.ModelAdmin):
     visual_editor_title = 'Hero Banner Live Preview'
     visual_editor_description = 'Experiment with colors, typography, spacing, and images without leaving the admin form.'
     visual_editor_file_fields = ('image', 'background_image')
-    actions = [duplicate_selected_banners]
+    actions = (duplicate_selected_banners, activate_selected, deactivate_selected)
     list_display = ('preview_image', 'heading', 'badge_text', 'display_order', 'is_active', 'slide_duration', 'views_count', 'clicks_count', 'ctr_display', 'created_at')
     list_editable = ('display_order', 'is_active', 'slide_duration')
     list_filter = ('is_active', 'layout_template', 'background_type', 'button_variant')
@@ -264,6 +275,7 @@ class HomepageSettingsAdmin(VisualEditorAdminMixin, admin.ModelAdmin):
 
 @admin.register(HomepageFeature)
 class HomepageFeatureAdmin(admin.ModelAdmin):
+    actions = (activate_selected, deactivate_selected)
     list_display = ('icon_preview', 'title', 'description', 'display_order', 'is_active')
     list_editable = ('display_order', 'is_active')
     list_filter = ('is_active',)
@@ -290,6 +302,7 @@ class HomepageFeatureAdmin(admin.ModelAdmin):
 
 @admin.register(HomepageCategory)
 class HomepageCategoryAdmin(admin.ModelAdmin):
+    actions = (activate_selected, deactivate_selected)
     list_display = (
         'preview_image',
         'name',
@@ -301,6 +314,10 @@ class HomepageCategoryAdmin(admin.ModelAdmin):
     list_filter = ('is_active',)
     search_fields = ('name', 'linked_category__name')
     ordering = ('display_order', 'id')
+    autocomplete_fields = ('linked_category',)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('linked_category')
 
     fieldsets = (
         ('Category Info', {

@@ -16,6 +16,18 @@ path(
 ),
 
 path(
+    'order-success/<int:order_id>/',
+    views.order_success,
+    name='order_success'
+),
+
+path(
+    'my-orders/<int:order_id>/',
+    views.order_detail,
+    name='order_detail'
+),
+
+path(
     'invoice/<int:order_id>/',
     views.invoice_pdf,
     name='invoice_pdf'

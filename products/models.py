@@ -1,8 +1,11 @@
 from decimal import Decimal
 from uuid import uuid4
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import Avg
 from django.urls import reverse
 from django.utils.text import slugify
 from django.utils import timezone
@@ -517,6 +520,15 @@ class Product(models.Model):
             badges.append('Verified Product')
         return badges
 
+    def refresh_review_summary(self):
+        """Keep storefront rating fields in sync with approved customer reviews."""
+        summary = self.reviews.filter(
+            moderation_status=ProductReview.ModerationStatus.APPROVED
+        ).aggregate(average=Avg('rating'), total=models.Count('id'))
+        self.rating = Decimal(str(summary['average'] or 0)).quantize(Decimal('0.1'))
+        self.reviews_count = summary['total'] or 0
+        self.save(update_fields=('rating', 'reviews_count'))
+
 
 class ProductListingSettings(models.Model):
     """Singleton controls for the public shop listing page."""
@@ -612,6 +624,78 @@ class ProductSpecification(models.Model):
 
     def __str__(self):
         return f"{self.name}: {self.value}"
+
+
+class ProductReview(models.Model):
+    class ModerationStatus(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        APPROVED = 'approved', 'Approved'
+        REJECTED = 'rejected', 'Rejected'
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='product_reviews',
+    )
+    rating = models.PositiveSmallIntegerField(
+        validators=(MinValueValidator(1), MaxValueValidator(5)),
+    )
+    title = models.CharField(max_length=160, blank=True)
+    body = models.TextField()
+    moderation_status = models.CharField(
+        max_length=12,
+        choices=ModerationStatus.choices,
+        default=ModerationStatus.PENDING,
+        db_index=True,
+    )
+    moderation_notes = models.TextField(blank=True)
+    moderated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='moderated_product_reviews',
+    )
+    moderated_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ('-created_at', '-id')
+        constraints = (
+            models.UniqueConstraint(
+                fields=('product', 'user'),
+                name='unique_product_review_per_customer',
+            ),
+        )
+        permissions = (
+            ('moderate_productreview', 'Can moderate product reviews'),
+        )
+
+    def __str__(self):
+        return f"{self.product} - {self.user} ({self.rating}/5)"
+
+    def save(self, *args, **kwargs):
+        previous_product_id = None
+        if self.pk:
+            previous_product_id = type(self).objects.filter(pk=self.pk).values_list(
+                'product_id', flat=True
+            ).first()
+        super().save(*args, **kwargs)
+        self.product.refresh_review_summary()
+        if previous_product_id and previous_product_id != self.product_id:
+            Product.objects.get(pk=previous_product_id).refresh_review_summary()
+
+    def delete(self, *args, **kwargs):
+        product = self.product
+        result = super().delete(*args, **kwargs)
+        product.refresh_review_summary()
+        return result
 
 
 class ProductDiscount(ActivationWindowMixin, ValueDiscountMixin):

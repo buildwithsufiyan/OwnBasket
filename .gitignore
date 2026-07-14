@@ -1,0 +1,14 @@
+# Python runtime artifacts
+__pycache__/
+*.py[cod]
+
+# Local runtime data and test uploads
+/.tmp/
+/media/
+*.log
+
+# Local virtual environment
+/djangovenv/
+
+# Accidental nested workspace copies (preserved locally, never committed)
+/OwnBasket/

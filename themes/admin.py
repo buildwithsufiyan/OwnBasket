@@ -1,12 +1,29 @@
 from django.contrib import admin
+from django.contrib import messages
 from django.urls import reverse
 from django.utils.html import format_html
 
 from .models import Theme, TemplateConversionLog, ThemeFileBackup
 
 
+@admin.action(description='Activate selected theme')
+def activate_theme(modeladmin, request, queryset):
+    if queryset.count() != 1:
+        modeladmin.message_user(
+            request,
+            'Select exactly one theme to activate.',
+            level=messages.ERROR,
+        )
+        return
+    theme = queryset.get()
+    theme.is_active = True
+    theme.save(update_fields=('is_active', 'updated_at'))
+    modeladmin.message_user(request, f'“{theme.name}” is now the active storefront theme.')
+
+
 @admin.register(Theme)
 class ThemeAdmin(admin.ModelAdmin):
+    actions = (activate_theme,)
     list_display = (
         "name",
         "slug",
@@ -20,6 +37,7 @@ class ThemeAdmin(admin.ModelAdmin):
     list_filter = ("is_active", "is_custom", "author")
     search_fields = ("name", "slug", "author", "theme_folder")
     readonly_fields = ("created_at", "updated_at", "theme_manager_link")
+    list_per_page = 25
     fieldsets = (
         (
             "Theme Metadata",
@@ -248,6 +266,11 @@ class ThemeAdmin(admin.ModelAdmin):
         )
 
     theme_manager_link.short_description = "Theme Manager"
+
+    def has_delete_permission(self, request, obj=None):
+        if obj and obj.is_active:
+            return False
+        return super().has_delete_permission(request, obj)
 
 
 @admin.register(TemplateConversionLog)

@@ -3,6 +3,7 @@ from urllib.parse import quote_plus
 
 from django import forms
 from django.forms.widgets import NumberInput, Select, TextInput
+from django.urls import reverse
 
 
 FONT_FAMILY_NAMES = [
@@ -195,6 +196,9 @@ class VisualEditorAdminMixin:
         context['visual_editor_title'] = self.visual_editor_title
         context['visual_editor_description'] = self.visual_editor_description
         context['visual_editor_file_urls_json'] = json.dumps(self.get_visual_editor_file_urls(obj))
+        context['live_preview_url'] = reverse('home')
+        context['live_preview_title'] = self.visual_editor_title
+        context['live_preview_update_session_url'] = ''
         return super().render_change_form(request, context, add, change, form_url, obj)
 
 

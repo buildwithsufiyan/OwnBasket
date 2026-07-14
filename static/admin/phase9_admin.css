@@ -1,0 +1,86 @@
+:root {
+  --ownbasket-focus: #ffb800;
+}
+
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--ownbasket-focus) !important;
+  outline-offset: 2px;
+}
+
+.object-tools a,
+input[type="submit"],
+button {
+  min-height: 36px;
+}
+
+#changelist-form .results {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+#changelist table {
+  min-width: 720px;
+}
+
+.form-row input:not([type="checkbox"]):not([type="radio"]),
+.form-row select,
+.form-row textarea {
+  max-width: 100%;
+}
+
+.help,
+p.help,
+form p.help,
+div.help,
+form div.help,
+div.help li {
+  line-height: 1.5;
+}
+
+@media (max-width: 767px) {
+  #header {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  #user-tools {
+    line-height: 1.8;
+  }
+
+  #content {
+    padding: 16px 12px;
+  }
+
+  .object-tools {
+    float: none;
+    margin: 0 0 14px;
+  }
+
+  .object-tools li,
+  .object-tools a {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .submit-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .submit-row input,
+  .submit-row a.deletelink {
+    margin: 0;
+    min-height: 42px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

@@ -1,0 +1,12 @@
+<section class="checkout-card" aria-labelledby="review-heading">
+  <div class="review-heading"><div><h2 id="review-heading">Review your items</h2><p>{{ summary.item_count }} item{{ summary.item_count|pluralize }} in this order</p></div><a href="{% url 'cart_detail' %}">Edit cart</a></div>
+  <div class="review-list">
+    {% for item in items %}
+    <article class="review-item">
+      {% if item.product.image %}<img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" loading="lazy" width="72" height="72">{% else %}<span class="image-placeholder"><i class="bi bi-image" aria-hidden="true"></i></span>{% endif %}
+      <div><h3>{{ item.product.name }}</h3>{% if item.size or item.color %}<p>{% if item.size %}Size: {{ item.size }}{% endif %}{% if item.size and item.color %} · {% endif %}{% if item.color %}Color: {{ item.color }}{% endif %}</p>{% endif %}<small>Quantity: {{ item.quantity }}</small></div>
+      <strong>₹{{ item.line_pricing.line_final_total }}</strong>
+    </article>
+    {% endfor %}
+  </div>
+</section>

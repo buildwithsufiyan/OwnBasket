@@ -4,6 +4,7 @@
 {% block extrastyle %}
 {{ block.super }}
 <link rel="stylesheet" type="text/css" href="{% static 'admin/css/visual_editor.css' %}">
+{% include "includes/font_family_links.html" %}
 {% endblock %}
 
 {% block content %}
@@ -66,6 +67,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const csrftoken = getCookie('csrftoken');
 
     function sendUpdateToSession() {
+        if (!updateSessionUrl) {
+            return;
+        }
         fetch(updateSessionUrl, {
             method: 'POST',
             headers: {

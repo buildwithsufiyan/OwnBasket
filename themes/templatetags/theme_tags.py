@@ -393,7 +393,11 @@ def render_component(
         template_path = resolver.get_template_path(component_name)
         ctx = context.flatten()
         ctx.update(kwargs)
-        return render_to_string(template_path, ctx, request=context.request)
+        # RequestContext exposes ``request`` and safely runs context processors.
+        # A plain Context may merely contain a RequestFactory request without
+        # authentication middleware, so render it from the flattened context.
+        request = getattr(context, 'request', None)
+        return render_to_string(template_path, ctx, request=request)
 
     theme = context.get("active_theme")
     if not theme:

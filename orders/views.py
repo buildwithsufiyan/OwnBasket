@@ -69,7 +69,7 @@ def checkout(request):
             "Order placed successfully!"
         )
 
-        return redirect('/')
+        return redirect('order_success', order_id=order.id)
 
     return render(
         request,
@@ -81,6 +81,16 @@ def checkout(request):
             'coupon_code': coupon_code,
         }
     )
+
+
+@login_required
+def order_success(request, order_id):
+    order = get_object_or_404(
+        Order.objects.prefetch_related('items__product'),
+        id=order_id,
+        user=request.user,
+    )
+    return render(request, 'orders/order_success.html', {'order': order})
 
 
 @login_required
@@ -96,9 +106,20 @@ def my_orders(request):
         {'orders': orders}
     )
 
+
+@login_required
+def order_detail(request, order_id):
+    order = get_object_or_404(
+        Order.objects.prefetch_related('items__product'),
+        id=order_id,
+        user=request.user,
+    )
+    return render(request, 'orders/order_detail.html', {'order': order})
+
+@login_required
 def invoice_pdf(request, order_id):
 
-    order = get_object_or_404(Order, id=order_id)
+    order = get_object_or_404(Order, id=order_id, user=request.user)
 
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="invoice_{order.id}.pdf"'
