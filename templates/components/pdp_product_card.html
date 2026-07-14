@@ -1,5 +1,5 @@
 {% load humanize %}
 <article class="pdp-product-card">
-  <a class="pdp-product-image" href="{% url 'products:product_detail' item.slug %}">{% if item.image %}<img src="{{ item.image.url }}" alt="{{ item.name }}" loading="lazy" decoding="async">{% else %}<i class="bi bi-image" aria-hidden="true"></i>{% endif %}</a>
+  <a class="pdp-product-image" href="{% url 'products:product_detail' item.slug %}">{% if item.image %}<img src="{{ item.image.url }}" alt="{{ item.name }}" width="480" height="480" loading="lazy" decoding="async">{% else %}<i class="bi bi-image" aria-hidden="true"></i>{% endif %}</a>
   <div><span>{{ item.brand.name }}</span><h3><a href="{% url 'products:product_detail' item.slug %}">{{ item.name }}</a></h3><p><strong>₹{{ item.display_price|intcomma }}</strong>{% if item.display_compare_price %}<del>₹{{ item.display_compare_price|intcomma }}</del>{% endif %}</p></div>
 </article>

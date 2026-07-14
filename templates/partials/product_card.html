@@ -4,7 +4,7 @@
     <div class="bb-product-media">
         <a href="{% url 'products:product_detail' product.slug %}" aria-label="View {{ product.name }}">
             {% if product.image %}
-            <img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy">
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" width="480" height="480" loading="lazy" decoding="async">
             {% else %}
             <span class="bb-product-image-fallback">
                 <i class="bi bi-image"></i>

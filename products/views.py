@@ -1,25 +1,36 @@
+import json
 import re
 from decimal import Decimal
 from urllib.parse import urlencode
 
 from django.core.paginator import Paginator
-from django.db.models import Case, F, IntegerField, Q, Value, When
+from django.db.models import Case, F, IntegerField, Prefetch, Q, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.utils.html import conditional_escape
 from django.utils.safestring import mark_safe
 
-from .models import Brand, BrandHeroBanner, Category, Product, ProductListingSettings, SubCategory
+from .models import Brand, BrandHeroBanner, Category, Product, ProductListingSettings, ProductReview, SubCategory
 from .listing import SORT_OPTIONS, build_product_listing
 from .pricing import attach_pricing_to_products
 
 
 # 📌 Product Detail Page
 def product_detail(request, slug):
-    product = get_object_or_404(Product, slug=slug)
+    approved_reviews = ProductReview.objects.filter(
+        moderation_status=ProductReview.ModerationStatus.APPROVED
+    ).select_related("user")
+    product = get_object_or_404(
+        Product.objects.select_related("brand", "category", "subcategory").prefetch_related(
+            "gallery", "variants", "features", "specifications",
+            Prefetch("reviews", queryset=approved_reviews),
+        ),
+        slug=slug,
+        is_active=True,
+    )
     Product.objects.filter(pk=product.pk).update(total_views=F('total_views') + 1, last_viewed_at=timezone.now())
-    product.refresh_from_db()
+    product.total_views += 1
     attach_pricing_to_products([product])
 
     recent_ids = request.session.get('recently_viewed_product_ids', [])
@@ -27,19 +38,54 @@ def product_detail(request, slug):
     recent_ids.insert(0, product.id)
     request.session['recently_viewed_product_ids'] = recent_ids[:12]
 
-    related_products = Product.objects.filter(
-        category=product.category
+    related_products = Product.objects.select_related("brand", "category", "subcategory").filter(
+        category=product.category, is_active=True
     ).exclude(
         id=product.id
     )[:4]
     related_products = attach_pricing_to_products(related_products)
 
+    canonical_url = request.build_absolute_uri(product.get_absolute_url())
+    image_url = request.build_absolute_uri(product.image.url) if product.image else ""
+    availability = "https://schema.org/InStock" if product.stock > 0 or product.allow_backorder else "https://schema.org/OutOfStock"
+    product_schema = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": product.name,
+        "description": product.short_description or product.description,
+        "sku": product.sku or "",
+        "url": canonical_url,
+        "brand": {"@type": "Brand", "name": product.brand.name},
+        "offers": {
+            "@type": "Offer", "url": canonical_url, "priceCurrency": "PKR",
+            "price": str(product.display_price), "availability": availability,
+        },
+    }
+    if image_url:
+        product_schema["image"] = [image_url]
+    if product.reviews_count and product.rating:
+        product_schema["aggregateRating"] = {
+            "@type": "AggregateRating", "ratingValue": str(product.rating),
+            "reviewCount": product.reviews_count,
+        }
+    breadcrumb_schema = {
+        "@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Home", "item": request.build_absolute_uri("/")},
+            {"@type": "ListItem", "position": 2, "name": product.category.name, "item": request.build_absolute_uri(product.category.target_url)},
+            {"@type": "ListItem", "position": 3, "name": product.name, "item": canonical_url},
+        ],
+    }
+    safe_json = lambda data: json.dumps(data, ensure_ascii=False).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
     return render(
         request,
         'products/product_detail.html',
         {
             'product': product,
             'related_products': related_products,
+            'canonical_url': canonical_url,
+            'social_image': image_url,
+            'product_json_ld': safe_json(product_schema),
+            'breadcrumb_json_ld': safe_json(breadcrumb_schema),
         }
     )
 
@@ -168,6 +214,7 @@ def search_results(request):
         'categories': categories,
         'brands': brands,
         'has_results': bool(products or categories or brands),
+        'canonical_url': request.build_absolute_uri(request.path),
     }
     return render(request, 'products/search_results.html', context)
 
@@ -222,6 +269,7 @@ def category_detail(request, slug):
             'products': products,
             'categories': Category.objects.filter(is_active=True).order_by('sort_order', 'name', 'id'),
             'subcategories': category.subcategories.filter(is_active=True).order_by('sort_order', 'name', 'id'),
+            'canonical_url': request.build_absolute_uri(request.path),
         }
     )
 
@@ -334,6 +382,7 @@ def brand_detail(request, pk):
             'selected_sort': sort_by,
             'search_query': search_query,
             'filter_querystring': filter_querystring,
+            'canonical_url': request.build_absolute_uri(request.path),
         }
     )
 

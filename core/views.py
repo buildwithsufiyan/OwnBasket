@@ -1,8 +1,14 @@
-from django.http import JsonResponse
+from django.conf import settings
+from django.db import connections
+import json
+from urllib.parse import urlparse
+
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.db.models import F, Q, Prefetch
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 from products.models import Brand, Category, Product
@@ -75,7 +81,6 @@ def home(request):
     subcategory_slug = request.GET.get("subcategory")
     query = request.GET.get("q")
 
-    products = Product.objects.select_related("brand", "category").all()
     products = Product.objects.select_related(
         "brand", "category", "subcategory"
     ).filter(is_active=True)
@@ -177,6 +182,11 @@ def home(request):
     if not any(s.section_type == "hero" for s in homepage_dynamic_sections):
         hero_section = None
 
+    base_url = request.build_absolute_uri("/").rstrip("/")
+    home_schema = [
+        {"@context": "https://schema.org", "@type": "Organization", "name": settings.SITE_NAME, "url": base_url, "logo": request.build_absolute_uri("/static/images/logo.png")},
+        {"@context": "https://schema.org", "@type": "WebSite", "name": settings.SITE_NAME, "url": base_url, "potentialAction": {"@type": "SearchAction", "target": f"{base_url}/search/?q={{search_term_string}}", "query-input": "required name=search_term_string"}},
+    ]
     context = {
         "products": products,
         "selected_category": selected_category,
@@ -197,6 +207,7 @@ def home(request):
         "popular_products": popular_products,
         "latest_products": latest_products,
         "best_rated_products": best_rated_products,
+        "home_json_ld": json.dumps(home_schema).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026"),
     }
 
     return render(request, "core/home.html", context)
@@ -207,12 +218,68 @@ def landing(request):
 
 
 @require_GET
+def health(request):
+    """Fast, non-sensitive readiness response for monitors and load balancers."""
+    status = "ok"
+    http_status = 200
+    if request.GET.get("database") == "1":
+        try:
+            connections["default"].ensure_connection()
+        except Exception:
+            status, http_status = "degraded", 503
+    return JsonResponse({"status": status}, status=http_status)
+
+
+@require_GET
+def robots_txt(request):
+    lines = [
+        "User-agent: *",
+        "Allow: /",
+        "Disallow: /admin/",
+        "Disallow: /account/",
+        "Disallow: /checkout/",
+        "Disallow: /cart/",
+        "Disallow: /wishlist/",
+        "Disallow: /theme-assets/",
+        "Disallow: /api/",
+        f"Sitemap: {settings.CANONICAL_BASE_URL}/sitemap.xml",
+    ]
+    return HttpResponse("\n".join(lines) + "\n", content_type="text/plain; charset=utf-8")
+
+
+def error_400(request, exception):
+    return render(request, "errors/400.html", status=400)
+
+
+def error_403(request, exception):
+    return render(request, "errors/403.html", status=403)
+
+
+def error_404(request, exception):
+    return render(request, "errors/404.html", status=404)
+
+
+def error_500(request):
+    return render(request, "errors/500.html", status=500)
+
+
+@require_GET
 def track_banner_click(request, banner_id):
     banner = get_object_or_404(BannerCarousel, pk=banner_id)
     BannerCarousel.objects.filter(pk=banner.pk).update(
         clicks_count=F("clicks_count") + 1
     )
-    target_url = request.GET.get("next") or banner.button_url or "/home/"
+    requested_url = request.GET.get("next", "")
+    configured_host = urlparse(banner.button_url or "").hostname
+    allowed_redirect_hosts = {request.get_host()}
+    if configured_host:
+        allowed_redirect_hosts.add(configured_host)
+    if requested_url and url_has_allowed_host_and_scheme(
+        requested_url, allowed_hosts=allowed_redirect_hosts, require_https=request.is_secure()
+    ):
+        target_url = requested_url
+    else:
+        target_url = banner.button_url or "/home/"
     return redirect(target_url)
 
 

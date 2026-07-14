@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
 {% load humanize %}
 
+{% block title %}{% if query %}Search: {{ query }}{% else %}Search{% endif %} | OwnBasket{% endblock %}
+{% block meta_description %}Search OwnBasket products, categories, and brands.{% endblock %}
+{% block robots %}noindex,follow{% endblock %}
+{% block canonical_url %}{{ canonical_url }}{% endblock %}
+
 {% block content %}
 <section class="search-results-page py-5">
     <div class="container">
@@ -41,7 +46,7 @@
                             <a href="{{ product.get_absolute_url }}" class="search-result-item search-result-product">
                                 <div class="search-result-media">
                                     {% if product.image %}
-                                    <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                                    <img src="{{ product.image.url }}" alt="{{ product.name }}" width="480" height="480" loading="lazy" decoding="async">
                                     {% else %}
                                     <div class="search-result-fallback"><i class="bi bi-phone"></i></div>
                                     {% endif %}
@@ -79,7 +84,7 @@
                             <a href="{{ category.target_url }}" class="search-side-item">
                                 <div class="search-side-media">
                                     {% if category.category_image %}
-                                    <img src="{{ category.category_image.url }}" alt="{{ category.name }}">
+                                    <img src="{{ category.category_image.url }}" alt="{{ category.name }}" width="320" height="240" loading="lazy" decoding="async">
                                     {% else %}
                                     <div class="search-result-fallback"><i class="bi bi-grid"></i></div>
                                     {% endif %}
@@ -106,7 +111,7 @@
                             <a href="{{ brand.target_url }}" class="search-side-item">
                                 <div class="search-side-media">
                                     {% if brand.logo %}
-                                    <img src="{{ brand.logo.url }}" alt="{{ brand.name }}">
+                                    <img src="{{ brand.logo.url }}" alt="{{ brand.name }}" width="320" height="240" loading="lazy" decoding="async">
                                     {% else %}
                                     <div class="search-result-fallback"><i class="bi bi-award"></i></div>
                                     {% endif %}

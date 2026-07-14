@@ -1,6 +1,12 @@
 {% extends 'base.html' %}
 {% load humanize %}
 
+{% block title %}{{ brand.name }} products | OwnBasket{% endblock %}
+{% block meta_description %}Browse genuine {{ brand.name }} products and current offers at OwnBasket.{% endblock %}
+{% block canonical_url %}{{ canonical_url }}{% endblock %}
+{% block og_title %}{{ brand.name }} products | OwnBasket{% endblock %}
+{% block og_description %}Browse genuine {{ brand.name }} products and current offers at OwnBasket.{% endblock %}
+
 {% block extra_head %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 {% endblock %}

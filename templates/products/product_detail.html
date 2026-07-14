@@ -1,8 +1,22 @@
 {% extends 'base.html' %}
 {% load static humanize %}
 
+{% block title %}{{ product.name }} | OwnBasket{% endblock %}
+{% block meta_description %}{{ product.short_description|default:product.description|striptags|truncatechars:160 }}{% endblock %}
+{% block canonical_url %}{{ canonical_url }}{% endblock %}
+{% block og_title %}{{ product.name }} | OwnBasket{% endblock %}
+{% block og_description %}{{ product.short_description|default:product.description|striptags|truncatechars:160 }}{% endblock %}
+{% block og_url %}{{ canonical_url }}{% endblock %}
+{% block og_type %}product{% endblock %}
+{% block og_image %}{% if social_image %}{{ social_image }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block twitter_title %}{{ product.name }} | OwnBasket{% endblock %}
+{% block twitter_description %}{{ product.short_description|default:product.description|striptags|truncatechars:160 }}{% endblock %}
+{% block twitter_image %}{% if social_image %}{{ social_image }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/product-detail.css' %}">
+<script type="application/ld+json">{{ product_json_ld|safe }}</script>
+<script type="application/ld+json">{{ breadcrumb_json_ld|safe }}</script>
 {% endblock %}
 
 {% block content %}
@@ -18,7 +32,7 @@
       <div class="pdp-gallery" data-gallery>
         <div class="pdp-stage skeleton" data-stage>
           {% if product.image %}
-          <img id="pdpMainImage" src="{{ product.image.url }}" alt="{{ product.name }}" fetchpriority="high" data-main-image>
+          <img id="pdpMainImage" src="{{ product.image.url }}" alt="{{ product.name }}" width="800" height="800" fetchpriority="high" decoding="async" data-main-image>
           <button class="pdp-gallery-btn pdp-prev" type="button" aria-label="Previous product image" data-gallery-prev><i class="bi bi-chevron-left"></i></button>
           <button class="pdp-gallery-btn pdp-next" type="button" aria-label="Next product image" data-gallery-next><i class="bi bi-chevron-right"></i></button>
           <button class="pdp-gallery-btn pdp-fullscreen" type="button" aria-label="Open fullscreen image" data-fullscreen><i class="bi bi-arrows-fullscreen"></i></button>
@@ -26,8 +40,8 @@
         </div>
         {% if product.image %}
         <div class="pdp-thumbs" role="list" aria-label="Product images">
-          <button class="pdp-thumb is-active" type="button" data-image="{{ product.image.url }}" aria-label="View main image" aria-current="true"><img src="{{ product.image.url }}" alt="" loading="lazy"></button>
-          {% for gallery_item in product.gallery.all %}<button class="pdp-thumb" type="button" data-image="{{ gallery_item.image.url }}" aria-label="View image {{ forloop.counter|add:1 }}"><img src="{{ gallery_item.image.url }}" alt="" loading="lazy"></button>{% endfor %}
+          <button class="pdp-thumb is-active" type="button" data-image="{{ product.image.url }}" aria-label="View main image" aria-current="true"><img src="{{ product.image.url }}" alt="" width="96" height="96" loading="lazy" decoding="async"></button>
+          {% for gallery_item in product.gallery.all %}<button class="pdp-thumb" type="button" data-image="{{ gallery_item.image.url }}" aria-label="View image {{ forloop.counter|add:1 }}"><img src="{{ gallery_item.image.url }}" alt="" width="96" height="96" loading="lazy" decoding="async"></button>{% endfor %}
         </div>
         {% endif %}
       </div>

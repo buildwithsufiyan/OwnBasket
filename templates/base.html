@@ -1,11 +1,26 @@
 <!DOCTYPE html>
 {% load theme_tags static %}
-<html>
+<html lang="{% block html_lang %}en{% endblock %}">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OwnBasket - Shop Smart, Live Better</title>
+    <title>{% block title %}OwnBasket - Shop Smart, Live Better{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}{{ default_meta_description }}{% endblock %}">
+    <meta name="robots" content="{% block robots %}index,follow{% endblock %}">
+    <link rel="canonical" href="{% block canonical_url %}{{ canonical_url }}{% endblock %}">
+    <meta name="theme-color" content="#198754">
+    <meta property="og:site_name" content="{{ site_name }}">
+    <meta property="og:title" content="{% block og_title %}OwnBasket - Shop Smart, Live Better{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ default_meta_description }}{% endblock %}">
+    <meta property="og:url" content="{% block og_url %}{{ canonical_url }}{% endblock %}">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ default_social_image }}{% endblock %}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}OwnBasket - Shop Smart, Live Better{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}{{ default_meta_description }}{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ default_social_image }}{% endblock %}">
+    <link rel="icon" href="{% static 'images/logo.png' %}">
 
     <!-- Google Fonts -->
     {% include 'includes/font_family_links.html' %}
@@ -27,9 +42,11 @@
     <link rel="stylesheet" href="{% static 'css/components/category_card.css' %}"> 
     <link rel="stylesheet" href="{% static 'css/components/product_card.css' %}">
     <link rel="stylesheet" href="{% static 'css/components/product-carousel.css' %}">
+    <link rel="stylesheet" href="{% static 'css/production-foundation.css' %}">
 </head>
 
 <body>
+    <a class="visually-hidden-focusable position-fixed top-0 start-0 bg-white p-3" href="#main-content">Skip to content</a>
 
     {% render_header %}
 
@@ -48,6 +65,7 @@
     </div>
     {% endif %}
 
+    <div id="main-content" tabindex="-1"></div>
     {% block content %}
     {% endblock %}
 
@@ -59,53 +77,8 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" defer></script>
 
     <script src="{% static 'js/components/product-carousel.js' %}" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        (function () {
-            function formatRemaining(ms) {
-                if (ms <= 0) {
-                    return 'Offer ended';
-                }
-
-                var totalSeconds = Math.floor(ms / 1000);
-                var days = Math.floor(totalSeconds / 86400);
-                var hours = Math.floor((totalSeconds % 86400) / 3600);
-                var minutes = Math.floor((totalSeconds % 3600) / 60);
-                var seconds = totalSeconds % 60;
-
-                if (days > 0) {
-                    return days + 'd ' + hours + 'h left';
-                }
-                if (hours > 0) {
-                    return hours + 'h ' + minutes + 'm left';
-                }
-                return minutes + 'm ' + seconds + 's left';
-            }
-
-            function initCountdowns() {
-                var elements = document.querySelectorAll('[data-countdown]');
-                if (!elements.length) {
-                    return;
-                }
-
-                function updateCountdowns() {
-                    elements.forEach(function (element) {
-                        var target = new Date(element.dataset.countdown);
-                        if (Number.isNaN(target.getTime())) {
-                            return;
-                        }
-                        var diff = target.getTime() - Date.now();
-                        element.textContent = formatRemaining(diff);
-                    });
-                }
-
-                updateCountdowns();
-                window.setInterval(updateCountdowns, 1000);
-            }
-
-            document.addEventListener('DOMContentLoaded', initCountdowns);
-        }());
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="{% static 'js/base.js' %}" defer></script>
     {% block extra_scripts %}{% endblock %}
 
 </body>

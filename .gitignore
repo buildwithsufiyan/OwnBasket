@@ -6,6 +6,11 @@ __pycache__/
 /.tmp/
 /media/
 *.log
+/.env
+/.env.*
+!/.env.example
+/staticfiles/
+*.sqlite3
 
 # Local virtual environment
 /djangovenv/

@@ -6,7 +6,7 @@
 <div class="product-card">
     <div class="product-card-img-container">
         <a href="{{ product.get_absolute_url }}" class="product-card-img-link">
-            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-card-img" loading="lazy">
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-card-img" width="480" height="480" loading="lazy" decoding="async">
         </a>
         {% if product.discount_percentage > 0 %}
             <span class="product-card-discount-badge">-{{ product.discount_percentage|floatformat:0 }}%</span>

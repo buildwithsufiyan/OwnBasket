@@ -1,10 +1,14 @@
 {% extends 'base.html' %}
 {% load humanize static carousel_tags %}
 
+{% block title %}OwnBasket - Shop Smart, Live Better{% endblock %}
+{% block meta_description %}Shop quality products, trusted brands, and current offers at OwnBasket.{% endblock %}
+
 {% block extra_head %}
 {{ block.super }}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css">
 <link rel="stylesheet" href="{% static 'css/product-carousels.css' %}">
+<script type="application/ld+json">{{ home_json_ld|safe }}</script>
 {% endblock %}
 
 {% block content %}
