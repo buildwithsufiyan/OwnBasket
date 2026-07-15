@@ -305,3 +305,5 @@ class TransactionalCompatibilityTests(MarketingBase):
         response = self.client.get(reverse('admin:index'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Active Subscribers')
+        self.assertContains(response, 'Unsubscribed')
+        self.assertContains(response, 'Referral Signups')
