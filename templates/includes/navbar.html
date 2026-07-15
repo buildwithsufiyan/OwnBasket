@@ -548,6 +548,7 @@
                 <a href="{% url 'home' %}" class="navbar-link-pill {% if request.resolver_match.url_name == 'home' and not request.GET.category and not request.GET.brand and not request.GET.q %}is-active{% endif %}">All Products</a>
                 <a href="{% url 'products:brand_list' %}" class="navbar-link-pill {% if request.resolver_match.url_name == 'brand_list' %}is-active{% endif %}">Top Brands</a>
                 <a href="{% url 'products:category_list' %}" class="navbar-link-pill {% if request.resolver_match.url_name == 'category_list' %}is-active{% endif %}">Categories</a>
+                <a href="{% url 'marketplace:store_list' %}" class="navbar-link-pill">Sellers</a>
                 <a href="#footer-contact" class="navbar-link-pill">Contact Us</a>
             </div>
 
@@ -570,6 +571,7 @@
                         <li><a class="dropdown-item" href="{% url 'account_choice' %}"><i class="bi bi-person"></i>My Profile</a></li>
                         <li><a class="dropdown-item" href="{% url 'my_orders' %}"><i class="bi bi-bag"></i>My Orders</a></li>
                         <li><a class="dropdown-item" href="{% url 'wishlist:wishlist' %}"><i class="bi bi-heart"></i>Wishlist</a></li>
+                        {% if user.seller_profile %}<li><a class="dropdown-item" href="{% url 'marketplace:dashboard' %}"><i class="bi bi-shop"></i>Seller Panel</a></li>{% else %}<li><a class="dropdown-item" href="{% url 'marketplace:onboarding' %}"><i class="bi bi-shop"></i>Become a Seller</a></li>{% endif %}
                         <li><hr class="dropdown-divider my-2"></li>
                         <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i>Logout</a></li>
                         {% else %}
@@ -631,6 +633,7 @@
                 <i class="bi bi-award"></i>
                 <span>Top Brands</span>
             </a>
+            <a href="{% url 'marketplace:store_list' %}" class="mobile-drawer-link"><i class="bi bi-shop-window"></i><span>Sellers</span></a>
             <a href="{% if user.is_authenticated %}{% url 'my_orders' %}{% else %}{% url 'login' %}{% endif %}" class="mobile-drawer-link">
                 <i class="bi bi-box-seam"></i>
                 <span>My Orders</span>

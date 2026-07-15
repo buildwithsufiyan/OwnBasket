@@ -3,20 +3,25 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Q
+from decimal import Decimal
 from reportlab.pdfgen import canvas
 
 from .models import Order, OrderItem
 from cart.models import Cart, CartItem
 from products.models import CouponRedemption
 from products.pricing import build_cart_summary
+from marketplace.models import SellerNotification
 
 
 
 @login_required
 def checkout(request):
     cart, _ = Cart.objects.get_or_create(id=request.user.id)
-    items = CartItem.objects.filter(cart=cart).select_related('product', 'product__brand', 'product__category')
+    items = CartItem.objects.filter(cart=cart, product__is_active=True).filter(
+        Q(product__seller__isnull=True) |
+        Q(product__seller__verification_status='approved')
+    ).select_related('product', 'product__seller', 'product__brand', 'product__category')
     coupon_code = request.session.get('active_coupon_code', '')
     summary = build_cart_summary(items, user=request.user, coupon_code=coupon_code)
 
@@ -38,7 +43,14 @@ def checkout(request):
                 total_price=summary.grand_total,
             )
 
+            ordered_sellers = {}
             for line in summary.line_items:
+                seller = line.item.product.seller
+                line_total = line.unit_final_price * line.quantity
+                commission_rate = seller.commission_rate if seller else Decimal('0.00')
+                marketplace_commission = (
+                    line_total * commission_rate / Decimal('100')
+                ).quantize(Decimal('0.01'))
                 OrderItem.objects.create(
                     order=order,
                     product=line.item.product,
@@ -48,11 +60,28 @@ def checkout(request):
                     discount_amount=line.line_discount_total,
                     applied_offer_name=line.pricing.source_name or line.pricing.badge_text,
                     size=line.item.size,
-                    color=line.item.color
+                    color=line.item.color,
+                    seller=seller,
+                    seller_name=seller.store_name if seller else '',
+                    marketplace_commission=marketplace_commission,
+                    seller_earning=line_total - marketplace_commission,
                 )
+                if seller:
+                    ordered_sellers[seller.pk] = seller
                 type(line.item.product).objects.filter(pk=line.item.product.pk).update(
                     total_sold=F('total_sold') + line.quantity
                 )
+
+            SellerNotification.objects.bulk_create([
+                SellerNotification(
+                    seller=seller,
+                    title=f'New order #{order.pk}',
+                    message='A customer placed an order containing one or more of your products.',
+                    link='/marketplace/seller/orders/',
+                )
+                for seller in ordered_sellers.values()
+                if seller.order_notifications
+            ])
 
             if summary.applied_coupon:
                 CouponRedemption.objects.create(

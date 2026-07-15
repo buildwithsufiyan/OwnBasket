@@ -24,7 +24,7 @@ def get_carousel_products(section):
     key = f"site_sections:carousel:{section.pk}:v{_catalog_version()}"
     product_ids = cache.get(key)
     if product_ids is None:
-        queryset = Product.objects.filter(is_active=True, brand__is_active=True, category__is_active=True)
+        queryset = Product.objects.marketplace_visible().filter(is_active=True, brand__is_active=True, category__is_active=True)
         source = section.source_type
         if source == ProductCarouselSource.MANUAL:
             queryset = queryset.filter(pk__in=section.manual_products.values("pk")).order_by("name", "id")
@@ -49,6 +49,6 @@ def get_carousel_products(section):
             queryset = queryset.order_by("-featured_product", "-created_at", "-id")
         product_ids = list(queryset.values_list("pk", flat=True)[:section.products_limit])
         cache.set(key, product_ids, 300)
-    products = Product.objects.select_related("brand", "category", "subcategory").filter(pk__in=product_ids)
+    products = Product.objects.marketplace_visible().select_related("seller", "brand", "category", "subcategory").filter(pk__in=product_ids)
     indexed = {product.pk: product for product in products}
     return attach_pricing_to_products([indexed[pk] for pk in product_ids if pk in indexed])

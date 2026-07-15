@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import models
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -42,7 +43,7 @@ def _coupon_return_url(request):
 
 @login_required(login_url='login')
 def add_to_cart(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
+    product = get_object_or_404(Product.objects.marketplace_visible(), id=product_id, is_active=True)
 
     size = request.POST.get('size')
     color = request.POST.get('color')
@@ -66,7 +67,10 @@ def add_to_cart(request, product_id):
 @login_required(login_url='login')
 def cart_detail(request):
     cart = _get_user_cart(request.user)
-    items = CartItem.objects.filter(cart=cart).select_related('product', 'product__brand', 'product__category')
+    items = CartItem.objects.filter(cart=cart, product__is_active=True).filter(
+        models.Q(product__seller__isnull=True) |
+        models.Q(product__seller__verification_status='approved')
+    ).select_related('product', 'product__seller', 'product__brand', 'product__category')
     coupon_code = _get_coupon_code(request)
     summary = build_cart_summary(items, user=request.user, coupon_code=coupon_code)
 

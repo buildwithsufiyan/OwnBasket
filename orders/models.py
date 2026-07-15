@@ -71,6 +71,28 @@ class OrderItem(models.Model):
         on_delete=models.CASCADE
     )
 
+    seller = models.ForeignKey(
+        'marketplace.SellerProfile',
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        related_name='order_items',
+    )
+
+    seller_name = models.CharField(max_length=160, blank=True)
+
+    marketplace_commission = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+    )
+
+    seller_earning = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+    )
+
     size = models.CharField(
         max_length=50,
         blank=True,

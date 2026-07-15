@@ -231,6 +231,7 @@ class ProductAdmin(admin.ModelAdmin):
     actions = (activate_selected, deactivate_selected)
     list_display = (
         'name',
+        'seller',
         'sku',
         'category',
         'subcategory',
@@ -243,6 +244,7 @@ class ProductAdmin(admin.ModelAdmin):
         'is_active',
     )
     list_filter = (
+        'seller',
         'is_active',
         'category',
         'subcategory',
@@ -261,8 +263,8 @@ class ProductAdmin(admin.ModelAdmin):
     list_per_page = 30
     date_hierarchy = 'created_at'
 
-    search_fields = ('name', 'slug', 'brand__name', 'category__name')
-    autocomplete_fields = ('brand', 'category', 'subcategory', 'warehouse')
+    search_fields = ('name', 'slug', 'brand__name', 'category__name', 'seller__store_name')
+    autocomplete_fields = ('seller', 'brand', 'category', 'subcategory', 'warehouse')
     readonly_fields = (
         'slug',
         'sku',
@@ -277,6 +279,7 @@ class ProductAdmin(admin.ModelAdmin):
     fieldsets = (
         ('Product Information', {
             'fields': (
+                'seller',
                 'name',
                 ('slug', 'sku', 'barcode'),
                 ('brand', 'category', 'subcategory'),
@@ -328,7 +331,7 @@ class ProductAdmin(admin.ModelAdmin):
     ]
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related('brand', 'category', 'subcategory', 'warehouse')
+        return super().get_queryset(request).select_related('seller', 'brand', 'category', 'subcategory', 'warehouse')
 
     def primary_image_preview(self, obj):
         if obj.pk and obj.image:

@@ -640,6 +640,8 @@ document.addEventListener('DOMContentLoaded', function () {
 </section>
 {% endif %}
 
+{% include 'includes/home_product_section.html' with section_title='Featured Products' section_note='Handpicked for you' section_products=featured_products %}
+
 {% for carousel_section in product_carousel_sections %}
     {% include "partials/product_carousel.html" with carousel_id=carousel_section.id title=carousel_section.title subtitle=carousel_section.subtitle products=carousel_section.products accent=carousel_section.accent %}
 {% endfor %}

@@ -22,7 +22,7 @@ def product_detail(request, slug):
         moderation_status=ProductReview.ModerationStatus.APPROVED
     ).select_related("user")
     product = get_object_or_404(
-        Product.objects.select_related("brand", "category", "subcategory").prefetch_related(
+        Product.objects.marketplace_visible().select_related("seller", "brand", "category", "subcategory").prefetch_related(
             "gallery", "variants", "features", "specifications",
             Prefetch("reviews", queryset=approved_reviews),
         ),
@@ -38,7 +38,7 @@ def product_detail(request, slug):
     recent_ids.insert(0, product.id)
     request.session['recently_viewed_product_ids'] = recent_ids[:12]
 
-    related_products = Product.objects.select_related("brand", "category", "subcategory").filter(
+    related_products = Product.objects.marketplace_visible().select_related("seller", "brand", "category", "subcategory").filter(
         category=product.category, is_active=True
     ).exclude(
         id=product.id
@@ -148,7 +148,7 @@ def _get_search_results(query):
     startswith_category = When(category__name__istartswith=query, then=Value(3))
     startswith_subcategory = When(subcategory__name__istartswith=query, then=Value(4))
 
-    products = Product.objects.select_related('brand', 'category', 'subcategory').filter(
+    products = Product.objects.marketplace_visible().select_related('seller', 'brand', 'category', 'subcategory').filter(
         product_filters,
         brand__is_active=True,
         category__is_active=True,
@@ -253,7 +253,7 @@ def product_list(request):
 def category_detail(request, slug):
     category = get_object_or_404(Category, slug=slug, is_active=True)
     subcategory_slug = request.GET.get('subcategory')
-    products = Product.objects.select_related('brand', 'category', 'subcategory').filter(category=category, is_active=True)
+    products = Product.objects.marketplace_visible().select_related('seller', 'brand', 'category', 'subcategory').filter(category=category, is_active=True)
     selected_subcategory = None
     if subcategory_slug:
         products = products.filter(subcategory__slug=subcategory_slug)
@@ -293,7 +293,7 @@ def brand_detail(request, pk):
     subcategory_slug = request.GET.get('subcategory', '').strip()
     sort_by = request.GET.get('sort', 'featured').strip() or 'featured'
 
-    products_queryset = Product.objects.select_related('brand', 'category', 'subcategory').filter(
+    products_queryset = Product.objects.marketplace_visible().select_related('seller', 'brand', 'category', 'subcategory').filter(
         brand=brand,
         is_active=True,
     )

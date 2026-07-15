@@ -6,7 +6,7 @@ from products.models import Brand, Category, Product
 
 class ProductSitemap(Sitemap):
     def items(self):
-        return Product.objects.filter(
+        return Product.objects.marketplace_visible().filter(
             is_active=True, category__is_active=True, brand__is_active=True
         ).only("slug", "created_at").order_by("pk")
 

@@ -9,12 +9,14 @@ class OrderItemInline(admin.TabularInline):
     extra = 0
 
     readonly_fields = (
-        'product', 'product_image', 'size', 'color', 'quantity', 'original_price',
-        'discount_amount', 'applied_offer_name', 'price',
+        'product', 'seller', 'seller_name', 'product_image', 'size', 'color', 'quantity', 'original_price',
+        'discount_amount', 'applied_offer_name', 'price', 'marketplace_commission', 'seller_earning',
     )
 
     fields = (
         'product',
+        'seller',
+        'seller_name',
         'product_image',
         'size',
         'color',
@@ -23,6 +25,8 @@ class OrderItemInline(admin.TabularInline):
         'discount_amount',
         'applied_offer_name',
         'price',
+        'marketplace_commission',
+        'seller_earning',
     )
 
     def product_image(self, obj):
@@ -42,7 +46,7 @@ class OrderItemInline(admin.TabularInline):
         return False
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related('product')
+        return super().get_queryset(request).select_related('product', 'seller')
 
 
 def _set_order_status(modeladmin, request, queryset, status):
@@ -73,6 +77,7 @@ class OrderAdmin(admin.ModelAdmin):
         'full_name',
         'email',
         'item_count',
+        'seller_count',
         'coupon_code',
         'total_price',
         'status_badge',
@@ -80,7 +85,7 @@ class OrderAdmin(admin.ModelAdmin):
     )
 
     inlines = [OrderItemInline]
-    search_fields = ('id', 'full_name', 'email', 'coupon_code')
+    search_fields = ('id', 'full_name', 'email', 'coupon_code', 'items__seller__store_name')
     list_filter = ('status', 'created_at')
     date_hierarchy = 'created_at'
     list_select_related = ('user',)
@@ -97,12 +102,17 @@ class OrderAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('user').annotate(
-            _item_count=Count('items')
+            _item_count=Count('items'),
+            _seller_count=Count('items__seller', distinct=True),
         )
 
     @admin.display(description='Items', ordering='_item_count')
     def item_count(self, obj):
         return obj._item_count
+
+    @admin.display(description='Sellers', ordering='_seller_count')
+    def seller_count(self, obj):
+        return obj._seller_count
 
     @admin.display(description='Status', ordering='status')
     def status_badge(self, obj):

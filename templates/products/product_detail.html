@@ -48,6 +48,7 @@
 
       <div class="pdp-info">
         <a class="pdp-brand" href="{% url 'products:brand_detail' product.brand.pk %}">{{ product.brand.name }}</a>
+        {% if product.seller %}<a class="pdp-brand" href="{{ product.seller.get_absolute_url }}">Sold by {{ product.seller.store_name }}</a>{% else %}<span class="pdp-brand">Sold by OwnBasket</span>{% endif %}
         <h1 id="product-title">{{ product.name }}</h1>
         <div class="pdp-rating"><span class="pdp-stars" aria-label="Rated {{ product.rating }} out of 5"><i class="bi bi-star-fill"></i><strong>{{ product.rating|default:'0.0' }}</strong></span><a href="#reviews">{{ product.reviews_count|default:0 }} reviews</a><span>{{ product.total_views|intcomma }} views</span></div>
         <p class="pdp-summary">{{ product.short_description|default:product.description|truncatewords:38 }}</p>

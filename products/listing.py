@@ -15,7 +15,7 @@ SORT_OPTIONS = {
 def build_product_listing(request, default_sort="default"):
     """Build a single relation-optimized queryset from all public PLP filters."""
     params = request.GET
-    products = Product.objects.select_related("brand", "category", "subcategory").filter(
+    products = Product.objects.marketplace_visible().select_related("seller", "brand", "category", "subcategory").filter(
         is_active=True, brand__is_active=True, category__is_active=True
     )
     query = params.get("q", "").strip()

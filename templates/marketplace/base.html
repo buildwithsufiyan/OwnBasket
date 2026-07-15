@@ -1,0 +1,19 @@
+{% extends 'base.html' %}{% load static %}
+{% block extra_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'css/marketplace.css' %}">{% endblock %}
+{% block content %}
+<div class="market-shell">
+  <aside class="market-sidebar">
+    <h4>{{ request.user.seller_profile.store_name|default:'Seller panel' }}</h4>
+    <a href="{% url 'marketplace:dashboard' %}">Dashboard</a>
+    <a href="{% url 'marketplace:products' %}">Products & inventory</a>
+    <a href="{% url 'marketplace:orders' %}">Orders</a>
+    <a href="{% url 'marketplace:analytics' %}">Analytics</a>
+    <a href="{% url 'marketplace:payouts' %}">Earnings & payouts</a>
+    <a href="{% url 'marketplace:documents' %}">Documents</a>
+    <a href="{% url 'marketplace:notifications' %}">Notifications</a>
+    <a href="{% url 'marketplace:settings' %}">Store settings</a>
+    {% if request.user.seller_profile.is_approved %}<a href="{{ request.user.seller_profile.get_absolute_url }}">View public store</a>{% endif %}
+  </aside>
+  <main class="market-content">{% block marketplace_content %}{% endblock %}</main>
+</div>
+{% endblock %}

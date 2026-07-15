@@ -1,0 +1,1 @@
+{% extends 'marketplace/base.html' %}{% block marketplace_content %}<div class="market-card"><h1>Store settings & policies</h1><form method="post" enctype="multipart/form-data" class="market-form">{% csrf_token %}{{ form.as_p }}<button class="market-btn">Save settings</button></form></div>{% endblock %}

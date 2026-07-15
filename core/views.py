@@ -51,7 +51,7 @@ def _get_recently_viewed_products(request):
     if not recent_ids:
         return []
     products = list(
-        Product.objects.select_related("brand", "category", "subcategory").filter(
+        Product.objects.marketplace_visible().select_related("seller", "brand", "category", "subcategory").filter(
             id__in=recent_ids, is_active=True
         )
     )
@@ -66,7 +66,7 @@ def _get_recently_viewed_products(request):
 
 
 def _home_section_queryset():
-    return Product.objects.select_related("brand", "category", "subcategory").filter(
+    return Product.objects.marketplace_visible().select_related("seller", "brand", "category", "subcategory").filter(
         is_active=True
     )
 
@@ -81,8 +81,8 @@ def home(request):
     subcategory_slug = request.GET.get("subcategory")
     query = request.GET.get("q")
 
-    products = Product.objects.select_related(
-        "brand", "category", "subcategory"
+    products = Product.objects.marketplace_visible().select_related(
+        "seller", "brand", "category", "subcategory"
     ).filter(is_active=True)
 
     if category_slug:

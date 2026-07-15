@@ -201,7 +201,26 @@ class ValueDiscountMixin(models.Model):
             raise ValidationError("Max discount amount must be greater than zero.")
 
 
+class ProductQuerySet(models.QuerySet):
+    def marketplace_visible(self):
+        return self.filter(
+            models.Q(seller__isnull=True) |
+            models.Q(seller__verification_status='approved')
+        )
+
+
 class Product(models.Model):
+    objects = ProductQuerySet.as_manager()
+
+    seller = models.ForeignKey(
+        'marketplace.SellerProfile',
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        related_name='products',
+        help_text='Leave empty for products owned directly by OwnBasket.',
+    )
+
     category = models.ForeignKey(
         Category,
         on_delete=models.CASCADE
