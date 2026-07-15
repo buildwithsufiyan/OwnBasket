@@ -141,11 +141,10 @@
                     <p class="text-muted mb-0 small">Get updates on new arrivals and exclusive offers.</p>
                 </div>
                 <div class="col-lg-6">
-                    <form action="#" class="input-group"
-                        onsubmit="event.preventDefault(); alert('Thank you for subscribing!'); this.reset();">
-                        <input type="email" class="form-control input-subscribe" placeholder="Enter your email" required
-                            autocomplete="off">
-                        <button class="btn btn-subscribe" type="submit">Subscribe</button>
+                    <form action="{% url 'marketing:newsletter_subscribe' %}" method="post">{% csrf_token %}
+                        <div class="input-group"><input type="email" name="email" class="form-control input-subscribe" placeholder="Enter your email" required autocomplete="email"><button class="btn btn-subscribe" type="submit">Subscribe</button></div>
+                        <label class="small text-light mt-2 d-block"><input type="checkbox" name="consent" required> I agree to receive optional marketing emails and can unsubscribe anytime.</label>
+                        <input type="hidden" name="source" value="footer"><input type="hidden" name="next" value="{{ request.path }}"><input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-10000px" aria-hidden="true">
                     </form>
                 </div>
             </div>

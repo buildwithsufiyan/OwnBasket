@@ -11,7 +11,16 @@ from products.pricing import build_cart_summary, get_coupon_by_code, validate_co
 
 
 def _get_user_cart(user):
-    return Cart.objects.get_or_create(id=user.id)[0]
+    cart, _ = Cart.objects.get_or_create(id=user.id, defaults={'user': user})
+    if cart.user_id != user.id:
+        cart.user = user
+        cart.save(update_fields=('user', 'updated_at'))
+    return cart
+
+
+def _touch_cart(cart):
+    cart.is_active = True
+    cart.save(update_fields=('is_active', 'updated_at'))
 
 
 def _get_coupon_session_key():
@@ -60,6 +69,7 @@ def add_to_cart(request, product_id):
     if not item_created:
         cart_item.quantity += 1
         cart_item.save()
+    _touch_cart(cart)
 
     return redirect('cart_detail')
 
@@ -96,6 +106,7 @@ def increase_quantity(request, item_id):
 
     item.quantity += 1
     item.save()
+    _touch_cart(item.cart)
 
     return redirect('cart_detail')
 
@@ -110,6 +121,7 @@ def decrease_quantity(request, item_id):
     if item.quantity > 1:
         item.quantity -= 1
         item.save()
+        _touch_cart(item.cart)
 
     return redirect('cart_detail')
 
@@ -121,7 +133,9 @@ def remove_from_cart(request, item_id):
     if item.cart.id != request.user.id:
         return redirect('cart_detail')
 
+    cart = item.cart
     item.delete()
+    _touch_cart(cart)
 
     return redirect('cart_detail')
 

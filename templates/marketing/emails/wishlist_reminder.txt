@@ -1,0 +1,4 @@
+{% extends 'marketing/emails/base.txt' %}{% block content %}Items currently available from your wishlist:
+{% for item in items %}- {{ item.product.name }} — Rs. {{ item.product.price }}
+{% endfor %}
+Open wishlist: {{ wishlist_url }}{% endblock %}

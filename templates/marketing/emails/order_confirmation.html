@@ -1,0 +1,1 @@
+{% extends 'marketing/emails/base.html' %}{% block title %}Order confirmation{% endblock %}{% block content %}<h1>Order #{{ order.id }} confirmed</h1><p>Thank you, {{ order.full_name }}. Your order total is Rs. {{ order.total_price }}.</p><p><a href="{{ order_url }}">View your order</a></p>{% endblock %}

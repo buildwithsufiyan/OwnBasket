@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<div class="container py-5"><div class="card p-4"><h1>Unsubscribe from marketing email?</h1><p>Order confirmations and other essential transactional messages will continue.</p><form method="post">{% csrf_token %}<button class="btn btn-danger">Confirm unsubscribe</button></form></div></div>{% endblock %}

@@ -1,0 +1,1 @@
+{% extends 'marketing/emails/base.txt' %}{% block content %}Order #{{ order.id }} status: {{ order.status }}.{% endblock %}

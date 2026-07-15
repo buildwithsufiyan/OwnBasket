@@ -13,7 +13,7 @@ class ContentSecurityPolicyMiddleware:
         response = self.get_response(request)
         header = "Content-Security-Policy-Report-Only" if settings.CSP_REPORT_ONLY else "Content-Security-Policy"
         response.setdefault(header, settings.CSP_POLICY)
-        if request.path.startswith(("/admin/", "/account/", "/checkout/", "/cart/", "/wishlist/", "/my-orders/")):
+        if request.path.startswith(("/admin/", "/account/", "/checkout/", "/cart/", "/wishlist/", "/my-orders/", "/marketing/")):
             response.setdefault("X-Robots-Tag", "noindex, nofollow")
         return response
 
@@ -27,6 +27,7 @@ class RateLimitMiddleware:
         "/search/live/": (60, 60),
         "/api/search-suggestions/": (60, 60),
         "/checkout/": (10, 300),
+        "/marketing/newsletter/subscribe/": (5, 600),
     }
 
     def __init__(self, get_response):

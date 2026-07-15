@@ -1,0 +1,4 @@
+{% extends 'marketing/emails/base.txt' %}{% block content %}Confirm your OwnBasket newsletter subscription:
+{{ confirm_url }}
+
+If you did not request this, no action is needed.{% endblock %}

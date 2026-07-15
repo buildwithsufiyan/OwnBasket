@@ -1,0 +1,3 @@
+{% extends 'marketing/emails/base.txt' %}{% block content %}Order #{{ order.id }} confirmed.
+Total: Rs. {{ order.total_price }}
+View order: {{ order_url }}{% endblock %}

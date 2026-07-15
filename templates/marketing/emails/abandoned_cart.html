@@ -1,0 +1,1 @@
+{% extends 'marketing/emails/base.html' %}{% block title %}Your saved cart{% endblock %}{% block content %}<h1>Your cart is waiting</h1><p>You left these real items in your OwnBasket cart:</p><ul>{% for item in items %}<li>{{ item.product.name }} × {{ item.quantity }}</li>{% endfor %}</ul><p><a href="{{ cart_url }}">Review your cart</a></p>{% endblock %}

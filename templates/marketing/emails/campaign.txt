@@ -1,0 +1,5 @@
+{% extends 'marketing/emails/base.txt' %}{% block content %}{{ campaign.subject }}
+
+{{ campaign.content }}
+{% if coupon %}
+Coupon: {{ coupon.code }}{% endif %}{% endblock %}{% block unsubscribe %}{% if unsubscribe_url %}Unsubscribe: {{ unsubscribe_url }}{% endif %}{% endblock %}

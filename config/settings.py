@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     "accounts",
     "marketplace.apps.MarketplaceConfig",
+    "marketing.apps.MarketingConfig",
     "products",
     "cart",
     "orders",
@@ -207,6 +208,11 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "OwnBasket <noreply@localhost>")
+MARKETING_HIGH_VALUE_THRESHOLD = os.getenv("MARKETING_HIGH_VALUE_THRESHOLD", "50000")
+ABANDONED_CART_MIN_HOURS = int(os.getenv("ABANDONED_CART_MIN_HOURS", "24"))
+ABANDONED_CART_MAX_REMINDERS = int(os.getenv("ABANDONED_CART_MAX_REMINDERS", "2"))
+WISHLIST_REMINDER_DAYS = int(os.getenv("WISHLIST_REMINDER_DAYS", "14"))
+WISHLIST_REMINDER_FREQUENCY_DAYS = int(os.getenv("WISHLIST_REMINDER_FREQUENCY_DAYS", "30"))
 
 STRIPE_PUBLIC_KEY = os.getenv("STRIPE_PUBLIC_KEY", "")
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
@@ -235,6 +241,7 @@ LOGGING = {
         "django.security": {"handlers": LOG_HANDLERS, "level": "WARNING", "propagate": False},
         "orders": {"handlers": LOG_HANDLERS, "level": LOG_LEVEL, "propagate": False},
         "payments": {"handlers": LOG_HANDLERS, "level": LOG_LEVEL, "propagate": False},
+        "marketing": {"handlers": LOG_HANDLERS, "level": LOG_LEVEL, "propagate": False},
     },
 }
 

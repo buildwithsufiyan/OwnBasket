@@ -1,0 +1,2 @@
+{% extends 'marketing/emails/base.txt' %}{% block content %}{{ product.name }} is currently back in stock.
+{{ product_url }}{% endblock %}

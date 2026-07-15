@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
@@ -12,12 +13,17 @@ from cart.models import Cart, CartItem
 from products.models import CouponRedemption
 from products.pricing import build_cart_summary
 from marketplace.models import SellerNotification
+from marketing.models import EngagementDelivery, NotificationPreference
+from marketing.services.email_service import send_branded_email
 
 
 
 @login_required
 def checkout(request):
-    cart, _ = Cart.objects.get_or_create(id=request.user.id)
+    cart, _ = Cart.objects.get_or_create(id=request.user.id, defaults={'user': request.user})
+    if cart.user_id != request.user.id:
+        cart.user = request.user
+        cart.save(update_fields=('user', 'updated_at'))
     items = CartItem.objects.filter(cart=cart, product__is_active=True).filter(
         Q(product__seller__isnull=True) |
         Q(product__seller__verification_status='approved')
@@ -91,7 +97,21 @@ def checkout(request):
                 )
 
             items.delete()
+            cart.is_active = False
+            cart.save(update_fields=('is_active', 'updated_at'))
             request.session.pop('active_coupon_code', None)
+
+            if request.POST.get('marketing_consent') == 'on':
+                preferences, _ = NotificationPreference.objects.get_or_create(user=request.user)
+                preferences.promotional_emails = True
+                preferences.record_consent(True, 'checkout')
+
+        send_branded_email(
+            subject=f'OwnBasket order #{order.pk} confirmation', recipient=order.email,
+            template_name='order_confirmation',
+            context={'order': order, 'order_url': request.build_absolute_uri(reverse('order_detail', args=(order.pk,)))},
+            kind=EngagementDelivery.Kind.TRANSACTIONAL, reference=order.pk, user=request.user,
+        )
 
         messages.success(
             request,

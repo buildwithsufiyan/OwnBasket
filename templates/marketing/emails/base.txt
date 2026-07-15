@@ -1,0 +1,6 @@
+OwnBasket
+
+{% block content %}{% endblock %}
+
+OwnBasket customer communications.
+{% block unsubscribe %}{% endblock %}

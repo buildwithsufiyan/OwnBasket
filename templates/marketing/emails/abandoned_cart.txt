@@ -1,0 +1,4 @@
+{% extends 'marketing/emails/base.txt' %}{% block content %}Your OwnBasket cart is waiting.
+{% for item in items %}- {{ item.product.name }} x {{ item.quantity }}
+{% endfor %}
+Review cart: {{ cart_url }}{% endblock %}

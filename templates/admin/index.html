@@ -1,5 +1,5 @@
 {% extends "admin/base_site.html" %}
-{% load i18n static log accounts_admin_tags product_admin_tags %}
+{% load i18n static log accounts_admin_tags product_admin_tags marketing_admin_tags %}
 
 {% block extrastyle %}
 {{ block.super }}
@@ -217,8 +217,13 @@
 {% dashboard_top_categories 5 as top_categories %}
 {% dashboard_recent_orders 6 as recent_orders %}
 {% dashboard_sales_analytics 7 as sales_analytics %}
+{% marketing_dashboard_stats as marketing_stats %}
 <div id="content-main" class="app-list">
   <div class="dashboard-stats-grid">
+    <div class="dashboard-stat-card"><a href="{% url 'admin:marketing_newslettersubscription_changelist' %}"><span class="dashboard-stat-label">Active Subscribers</span><div class="dashboard-stat-value">{{ marketing_stats.active_subscribers }}</div><p class="dashboard-stat-note">Confirmed newsletter subscriptions.</p></a></div>
+    <div class="dashboard-stat-card"><a href="{% url 'admin:marketing_campaign_changelist' %}"><span class="dashboard-stat-label">Campaigns</span><div class="dashboard-stat-value">{{ marketing_stats.draft_campaigns }}/{{ marketing_stats.scheduled_campaigns }}/{{ marketing_stats.sent_campaigns }}</div><p class="dashboard-stat-note">Draft / scheduled / sent.</p></a></div>
+    <div class="dashboard-stat-card"><span class="dashboard-stat-label">Abandoned Cart Candidates</span><div class="dashboard-stat-value">{{ marketing_stats.abandoned_candidates }}</div><p class="dashboard-stat-note">Real identifiable inactive carts; consent is enforced during processing.</p></div>
+    <div class="dashboard-stat-card"><a href="{% url 'admin:marketing_stockalert_changelist' %}"><span class="dashboard-stat-label">Active Stock Alerts</span><div class="dashboard-stat-value">{{ marketing_stats.active_stock_alerts }}</div><p class="dashboard-stat-note">Waiting for real inventory availability.</p></a></div>
     <div class="dashboard-stat-card">
       <span class="dashboard-stat-label">Total Customers</span>
       <div class="dashboard-stat-value">{{ customer_count }}</div>

@@ -74,6 +74,7 @@
           <button type="submit" class="pdp-btn pdp-btn-primary" {% if product.out_of_stock %}disabled{% endif %}><i class="bi bi-bag-plus"></i>Add to cart</button>
           <button type="submit" name="buy_now" value="true" class="pdp-btn pdp-btn-dark" {% if product.out_of_stock %}disabled{% endif %}><i class="bi bi-lightning-charge-fill"></i>Buy now</button>
         </form>
+        {% if product.out_of_stock and user.is_authenticated %}<form method="post" action="{% url 'marketing:stock_alert_subscribe' product.id %}">{% csrf_token %}<button type="submit" class="pdp-btn pdp-btn-dark"><i class="bi bi-envelope"></i>Notify me when available</button></form>{% endif %}
         <div class="pdp-secondary-actions"><a href="{% url 'wishlist:add_to_wishlist' product.id %}"><i class="bi bi-heart"></i>Wishlist</a><button type="button" data-share><i class="bi bi-share"></i>Share</button></div>
         <ul class="pdp-assurances"><li><i class="bi bi-shield-check"></i>Secure payment</li>{% if product.cash_on_delivery %}<li><i class="bi bi-cash-coin"></i>Cash on delivery</li>{% endif %}<li><i class="bi bi-arrow-counterclockwise"></i>{{ product.return_policy|default:'Easy return policy'|truncatewords:8 }}</li></ul>
       </aside>

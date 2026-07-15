@@ -91,6 +91,12 @@
                                         </div>
 
                                         <div class="auth-field-group">
+                                            <label class="auth-label" for="id_email">Email</label>
+                                            <div class="auth-input-wrap"><i class="bi bi-envelope auth-input-icon"></i><input type="email" name="email" id="id_email" class="auth-input {% if form.email.errors %}auth-input-error{% endif %}" value="{{ form.email.value|default:'' }}" required></div>
+                                            {% if form.email.errors %}<span class="auth-field-error">{{ form.email.errors.0 }}</span>{% endif %}
+                                        </div>
+
+                                        <div class="auth-field-group">
                                             <label class="auth-label" for="id_password1">Password</label>
                                             <div class="auth-input-wrap">
                                                 <i class="bi bi-lock auth-input-icon"></i>
@@ -128,6 +134,8 @@
                                             <span class="auth-field-error">{{ form.password2.errors.0 }}</span>
                                             {% endif %}
                                         </div>
+
+                                        <label><input type="checkbox" name="marketing_consent" {% if form.marketing_consent.value %}checked{% endif %}> Send me optional OwnBasket offers and product updates. This is not required to create an account.</label>
 
                                         <button type="submit" class="btn-auth-submit">
                                             <i class="bi bi-person-check-fill me-2"></i>Create Account

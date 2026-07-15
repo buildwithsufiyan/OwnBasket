@@ -2,7 +2,6 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import logout
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
@@ -10,6 +9,11 @@ from django.views.decorators.http import require_http_methods
 
 from .models import CustomerProfile
 from .forms import AccountPasswordChangeForm, ProfileForm
+from marketing.forms import AccountRegistrationForm
+from marketing.models import NotificationPreference
+from marketing.models import Referral, ReferralCode
+from marketing.models import EngagementDelivery
+from marketing.services.email_service import send_branded_email
 from orders.models import Order
 from wishlist.models import Wishlist
 
@@ -57,8 +61,11 @@ def change_password(request):
 
 
 def register(request):
+    referral_value = (request.GET.get('ref') or '').strip().upper()
+    if referral_value:
+        request.session['pending_referral_code'] = referral_value
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = AccountRegistrationForm(request.POST)
 
         if form.is_valid():
             with transaction.atomic():
@@ -67,16 +74,31 @@ def register(request):
                 user.is_superuser = False
                 user.save()
                 CustomerProfile.objects.get_or_create(user=user)
+                preferences, _ = NotificationPreference.objects.get_or_create(user=user)
+                if form.cleaned_data.get('marketing_consent'):
+                    preferences.promotional_emails = True
+                    preferences.record_consent(True, 'registration')
+                referral_code = ReferralCode.objects.filter(code=request.session.pop('pending_referral_code', '')).first()
+                if referral_code and referral_code.user_id != user.id:
+                    referral = Referral(referral_code=referral_code, referred_user=user)
+                    referral.full_clean()
+                    referral.save()
 
             messages.success(
                 request,
                 'Account created successfully. Please login.'
             )
 
+            send_branded_email(
+                subject='Welcome to OwnBasket', recipient=user.email,
+                template_name='welcome', context={'user': user},
+                kind=EngagementDelivery.Kind.TRANSACTIONAL, reference=f'welcome-{user.pk}', user=user,
+            )
+
             return redirect('login')
 
     else:
-        form = UserCreationForm()
+        form = AccountRegistrationForm()
 
     return render(
         request,

@@ -1,9 +1,17 @@
 from django.db import models
+from django.conf import settings
 from products.models import Product
 
 
 class Cart(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True, related_name='shopping_cart'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True, db_index=True)
+    reminder_count = models.PositiveSmallIntegerField(default=0)
+    last_reminder_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return f"Cart {self.id}"
