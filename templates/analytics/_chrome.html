@@ -1,0 +1,11 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'admin/analytics.css' %}">
+<nav class="analytics-nav" aria-label="Analytics reports">
+  <a href="{% url 'analytics:dashboard' %}">Dashboard</a><a href="{% url 'analytics:sales' %}">Sales</a><a href="{% url 'analytics:products' %}">Products</a><a href="{% url 'analytics:customers' %}">Customers</a><a href="{% url 'analytics:sellers' %}">Sellers</a><a href="{% url 'analytics:refunds' %}">Refunds</a><a href="{% url 'analytics:tax' %}">Tax foundation</a>
+</nav>
+<form method="get" class="analytics-filter" aria-label="Report date filter">
+  <label>Preset {{ date_form.preset }}</label><label>Start date {{ date_form.start_date }}</label><label>End date {{ date_form.end_date }}</label>
+  {% if granularity %}<label>Granularity<select name="granularity"><option value="daily" {% if granularity == 'daily' %}selected{% endif %}>Daily</option><option value="weekly" {% if granularity == 'weekly' %}selected{% endif %}>Weekly</option><option value="monthly" {% if granularity == 'monthly' %}selected{% endif %}>Monthly</option><option value="yearly" {% if granularity == 'yearly' %}selected{% endif %}>Yearly</option></select></label>{% endif %}
+  <button type="submit">Apply</button><a href="?preset=last_30_days">Reset</a>
+</form>
+{% if date_form.errors %}<div class="analytics-errors" role="alert">{{ date_form.non_field_errors }}{% for field in date_form %}{{ field.errors }}{% endfor %}</div>{% endif %}

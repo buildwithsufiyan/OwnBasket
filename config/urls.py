@@ -11,6 +11,7 @@ urlpatterns = [
     path('sitemap.xml', cache_page(3600)(sitemap), {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('admin/themes/', include('themes.urls')),
     path('theme-assets/<str:theme_folder>/<path:asset_path>', theme_asset, name='theme_asset'),
+    path('admin/analytics/', include('analytics.urls')),
     path('admin/', admin.site.urls),
 
     path('', include('core.urls')),

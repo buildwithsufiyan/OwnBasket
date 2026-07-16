@@ -220,6 +220,9 @@
 {% marketing_dashboard_stats as marketing_stats %}
 <div id="content-main" class="app-list">
   <div class="dashboard-stats-grid">
+    {% if perms.orders.view_financial_reports or user.is_superuser %}
+    <div class="dashboard-stat-card"><a href="{% url 'analytics:dashboard' %}"><span class="dashboard-stat-label">Business Analytics</span><div class="dashboard-stat-value">Reports</div><p class="dashboard-stat-note">Revenue, sales, products, customers, sellers, refunds, tax and secure exports.</p></a></div>
+    {% endif %}
     <div class="dashboard-stat-card"><a href="{% url 'admin:marketing_newslettersubscription_changelist' %}"><span class="dashboard-stat-label">Active Subscribers</span><div class="dashboard-stat-value">{{ marketing_stats.active_subscribers }}</div><p class="dashboard-stat-note">Confirmed newsletter subscriptions.</p></a></div>
     <div class="dashboard-stat-card"><a href="{% url 'admin:marketing_newslettersubscription_changelist' %}?status__exact=unsubscribed"><span class="dashboard-stat-label">Unsubscribed</span><div class="dashboard-stat-value">{{ marketing_stats.unsubscribed }}</div><p class="dashboard-stat-note">Customers who withdrew newsletter permission.</p></a></div>
     <div class="dashboard-stat-card"><a href="{% url 'admin:marketing_campaign_changelist' %}"><span class="dashboard-stat-label">Campaigns</span><div class="dashboard-stat-value">{{ marketing_stats.draft_campaigns }}/{{ marketing_stats.scheduled_campaigns }}/{{ marketing_stats.sent_campaigns }}</div><p class="dashboard-stat-note">Draft / scheduled / sent.</p></a></div>

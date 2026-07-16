@@ -45,6 +45,7 @@ def checkout(request):
                 subtotal=summary.subtotal_original,
                 discount_total=summary.total_discount,
                 shipping_amount=summary.shipping_amount,
+                payment_method=(request.POST.get('payment_method') or 'COD')[:40],
                 coupon_code=summary.applied_coupon.code if summary.applied_coupon else '',
                 total_price=summary.grand_total,
             )
@@ -71,6 +72,7 @@ def checkout(request):
                     seller_name=seller.store_name if seller else '',
                     marketplace_commission=marketplace_commission,
                     seller_earning=line_total - marketplace_commission,
+                    cost_price=line.item.product.cost_price,
                 )
                 if seller:
                     ordered_sellers[seller.pk] = seller

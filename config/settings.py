@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "products",
     "cart",
     "orders",
+    "analytics.apps.AnalyticsConfig",
     "core",
     "wishlist",
     "banners.apps.BannersConfig",

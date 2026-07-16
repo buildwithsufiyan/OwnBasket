@@ -1,7 +1,25 @@
 from django.contrib import admin
 from django.db.models import Count
 from django.utils.html import format_html
-from .models import Order, OrderItem
+from .models import Order, OrderItem, PaymentTransaction, Refund
+
+
+@admin.register(PaymentTransaction)
+class PaymentTransactionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'order', 'method', 'status', 'amount', 'created_at')
+    list_filter = ('method', 'status', 'created_at')
+    search_fields = ('order__id', 'provider_reference')
+    readonly_fields = ('created_at', 'updated_at')
+    list_select_related = ('order',)
+
+
+@admin.register(Refund)
+class RefundAdmin(admin.ModelAdmin):
+    list_display = ('id', 'order', 'order_item', 'amount', 'quantity', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('order__id', 'reason')
+    readonly_fields = ('created_at',)
+    list_select_related = ('order', 'payment', 'order_item__product', 'order_item__seller')
 
 
 class OrderItemInline(admin.TabularInline):
@@ -93,11 +111,13 @@ class OrderAdmin(admin.ModelAdmin):
     readonly_fields = (
         'user', 'full_name', 'email', 'address', 'subtotal', 'discount_total',
         'shipping_amount', 'coupon_code', 'total_price', 'created_at',
+        'tax_amount', 'payment_method', 'payment_status', 'customer_state',
     )
     fieldsets = (
         ('Order', {'fields': ('user', 'status', 'created_at')}),
         ('Customer and delivery', {'fields': ('full_name', 'email', 'address')}),
-        ('Payment summary', {'fields': ('subtotal', 'discount_total', 'shipping_amount', 'coupon_code', 'total_price')}),
+        ('Payment summary', {'fields': ('subtotal', 'discount_total', 'tax_amount', 'shipping_amount', 'coupon_code', 'total_price', 'payment_method', 'payment_status')}),
+        ('Reporting snapshot', {'fields': ('customer_state',)}),
     )
 
     def get_queryset(self, request):

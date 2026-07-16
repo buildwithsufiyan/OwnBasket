@@ -1,0 +1,4 @@
+<div class="export-actions" aria-label="Export options">
+  <a class="export-link" href="{% url 'analytics:export' report 'csv' %}?{{ query_string }}">Export {{ report|title }} CSV</a>
+  <a class="export-link" href="{% url 'analytics:export' report 'xlsx' %}?{{ query_string }}">Export {{ report|title }} Excel</a>
+</div>
