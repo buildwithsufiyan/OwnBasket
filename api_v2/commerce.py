@@ -15,6 +15,8 @@ from products.models import Product
 from products.pricing import build_cart_summary
 from products.pricing import attach_pricing_to_products
 from wishlist.models import Wishlist
+from personalization.models import BehaviorEvent
+from personalization.services import record_behavior
 
 from .catalog import visible_products
 from .http import ApiError, api_endpoint, json_body, paginated, positive_int
@@ -70,13 +72,15 @@ def cart_items(request):
         item.quantity = min(item.quantity + quantity, 99)
         item.save(update_fields=('quantity',))
     touch_cart(user_cart)
+    record_behavior(request, BehaviorEvent.EventType.CART_ADD, product=product, category=product.category, brand=product.brand)
     _, items, summary = _cart_state(request)
     return {'cart': _cart_payload(request, items, summary), 'created': created}
 
 
 @api_endpoint(('PATCH', 'DELETE'), auth=True)
 def cart_item_detail(request, item_id):
-    item = get_object_or_404(CartItem.objects.select_related('cart'), pk=item_id, cart__user=request.user)
+    item = get_object_or_404(CartItem.objects.select_related('cart', 'product__category', 'product__brand'), pk=item_id, cart__user=request.user)
+    product = item.product
     if request.method == 'DELETE':
         user_cart = item.cart
         item.delete()
@@ -86,6 +90,11 @@ def cart_item_detail(request, item_id):
         item.quantity = positive_int(payload.get('quantity'), name='quantity', maximum=99)
         item.save(update_fields=('quantity',))
         touch_cart(item.cart)
+    record_behavior(
+        request,
+        BehaviorEvent.EventType.CART_REMOVE if request.method == 'DELETE' else BehaviorEvent.EventType.CART_ADD,
+        product=product, category=product.category, brand=product.brand,
+    )
     _, items, summary = _cart_state(request)
     return {'cart': _cart_payload(request, items, summary)}
 
@@ -154,6 +163,7 @@ def wishlist(request):
         _, created = Wishlist.objects.get_or_create(user=request.user, product=product)
         if created:
             Product.objects.filter(pk=product.pk).update(wishlist_count=F('wishlist_count') + 1)
+            record_behavior(request, BehaviorEvent.EventType.WISHLIST_ADD, product=product, category=product.category, brand=product.brand)
     queryset = list(Wishlist.objects.filter(user=request.user).filter(
         models.Q(product__seller__isnull=True) | models.Q(product__seller__verification_status='approved')
     ).select_related('product', 'product__seller', 'product__brand', 'product__category'))
@@ -166,4 +176,7 @@ def wishlist_detail(request, product_id):
     deleted, _ = Wishlist.objects.filter(user=request.user, product_id=product_id).delete()
     if deleted:
         Product.objects.filter(pk=product_id, wishlist_count__gt=0).update(wishlist_count=F('wishlist_count') - 1)
+        product = Product.objects.select_related('category', 'brand').filter(pk=product_id).first()
+        if product:
+            record_behavior(request, BehaviorEvent.EventType.WISHLIST_REMOVE, product=product, category=product.category, brand=product.brand)
     return {'deleted': bool(deleted)}

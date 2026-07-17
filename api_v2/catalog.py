@@ -6,6 +6,8 @@ from products.pricing import attach_pricing_to_products
 
 from .http import ApiError, api_endpoint, json_body, paginated, positive_int
 from .serializers import brand_data, category_data, product_data, review_data
+from personalization.models import BehaviorEvent
+from personalization.services import record_behavior
 
 
 def visible_products():
@@ -20,6 +22,7 @@ def products(request):
     query = (request.GET.get('q') or '').strip()[:100]
     if query:
         queryset = queryset.filter(Q(name__icontains=query) | Q(short_description__icontains=query))
+        record_behavior(request, BehaviorEvent.EventType.SEARCH, search_term=query)
     if request.GET.get('category'):
         queryset = queryset.filter(category__slug=request.GET['category'][:100])
     if request.GET.get('brand'):
@@ -30,6 +33,7 @@ def products(request):
 @api_endpoint(public_cache_seconds=60)
 def product_detail(request, product_id):
     product = get_object_or_404(visible_products(), pk=product_id)
+    record_behavior(request, BehaviorEvent.EventType.PRODUCT_VIEW, product=product, category=product.category, brand=product.brand)
     payload = product_data(request, product)
     payload.update({
         'description': product.description,

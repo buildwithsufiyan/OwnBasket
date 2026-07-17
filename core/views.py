@@ -21,6 +21,7 @@ from banners.models import (
 )
 from site_sections.models import HeroSection, HomepageSection
 from site_sections.services import get_carousel_products
+from personalization.services import RecommendationService, trending_products
 
 DEFAULT_HOME_FEATURES = [
     {
@@ -177,6 +178,19 @@ def home(request):
     # Best Rated Products
     best_rated_products = _priced_products(_home_section_queryset().order_by("-rating"))
 
+    recommendations = RecommendationService(request)
+    recommendations_personalized = recommendations.has_signals()
+    recently_viewed_products = recommendations.recently_viewed(limit=12)
+    recommended_products = recommendations.recommended(limit=12)
+    personalized_offers = recommendations.personalized_offers(limit=8) if request.user.is_authenticated else []
+    favorite_brands = recommendations.favorite_brands(limit=4) if request.user.is_authenticated else []
+    suggested_categories = recommendations.suggested_categories(limit=4) if request.user.is_authenticated else []
+    guest_trending_products = trending_products(hours=168, limit=12) if not request.user.is_authenticated else []
+    guest_best_sellers = _priced_products(_home_section_queryset().order_by('-total_sold', '-total_views'), limit=12) if not request.user.is_authenticated else []
+    guest_popular_categories = []
+    if guest_trending_products:
+        guest_popular_categories = list({item.category_id: item.category for item in guest_trending_products}.values())[:4]
+
     # This is for backward compatibility with templates
     # that might still use the old hero_section
     if not any(s.section_type == "hero" for s in homepage_dynamic_sections):
@@ -207,6 +221,15 @@ def home(request):
         "popular_products": popular_products,
         "latest_products": latest_products,
         "best_rated_products": best_rated_products,
+        "recently_viewed_products": recently_viewed_products,
+        "recommended_products": recommended_products,
+        "recommendations_personalized": recommendations_personalized,
+        "personalized_offers": personalized_offers,
+        "favorite_brands": favorite_brands,
+        "suggested_categories": suggested_categories,
+        "guest_trending_products": guest_trending_products,
+        "guest_best_sellers": guest_best_sellers,
+        "guest_popular_categories": guest_popular_categories,
         "home_json_ld": json.dumps(home_schema).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026"),
     }
 

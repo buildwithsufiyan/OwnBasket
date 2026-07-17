@@ -10,6 +10,8 @@ from .models import Cart, CartItem
 from .services import get_user_cart, touch_cart
 from products.models import Product
 from products.pricing import build_cart_summary, get_coupon_by_code, validate_coupon
+from personalization.models import BehaviorEvent
+from personalization.services import record_behavior
 
 
 def _get_user_cart(user):
@@ -67,6 +69,7 @@ def add_to_cart(request, product_id):
         cart_item.quantity += 1
         cart_item.save()
     _touch_cart(cart)
+    record_behavior(request, BehaviorEvent.EventType.CART_ADD, product=product, category=product.category, brand=product.brand)
 
     return redirect('cart_detail')
 
@@ -104,6 +107,7 @@ def increase_quantity(request, item_id):
     item.quantity += 1
     item.save()
     _touch_cart(item.cart)
+    record_behavior(request, BehaviorEvent.EventType.CART_ADD, product=item.product, category=item.product.category, brand=item.product.brand)
 
     return redirect('cart_detail')
 
@@ -119,6 +123,7 @@ def decrease_quantity(request, item_id):
         item.quantity -= 1
         item.save()
         _touch_cart(item.cart)
+        record_behavior(request, BehaviorEvent.EventType.CART_REMOVE, product=item.product, category=item.product.category, brand=item.product.brand)
 
     return redirect('cart_detail')
 
@@ -131,8 +136,10 @@ def remove_from_cart(request, item_id):
         return redirect('cart_detail')
 
     cart = item.cart
+    product = item.product
     item.delete()
     _touch_cart(cart)
+    record_behavior(request, BehaviorEvent.EventType.CART_REMOVE, product=product, category=product.category, brand=product.brand)
 
     return redirect('cart_detail')
 

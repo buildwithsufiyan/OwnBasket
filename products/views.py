@@ -15,6 +15,9 @@ from django.views.decorators.http import require_GET
 from .models import Brand, BrandHeroBanner, Category, Product, ProductListingSettings, ProductReview, SubCategory
 from .listing import SORT_OPTIONS, build_product_listing
 from .pricing import attach_pricing_to_products
+from personalization.models import BehaviorEvent
+from personalization.search import intelligent_search, popular_searches
+from personalization.services import frequently_bought_together, record_behavior, similar_products
 
 
 # 📌 Product Detail Page
@@ -32,6 +35,7 @@ def product_detail(request, slug):
     )
     Product.objects.filter(pk=product.pk).update(total_views=F('total_views') + 1, last_viewed_at=timezone.now())
     product.total_views += 1
+    record_behavior(request, BehaviorEvent.EventType.PRODUCT_VIEW, product=product, category=product.category, brand=product.brand)
     attach_pricing_to_products([product])
 
     recent_ids = request.session.get('recently_viewed_product_ids', [])
@@ -39,12 +43,8 @@ def product_detail(request, slug):
     recent_ids.insert(0, product.id)
     request.session['recently_viewed_product_ids'] = recent_ids[:12]
 
-    related_products = Product.objects.marketplace_visible().select_related("seller", "brand", "category", "subcategory").filter(
-        category=product.category, is_active=True
-    ).exclude(
-        id=product.id
-    )[:4]
-    related_products = attach_pricing_to_products(related_products)
+    related_products = similar_products(product, limit=8)
+    bought_together_products = frequently_bought_together(product, limit=4)
 
     canonical_url = request.build_absolute_uri(product.get_absolute_url())
     image_url = request.build_absolute_uri(product.image.url) if product.image else ""
@@ -83,6 +83,7 @@ def product_detail(request, slug):
         {
             'product': product,
             'related_products': related_products,
+            'bought_together_products': bought_together_products,
             'canonical_url': canonical_url,
             'social_image': image_url,
             'product_json_ld': safe_json(product_schema),
@@ -193,27 +194,32 @@ def _get_search_results(query):
 
 def search_results(request):
     query = _get_search_query(request)
-    products, categories, brands = _get_search_results(query)
-    products = attach_pricing_to_products(products)
-    categories = list(categories)
-    brands = list(brands)
+    result = intelligent_search(query)
+    products = attach_pricing_to_products(result.products)
+    categories = result.categories
+    brands = result.brands
+    if query:
+        record_behavior(request, BehaviorEvent.EventType.SEARCH, search_term=query)
+    highlight_query = result.corrected_query or query
 
     for product in products:
-        product.highlighted_name = _highlight_text(product.name, query)
-        product.highlighted_category_name = _highlight_text(product.category.name, query)
-        product.highlighted_brand_name = _highlight_text(product.brand.name, query)
+        product.highlighted_name = _highlight_text(product.name, highlight_query)
+        product.highlighted_category_name = _highlight_text(product.category.name, highlight_query)
+        product.highlighted_brand_name = _highlight_text(product.brand.name, highlight_query)
 
     for category in categories:
-        category.highlighted_name = _highlight_text(category.name, query)
+        category.highlighted_name = _highlight_text(category.name, highlight_query)
 
     for brand in brands:
-        brand.highlighted_name = _highlight_text(brand.name, query)
+        brand.highlighted_name = _highlight_text(brand.name, highlight_query)
 
     context = {
         'query': query,
         'products': products,
         'categories': categories,
         'brands': brands,
+        'corrected_query': result.corrected_query,
+        'popular_searches': popular_searches(),
         'has_results': bool(products or categories or brands),
         'canonical_url': request.build_absolute_uri(request.path),
     }
@@ -253,6 +259,7 @@ def product_list(request):
 
 def category_detail(request, slug):
     category = get_object_or_404(Category, slug=slug, is_active=True)
+    record_behavior(request, BehaviorEvent.EventType.CATEGORY_VIEW, category=category)
     subcategory_slug = request.GET.get('subcategory')
     products = Product.objects.marketplace_visible().select_related('seller', 'brand', 'category', 'subcategory').filter(category=category, is_active=True)
     selected_subcategory = None
@@ -289,6 +296,7 @@ def brand_list(request):
 
 def brand_detail(request, pk):
     brand = get_object_or_404(Brand, pk=pk, is_active=True)
+    record_behavior(request, BehaviorEvent.EventType.BRAND_VIEW, brand=brand)
     search_query = request.GET.get('q', '').strip()
     category_slug = request.GET.get('category', '').strip()
     subcategory_slug = request.GET.get('subcategory', '').strip()
@@ -389,8 +397,10 @@ def brand_detail(request, pk):
 
 
 def _build_live_search_payload(query):
-    products, categories, brands = _get_search_results(query)
-    products = attach_pricing_to_products(products)
+    result = intelligent_search(query, product_limit=20)
+    products = attach_pricing_to_products(result.products)
+    categories = result.categories
+    brands = result.brands
 
     product_results = [
         {
@@ -428,6 +438,8 @@ def _build_live_search_payload(query):
         "categories": category_results,
         "brands": brand_results,
         "has_results": bool(product_results or category_results or brand_results),
+        "corrected_query": result.corrected_query,
+        "popular_searches": popular_searches(6) if not query else [],
     }
 
 

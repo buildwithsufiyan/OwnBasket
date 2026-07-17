@@ -4,6 +4,8 @@ from django.contrib.auth.decorators import login_required
 from products.models import Product
 from products.pricing import attach_pricing_to_products
 from .models import Wishlist
+from personalization.models import BehaviorEvent
+from personalization.services import record_behavior
 
 
 @login_required
@@ -14,6 +16,7 @@ def add_to_wishlist(request, product_id):
         Product.objects.filter(pk=product.pk).update(
             wishlist_count=F("wishlist_count") + 1
         )
+        record_behavior(request, BehaviorEvent.EventType.WISHLIST_ADD, product=product, category=product.category, brand=product.brand)
     return redirect("wishlist:wishlist")
 
 
@@ -25,6 +28,7 @@ def remove_from_wishlist(request, product_id):
         Product.objects.filter(pk=product.pk, wishlist_count__gt=0).update(
             wishlist_count=F("wishlist_count") - 1
         )
+        record_behavior(request, BehaviorEvent.EventType.WISHLIST_REMOVE, product=product, category=product.category, brand=product.brand)
     return redirect("wishlist:wishlist")
 
 

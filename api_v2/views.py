@@ -22,6 +22,8 @@ def index(request):
             'orders': url('api-v2:orders'), 'wishlist': url('api-v2:wishlist'),
             'profile': url('api-v2:profile'), 'sellerDashboard': url('api-v2:seller-dashboard'),
             'pushDevices': url('api-v2:push-devices'), 'sync': url('api-v2:sync-capabilities'),
+            'recommendations': url('api-v2:recommendations'), 'trending': url('api-v2:trending'),
+            'intelligentSearch': url('api-v2:intelligent-search'),
         },
     }
 

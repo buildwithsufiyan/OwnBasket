@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     "analytics.apps.AnalyticsConfig",
     "security.apps.SecurityConfig",
     "api_v2.apps.ApiV2Config",
+    "personalization.apps.PersonalizationConfig",
     "core",
     "wishlist",
     "banners.apps.BannersConfig",

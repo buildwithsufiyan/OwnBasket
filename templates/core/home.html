@@ -640,6 +640,19 @@ document.addEventListener('DOMContentLoaded', function () {
 </section>
 {% endif %}
 
+{% if user.is_authenticated %}
+    {% include 'includes/home_product_section.html' with section_title='Continue Shopping' section_note='Based on products you viewed' section_products=recently_viewed_products %}
+    {% if recommendations_personalized %}{% include 'includes/home_product_section.html' with section_title='Recommended For You' section_note='Ranked from your real shopping activity' section_products=recommended_products %}{% else %}{% include 'includes/home_product_section.html' with section_title='Popular On OwnBasket' section_note='Personalization starts as you browse and shop' section_products=recommended_products %}{% endif %}
+    {% include 'includes/home_product_section.html' with section_title='Offers For You' section_note='Relevant active catalog offers' section_products=personalized_offers %}
+    {% if suggested_categories or favorite_brands %}
+    <section class="homepage-top-brands-section" aria-labelledby="personalized-discovery-title"><div class="container"><div class="homepage-section-head"><h2 class="homepage-section-title" id="personalized-discovery-title">Your Favourite Aisles</h2><span class="homepage-section-mini-note">Based on your activity</span></div><div class="homepage-brands-grid">{% for category in suggested_categories %}<a href="{{ category.target_url }}" class="homepage-brand-item homepage-category-item">{% if category.category_image %}<div class="homepage-brand-media homepage-category-media"><img src="{{ category.category_image.url }}" alt="{{ category.name }}" loading="lazy"></div>{% endif %}<span class="homepage-brand-name">{{ category.name }}</span></a>{% endfor %}{% for brand in favorite_brands %}<a href="{{ brand.target_url }}" class="homepage-brand-item">{% if brand.logo %}<div class="homepage-brand-media"><img src="{{ brand.logo.url }}" alt="{{ brand.name }}" loading="lazy"></div>{% endif %}<span class="homepage-brand-name">{{ brand.name }}</span></a>{% endfor %}</div></div></section>
+    {% endif %}
+{% else %}
+    {% include 'includes/home_product_section.html' with section_title='Trending This Week' section_note='Real views, orders, wishlists and ratings' section_products=guest_trending_products %}
+    {% include 'includes/home_product_section.html' with section_title='Most Purchased' section_note='Real customer best sellers' section_products=guest_best_sellers %}
+    {% if guest_popular_categories %}<section class="homepage-categories-section"><div class="container"><div class="homepage-section-head"><h2 class="homepage-section-title">Popular Categories</h2></div><div class="homepage-brands-grid homepage-categories-grid">{% for category in guest_popular_categories %}<a href="{{ category.target_url }}" class="homepage-brand-item homepage-category-item">{% if category.category_image %}<div class="homepage-brand-media homepage-category-media"><img src="{{ category.category_image.url }}" alt="{{ category.name }}" loading="lazy"></div>{% endif %}<span class="homepage-brand-name">{{ category.name }}</span></a>{% endfor %}</div></div></section>{% endif %}
+{% endif %}
+
 {% include 'includes/home_product_section.html' with section_title='Featured Products' section_note='Handpicked for you' section_products=featured_products %}
 
 {% for carousel_section in product_carousel_sections %}

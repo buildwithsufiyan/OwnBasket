@@ -22,6 +22,9 @@
                 <p class="search-results-subtitle">
                     Browse matching products, categories and brands from your live search query.
                 </p>
+                {% if corrected_query %}
+                <p class="search-results-correction">Showing results for <a href="?q={{ corrected_query|urlencode }}">{{ corrected_query }}</a>.</p>
+                {% endif %}
             </div>
             <form action="{% url 'products:search_results' %}" method="GET" class="search-results-form">
                 <div class="input-group">
@@ -140,6 +143,7 @@
             <i class="bi bi-search"></i>
             <h3>Start typing to search the catalog</h3>
             <p>Use keywords like Samsung, mobile, earbuds, Apple or electronics.</p>
+            {% if popular_searches %}<div class="popular-searches" aria-label="Popular searches">{% for term in popular_searches %}<a href="?q={{ term|urlencode }}">{{ term }}</a>{% endfor %}</div>{% endif %}
         </div>
         {% endif %}
     </div>
@@ -179,6 +183,8 @@
     color: #667085;
     max-width: 640px;
 }
+
+.search-results-correction{margin:.65rem 0 0;color:#667085}.search-results-correction a{font-weight:800;color:#8a6500}.popular-searches{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin-top:1rem}.popular-searches a{border:1px solid var(--owncart-border);border-radius:999px;color:#344054;padding:.45rem .75rem;text-decoration:none}
 
 .search-results-input {
     min-height: 52px;
