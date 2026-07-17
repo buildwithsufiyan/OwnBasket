@@ -27,4 +27,3 @@ urlpatterns = [
     path('push/devices/<int:device_id>/', account.push_device_detail, name='push-device-detail'),
     path('sync/capabilities/', views.sync_capabilities, name='sync-capabilities'),
 ]
-

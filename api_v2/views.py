@@ -40,4 +40,3 @@ def sync_capabilities(request):
         },
         'push': {'deviceRegistration': True, 'deliveryConfigured': False},
     }
-

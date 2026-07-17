@@ -30,4 +30,3 @@ class PushDevice(models.Model):
 
     def __str__(self):
         return f'{self.user} - {self.get_platform_display()}'
-
