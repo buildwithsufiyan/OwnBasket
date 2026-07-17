@@ -68,7 +68,11 @@ class OrderItemInline(admin.TabularInline):
 
 
 def _set_order_status(modeladmin, request, queryset, status):
-    count = queryset.exclude(status=status).update(status=status)
+    count = 0
+    for order in queryset.exclude(status=status):
+        order.status = status
+        order.save(update_fields=('status',))
+        count += 1
     modeladmin.message_user(request, f'{count} order(s) moved to {status}.')
 
 

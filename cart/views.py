@@ -4,6 +4,7 @@ from django.db import models
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_POST
 
 from .models import Cart, CartItem
 from products.models import Product
@@ -141,10 +142,8 @@ def remove_from_cart(request, item_id):
 
 
 @login_required(login_url='login')
+@require_POST
 def apply_coupon(request):
-    if request.method != 'POST':
-        return redirect('cart_detail')
-
     code = (request.POST.get('code') or '').upper().strip()
     cart = _get_user_cart(request.user)
     items = CartItem.objects.filter(cart=cart).select_related('product', 'product__brand', 'product__category')
@@ -179,6 +178,7 @@ def apply_coupon(request):
 
 
 @login_required(login_url='login')
+@require_POST
 def remove_coupon(request):
     _clear_coupon_code(request)
     messages.success(request, 'Coupon removed successfully.')

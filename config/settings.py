@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "cart",
     "orders",
     "analytics.apps.AnalyticsConfig",
+    "security.apps.SecurityConfig",
     "core",
     "wishlist",
     "banners.apps.BannersConfig",
@@ -89,6 +90,7 @@ MIDDLEWARE += [
     "core.middleware.RateLimitMiddleware",
     "core.middleware.ContentSecurityPolicyMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "security.middleware.SecurityMonitoringMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -145,7 +147,7 @@ DATABASES = {"default": database_from_url(DATABASE_URL)} if DATABASE_URL else {
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 12}},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
@@ -182,6 +184,9 @@ SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = env_bool("CSRF_COOKIE_HTTPONLY", False)
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_AGE = int(os.getenv("SESSION_COOKIE_AGE", str(14 * 24 * 60 * 60)))
+SESSION_SAVE_EVERY_REQUEST = False
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", IS_PRODUCTION)
 SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "31536000" if IS_PRODUCTION else "0"))
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", IS_PRODUCTION)
@@ -201,6 +206,8 @@ CSP_POLICY = os.getenv(
     "connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'",
 )
 RATE_LIMIT_ENABLED = env_bool("RATE_LIMIT_ENABLED", IS_PRODUCTION)
+TRUST_PROXY_HEADERS = env_bool("TRUST_PROXY_HEADERS", False)
+SECURITY_SESSION_IDLE_SECONDS = int(os.getenv("SECURITY_SESSION_IDLE_SECONDS", "1800"))
 
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
 EMAIL_HOST = os.getenv("EMAIL_HOST", "")

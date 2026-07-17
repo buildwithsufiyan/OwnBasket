@@ -1,6 +1,14 @@
 from django.contrib import admin
+from django import forms
 
 from .models import HeroSection, HomepageSection, ProductCarouselSection
+from security.uploads import SecureUploadFormMixin
+
+
+class HeroSectionAdminForm(SecureUploadFormMixin, forms.ModelForm):
+    class Meta:
+        model = HeroSection
+        fields = '__all__'
 
 
 @admin.register(HomepageSection)
@@ -17,6 +25,7 @@ class HomepageSectionAdmin(admin.ModelAdmin):
 
 @admin.register(HeroSection)
 class HeroSectionAdmin(admin.ModelAdmin):
+    form = HeroSectionAdminForm
     list_display = ("name", "heading", "display_order", "is_active")
     list_editable = ("display_order", "is_active")
     search_fields = ("name", "heading", "subheading")

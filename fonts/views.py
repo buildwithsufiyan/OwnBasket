@@ -2,12 +2,14 @@ from mimetypes import guess_type
 
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.views.decorators.cache import cache_control
+from django.views.decorators.http import require_GET
 
 from .models import ManagedFont
 from .services import build_font_face_css, get_active_font_entries
 
 
 @cache_control(public=True, max_age=3600)
+@require_GET
 def active_fonts_api(request):
     pack_slug = (request.GET.get('pack') or 'all-fonts').strip() or 'all-fonts'
     designer_slug = (request.GET.get('designer') or 'all-designer-fonts').strip() or 'all-designer-fonts'
@@ -25,6 +27,7 @@ def active_fonts_api(request):
 
 
 @cache_control(public=True, max_age=3600)
+@require_GET
 def managed_fonts_stylesheet(request):
     response = HttpResponse(build_font_face_css(), content_type='text/css; charset=utf-8')
     response['X-Content-Type-Options'] = 'nosniff'
@@ -32,6 +35,7 @@ def managed_fonts_stylesheet(request):
 
 
 @cache_control(public=True, max_age=31536000, immutable=True)
+@require_GET
 def managed_font_file(request, pk):
     try:
         font = ManagedFont.objects.get(pk=pk, is_active=True, source='upload')

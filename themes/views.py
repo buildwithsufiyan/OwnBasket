@@ -5,6 +5,7 @@ import shutil
 import zipfile
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import permission_required
 from django.core.files.base import ContentFile
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -35,6 +36,7 @@ from .services import get_theme_validation_map, scan_theme_packages, install_the
 
 
 @staff_member_required
+@permission_required('themes.view_theme', raise_exception=True)
 def theme_manager(request):
     validation_map = get_theme_validation_map()
     themes = Theme.objects.all().order_by("-is_active", "-created_at")
@@ -60,6 +62,7 @@ def theme_manager(request):
 
 
 @staff_member_required
+@permission_required('themes.change_theme', raise_exception=True)
 @require_POST
 def scan_themes(request):
     results = scan_theme_packages()
@@ -82,6 +85,8 @@ def scan_themes(request):
 
 
 @staff_member_required
+@permission_required('themes.change_theme', raise_exception=True)
+@require_POST
 def apply_theme(request, theme_id):
     theme = get_object_or_404(Theme, pk=theme_id)
     validation = get_theme_validation_map().get(theme.theme_folder)
@@ -104,6 +109,8 @@ def apply_theme(request, theme_id):
 
 
 @staff_member_required
+@permission_required('themes.view_theme', raise_exception=True)
+@require_POST
 def preview_theme(request, theme_id):
     theme = get_object_or_404(Theme, pk=theme_id)
     request.session["preview_theme_id"] = theme.id
@@ -115,6 +122,8 @@ def preview_theme(request, theme_id):
 
 
 @staff_member_required
+@permission_required('themes.view_theme', raise_exception=True)
+@require_POST
 def preview_clear(request):
     if "preview_theme_id" in request.session:
         del request.session["preview_theme_id"]
@@ -125,6 +134,8 @@ def preview_clear(request):
 
 
 @staff_member_required
+@permission_required('themes.delete_theme', raise_exception=True)
+@require_POST
 def delete_theme(request, theme_id):
     theme = get_object_or_404(Theme, pk=theme_id)
     if theme.is_active:
@@ -149,6 +160,7 @@ def delete_theme(request, theme_id):
 
 
 @staff_member_required
+@permission_required('themes.add_theme', raise_exception=True)
 def theme_builder(request):
     if request.method == "POST":
         name = request.POST.get("name")
@@ -208,6 +220,7 @@ def theme_builder(request):
 
 
 @staff_member_required
+@permission_required('themes.change_theme', raise_exception=True)
 def theme_settings(request):
     active_theme = Theme.objects.filter(is_active=True).first()
     if not active_theme:
@@ -249,6 +262,7 @@ def theme_settings(request):
 
 
 @staff_member_required
+@permission_required('themes.add_theme', raise_exception=True)
 def import_theme(request):
     if request.method == "POST" and request.FILES.get("theme_file"):
         uploaded_file = request.FILES["theme_file"]
@@ -333,6 +347,7 @@ def _suggest_mapping(filename, page_types):
 
 
 @staff_member_required
+@permission_required('themes.change_theme', raise_exception=True)
 def template_mapping(request, theme_id):
     theme = get_object_or_404(Theme, pk=theme_id)
     theme_dir = settings.BASE_DIR / "themes" / theme.theme_folder
@@ -383,6 +398,7 @@ def template_mapping(request, theme_id):
 
 
 @staff_member_required
+@permission_required('themes.change_theme', raise_exception=True)
 def template_converter_review(request, theme_id):
     theme = get_object_or_404(Theme, pk=theme_id)
     pending_suggestions = TemplateConversionLog.objects.filter(
@@ -400,6 +416,7 @@ def template_converter_review(request, theme_id):
 
 
 @staff_member_required
+@permission_required('themes.change_theme', raise_exception=True)
 @require_POST
 def apply_suggestion(request, log_id):
     action = request.POST.get("action")
@@ -448,6 +465,7 @@ def apply_suggestion(request, log_id):
 
 
 @staff_member_required
+@permission_required('themes.view_themefilebackup', raise_exception=True)
 def file_history(request, theme_id):
     theme = get_object_or_404(Theme, pk=theme_id)
     backups = ThemeFileBackup.objects.filter(theme=theme).order_by(
@@ -472,6 +490,7 @@ def file_history(request, theme_id):
 
 
 @staff_member_required
+@permission_required('themes.change_theme', raise_exception=True)
 @require_POST
 def restore_backup(request, backup_id):
     backup_to_restore = get_object_or_404(ThemeFileBackup, pk=backup_id)
@@ -513,6 +532,7 @@ def restore_backup(request, backup_id):
 
 
 @staff_member_required
+@permission_required('themes.view_theme', raise_exception=True)
 def export_theme(request, theme_id):
     theme = get_object_or_404(Theme, pk=theme_id)
     slug = theme.slug

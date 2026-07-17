@@ -51,6 +51,8 @@ IGNORED_THEME_DIRS = {
 }
 
 MAX_THEME_ZIP_BYTES = 50 * 1024 * 1024
+MAX_THEME_UNCOMPRESSED_BYTES = 200 * 1024 * 1024
+MAX_THEME_MEMBERS = 5000
 BLOCKED_EXTENSIONS = {
     ".bat",
     ".cmd",
@@ -159,7 +161,12 @@ def _is_unsafe_zip_name(name):
 
 def _safe_extract_zip(zip_file, destination):
     destination = Path(destination).resolve()
-    for member in zip_file.infolist():
+    members = zip_file.infolist()
+    if len(members) > MAX_THEME_MEMBERS:
+        raise ValidationError('Theme ZIP contains too many files.')
+    if sum(member.file_size for member in members) > MAX_THEME_UNCOMPRESSED_BYTES:
+        raise ValidationError('Theme ZIP expands beyond the safe uncompressed size limit.')
+    for member in members:
         if _is_unsafe_zip_name(member.filename):
             raise ValidationError(f"Unsafe file in ZIP: {member.filename}")
 

@@ -11,7 +11,7 @@ from .models import (
 )
 
 
-@admin.action(description='Approve selected sellers')
+@admin.action(description='Approve selected sellers', permissions=('review',))
 def approve_sellers(modeladmin, request, queryset):
     count = 0
     for seller in queryset:
@@ -27,21 +27,25 @@ def approve_sellers(modeladmin, request, queryset):
     modeladmin.message_user(request, f'{count} seller(s) approved.')
 
 
-@admin.action(description='Reject selected sellers')
+@admin.action(description='Reject selected sellers', permissions=('review',))
 def reject_sellers(modeladmin, request, queryset):
-    count = queryset.exclude(verification_status=SellerProfile.VerificationStatus.REJECTED).update(
-        verification_status=SellerProfile.VerificationStatus.REJECTED,
-        approved_by=None,
-        approved_at=None,
-    )
+    count = 0
+    for seller in queryset.exclude(verification_status=SellerProfile.VerificationStatus.REJECTED):
+        seller.verification_status = SellerProfile.VerificationStatus.REJECTED
+        seller.approved_by = None
+        seller.approved_at = None
+        seller.save(update_fields=('verification_status', 'approved_by', 'approved_at', 'updated_at'))
+        count += 1
     modeladmin.message_user(request, f'{count} seller(s) rejected.', messages.WARNING)
 
 
-@admin.action(description='Suspend selected sellers')
+@admin.action(description='Suspend selected sellers', permissions=('suspend',))
 def suspend_sellers(modeladmin, request, queryset):
-    count = queryset.exclude(verification_status=SellerProfile.VerificationStatus.SUSPENDED).update(
-        verification_status=SellerProfile.VerificationStatus.SUSPENDED,
-    )
+    count = 0
+    for seller in queryset.exclude(verification_status=SellerProfile.VerificationStatus.SUSPENDED):
+        seller.verification_status = SellerProfile.VerificationStatus.SUSPENDED
+        seller.save(update_fields=('verification_status', 'updated_at'))
+        count += 1
     modeladmin.message_user(request, f'{count} seller(s) suspended.', messages.WARNING)
 
 
@@ -83,6 +87,18 @@ class SellerProfileAdmin(admin.ModelAdmin):
             _earnings_total=Sum('order_items__seller_earning'),
         )
 
+    def has_review_permission(self, request):
+        return request.user.is_superuser or request.user.has_perm('marketplace.review_seller')
+
+    def has_suspend_permission(self, request):
+        return request.user.is_superuser or request.user.has_perm('marketplace.suspend_seller')
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly = list(super().get_readonly_fields(request, obj))
+        if not self.has_review_permission(request):
+            readonly.extend(('verification_status', 'verification_notes', 'approved_by'))
+        return tuple(dict.fromkeys(readonly))
+
     @admin.display(description='Products', ordering='_product_total')
     def product_total(self, obj):
         return obj._product_total
@@ -96,13 +112,13 @@ class SellerProfileAdmin(admin.ModelAdmin):
         return obj._earnings_total or 0
 
 
-@admin.action(description='Verify selected documents')
+@admin.action(description='Verify selected documents', permissions=('review',))
 def verify_documents(modeladmin, request, queryset):
     count = queryset.update(status=SellerDocument.ReviewStatus.VERIFIED, reviewed_at=timezone.now())
     modeladmin.message_user(request, f'{count} document(s) verified.')
 
 
-@admin.action(description='Reject selected documents')
+@admin.action(description='Reject selected documents', permissions=('review',))
 def reject_documents(modeladmin, request, queryset):
     count = queryset.update(status=SellerDocument.ReviewStatus.REJECTED, reviewed_at=timezone.now())
     modeladmin.message_user(request, f'{count} document(s) rejected.', messages.WARNING)
@@ -116,6 +132,15 @@ class SellerDocumentAdmin(admin.ModelAdmin):
     search_fields = ('seller__store_name', 'seller__business_email')
     autocomplete_fields = ('seller',)
     list_select_related = ('seller',)
+
+    def has_review_permission(self, request):
+        return request.user.is_superuser or request.user.has_perm('marketplace.review_seller')
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly = list(super().get_readonly_fields(request, obj))
+        if not self.has_review_permission(request):
+            readonly.extend(('status', 'review_notes', 'reviewed_at'))
+        return tuple(dict.fromkeys(readonly))
 
 
 @admin.register(SellerPayoutAccount)

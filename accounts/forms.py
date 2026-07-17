@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
+from django.contrib.auth.hashers import check_password
 
 
 class ProfileForm(forms.ModelForm):
@@ -30,3 +31,9 @@ class AccountPasswordChangeForm(PasswordChangeForm):
         self.fields['old_password'].widget.attrs.update({'autocomplete': 'current-password'})
         self.fields['new_password1'].widget.attrs.update({'autocomplete': 'new-password'})
         self.fields['new_password2'].widget.attrs.update({'autocomplete': 'new-password'})
+
+    def clean_new_password1(self):
+        password = self.cleaned_data.get('new_password1')
+        if any(check_password(password, item.encoded_password) for item in self.user.password_history.all()[:6]):
+            raise forms.ValidationError('Choose a password you have not used recently.')
+        return password

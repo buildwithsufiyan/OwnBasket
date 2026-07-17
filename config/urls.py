@@ -6,12 +6,14 @@ from django.views.decorators.cache import cache_page
 from django.urls import path, include
 from core.sitemaps import sitemaps
 from themes.views import theme_asset
+from security.views import security_dashboard
 
 urlpatterns = [
     path('sitemap.xml', cache_page(3600)(sitemap), {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('admin/themes/', include('themes.urls')),
     path('theme-assets/<str:theme_folder>/<path:asset_path>', theme_asset, name='theme_asset'),
     path('admin/analytics/', include('analytics.urls')),
+    path('admin/security/', security_dashboard, name='security-dashboard'),
     path('admin/', admin.site.urls),
 
     path('', include('core.urls')),
@@ -21,6 +23,7 @@ urlpatterns = [
     path('', include('orders.urls')),
     path('marketplace/', include('marketplace.urls')),
     path('marketing/', include('marketing.urls')),
+    path('security/', include('security.urls')),
     path('fonts/', include('fonts.urls')),
     
     path('wishlist/', include('wishlist.urls')),  # ← Add this

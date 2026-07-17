@@ -110,10 +110,13 @@
                                         </div>
                                         {% endif %}
 
+                                        <label class="d-flex align-items-center gap-2"><input type="checkbox" name="remember_me"> Keep me signed in on this device</label>
+
                                         <button type="submit" class="btn-auth-submit">
                                             <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
                                         </button>
                                     </form>
+                                    <p class="mt-3"><a href="{% url 'password_reset' %}">Forgot your password?</a></p>
 
                                     <div class="auth-divider">
                                         <span>New to OwnBasket?</span>

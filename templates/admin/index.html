@@ -220,6 +220,7 @@
 {% marketing_dashboard_stats as marketing_stats %}
 <div id="content-main" class="app-list">
   <div class="dashboard-stats-grid">
+    {% if perms.security.view_security_dashboard or user.is_superuser %}<div class="dashboard-stat-card"><a href="{% url 'security-dashboard' %}"><span class="dashboard-stat-label">Security Monitoring</span><div class="dashboard-stat-value">Audit</div><p class="dashboard-stat-note">Authentication, sessions, alerts and immutable activity logs.</p></a></div>{% endif %}
     {% if perms.orders.view_financial_reports or user.is_superuser %}
     <div class="dashboard-stat-card"><a href="{% url 'analytics:dashboard' %}"><span class="dashboard-stat-label">Business Analytics</span><div class="dashboard-stat-value">Reports</div><p class="dashboard-stat-note">Revenue, sales, products, customers, sellers, refunds, tax and secure exports.</p></a></div>
     {% endif %}

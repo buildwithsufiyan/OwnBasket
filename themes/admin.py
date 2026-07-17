@@ -1,9 +1,17 @@
 from django.contrib import admin
 from django.contrib import messages
+from django import forms
 from django.urls import reverse
 from django.utils.html import format_html
 
 from .models import Theme, TemplateConversionLog, ThemeFileBackup
+from security.uploads import SecureUploadFormMixin
+
+
+class ThemeAdminForm(SecureUploadFormMixin, forms.ModelForm):
+    class Meta:
+        model = Theme
+        fields = '__all__'
 
 
 @admin.action(description='Activate selected theme')
@@ -23,6 +31,7 @@ def activate_theme(modeladmin, request, queryset):
 
 @admin.register(Theme)
 class ThemeAdmin(admin.ModelAdmin):
+    form = ThemeAdminForm
     actions = (activate_theme,)
     list_display = (
         "name",

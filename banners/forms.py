@@ -23,9 +23,10 @@ from fonts.services import (
 from fonts.widgets import FontPickerSelect
 
 from .models import BannerCarousel, HomepageCarousel, HomepageSettings
+from security.uploads import SecureUploadFormMixin
 
 
-class HomepageCarouselAdminForm(VisualEditorFormMixin, forms.ModelForm):
+class HomepageCarouselAdminForm(SecureUploadFormMixin, VisualEditorFormMixin, forms.ModelForm):
     class Meta:
         model = HomepageCarousel
         fields = '__all__'
@@ -49,7 +50,7 @@ class HomepageCarouselAdminForm(VisualEditorFormMixin, forms.ModelForm):
             self.set_help_text(field_name, help_text)
 
 
-class BannerCarouselAdminForm(VisualEditorFormMixin, forms.ModelForm):
+class BannerCarouselAdminForm(SecureUploadFormMixin, VisualEditorFormMixin, forms.ModelForm):
     badge_font_family = forms.ChoiceField(
         choices=(),
         widget=FontPickerSelect(),
@@ -248,7 +249,7 @@ class BannerCarouselAdminForm(VisualEditorFormMixin, forms.ModelForm):
                 field.widget.set_designer_font_libraries(designer_font_libraries)
 
 
-class HomepageSettingsAdminForm(VisualEditorFormMixin, forms.ModelForm):
+class HomepageSettingsAdminForm(SecureUploadFormMixin, VisualEditorFormMixin, forms.ModelForm):
     class Meta:
         model = HomepageSettings
         fields = '__all__'

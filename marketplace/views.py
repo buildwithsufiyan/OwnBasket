@@ -13,6 +13,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from orders.models import OrderItem
 from products.models import Product, ProductReview
 from products.pricing import attach_pricing_to_products
+from security.forms import SecureAuthenticationForm
 
 from .decorators import approved_seller_required, seller_account_required
 from .forms import (
@@ -31,6 +32,7 @@ ZERO = Decimal('0.00')
 
 class SellerLoginView(LoginView):
     template_name = 'marketplace/login.html'
+    authentication_form = SecureAuthenticationForm
 
     def get_success_url(self):
         return self.get_redirect_url() or str('/marketplace/seller/')

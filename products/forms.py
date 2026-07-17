@@ -5,15 +5,16 @@ from django import forms
 from core.admin_visual_editor import VisualEditorFormMixin
 
 from .models import Brand, BrandHeroBanner, Category, Product, SubCategory, Warehouse
+from security.uploads import SecureUploadFormMixin
 
 
-class CategoryAdminForm(forms.ModelForm):
+class CategoryAdminForm(SecureUploadFormMixin, forms.ModelForm):
     class Meta:
         model = Category
         fields = '__all__'
 
 
-class SubCategoryAdminForm(forms.ModelForm):
+class SubCategoryAdminForm(SecureUploadFormMixin, forms.ModelForm):
     class Meta:
         model = SubCategory
         fields = '__all__'
@@ -25,7 +26,7 @@ class WarehouseAdminForm(forms.ModelForm):
         fields = '__all__'
 
 
-class BrandAdminForm(forms.ModelForm):
+class BrandAdminForm(SecureUploadFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         name_field = self.fields.get('name')
@@ -54,7 +55,7 @@ class BrandAdminForm(forms.ModelForm):
         fields = '__all__'
 
 
-class BrandHeroBannerAdminForm(VisualEditorFormMixin, forms.ModelForm):
+class BrandHeroBannerAdminForm(SecureUploadFormMixin, VisualEditorFormMixin, forms.ModelForm):
     class Meta:
         model = BrandHeroBanner
         fields = '__all__'
@@ -102,7 +103,7 @@ class CouponApplyForm(forms.Form):
         return (self.cleaned_data.get('code') or '').upper().strip()
 
 
-class ProductAdminForm(forms.ModelForm):
+class ProductAdminForm(SecureUploadFormMixin, forms.ModelForm):
     class Meta:
         model = Product
         fields = '__all__'

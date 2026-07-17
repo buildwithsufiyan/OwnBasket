@@ -1,6 +1,7 @@
 from django import forms
 
 from .models import FONT_FILE_EXTENSIONS, ManagedFont
+from security.uploads import validate_font_upload
 
 
 class ManagedFontAdminForm(forms.ModelForm):
@@ -70,4 +71,4 @@ class ManagedFontAdminForm(forms.ModelForm):
         extension = font_file.name.rsplit('.', 1)[-1].lower()
         if extension not in FONT_FILE_EXTENSIONS:
             raise forms.ValidationError('Only .ttf, .otf, .woff, and .woff2 files are allowed.')
-        return font_file
+        return validate_font_upload(font_file)

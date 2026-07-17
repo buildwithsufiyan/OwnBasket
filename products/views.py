@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.utils.html import conditional_escape
 from django.utils.safestring import mark_safe
+from django.views.decorators.http import require_GET
 
 from .models import Brand, BrandHeroBanner, Category, Product, ProductListingSettings, ProductReview, SubCategory
 from .listing import SORT_OPTIONS, build_product_listing
@@ -430,11 +431,13 @@ def _build_live_search_payload(query):
     }
 
 
+@require_GET
 def live_search(request):
     query = _get_search_query(request)
     return JsonResponse(_build_live_search_payload(query))
 
 
+@require_GET
 def search_suggestions_api(request):
     query = _get_search_query(request)
     return JsonResponse(_build_live_search_payload(query))

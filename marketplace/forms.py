@@ -6,6 +6,7 @@ from django.utils.text import slugify
 from products.models import Product
 
 from .models import SellerDocument, SellerPayoutAccount, SellerProfile
+from security.uploads import SecureUploadFormMixin
 
 
 User = get_user_model()
@@ -60,7 +61,7 @@ def unique_store_slug(name, instance=None):
     return candidate
 
 
-class SellerOnboardingForm(forms.ModelForm):
+class SellerOnboardingForm(SecureUploadFormMixin, forms.ModelForm):
     class Meta:
         model = SellerProfile
         fields = (
@@ -96,7 +97,7 @@ class SellerOnboardingForm(forms.ModelForm):
         return seller
 
 
-class SellerProductForm(forms.ModelForm):
+class SellerProductForm(SecureUploadFormMixin, forms.ModelForm):
     class Meta:
         model = Product
         fields = (
@@ -125,7 +126,7 @@ class SellerProductForm(forms.ModelForm):
         return cleaned
 
 
-class SellerSettingsForm(forms.ModelForm):
+class SellerSettingsForm(SecureUploadFormMixin, forms.ModelForm):
     class Meta:
         model = SellerProfile
         fields = (
@@ -156,7 +157,7 @@ class SellerSettingsForm(forms.ModelForm):
         return seller
 
 
-class SellerDocumentForm(forms.ModelForm):
+class SellerDocumentForm(SecureUploadFormMixin, forms.ModelForm):
     class Meta:
         model = SellerDocument
         fields = ('document_type', 'file')
