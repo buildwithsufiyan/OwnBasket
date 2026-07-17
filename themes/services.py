@@ -9,22 +9,9 @@ from urllib.parse import urlparse
 
 from django.conf import settings
 
-# Configure a file-based logger
-log_file_path = (
-    Path(settings.BASE_DIR)
-    / ".tmp"
-    / "theme_debug.log"
-)
-log_file_path.parent.mkdir(parents=True, exist_ok=True)
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(log_file_path),
-        # You can also add logging.StreamHandler() to see logs in the console
-    ],
-    force=True,  # force=True is needed to reconfigure logging
-)
+# Logging is configured centrally in ``config.settings``.  Avoid opening a
+# project-local file at import time: web workers, management commands and test
+# runners can import this module concurrently, and Windows locks that file.
 logger = logging.getLogger(__name__)
 
 from django.core.cache import cache

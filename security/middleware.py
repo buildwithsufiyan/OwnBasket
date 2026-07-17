@@ -7,7 +7,7 @@ from .services import touch_session
 
 
 class SecurityMonitoringMiddleware:
-    SENSITIVE_PREFIXES = ('/admin/', '/account/', '/checkout/', '/cart/', '/wishlist/', '/my-orders/', '/marketplace/seller/')
+    SENSITIVE_PREFIXES = ('/admin/', '/account/', '/checkout/', '/cart/', '/wishlist/', '/my-orders/', '/marketplace/seller/', '/api/v2/')
 
     def __init__(self, get_response):
         self.get_response = get_response

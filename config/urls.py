@@ -7,8 +7,13 @@ from django.urls import path, include
 from core.sitemaps import sitemaps
 from themes.views import theme_asset
 from security.views import security_dashboard
+from core import pwa
 
 urlpatterns = [
+    path('manifest.json', pwa.manifest, name='pwa-manifest'),
+    path('service-worker.js', pwa.service_worker, name='pwa-service-worker'),
+    path('offline/', pwa.offline, name='pwa-offline'),
+    path('api/v2/', include('api_v2.urls')),
     path('sitemap.xml', cache_page(3600)(sitemap), {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('admin/themes/', include('themes.urls')),
     path('theme-assets/<str:theme_folder>/<path:asset_path>', theme_asset, name='theme_asset'),

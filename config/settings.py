@@ -34,6 +34,7 @@ ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,testserver
 if IS_PRODUCTION and not ALLOWED_HOSTS:
     raise RuntimeError("DJANGO_ALLOWED_HOSTS must contain at least one production host.")
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
+CSRF_FAILURE_VIEW = "api_v2.http.csrf_failure"
 
 SITE_NAME = os.getenv("SITE_NAME", "OwnBasket")
 SITE_DOMAIN = os.getenv("SITE_DOMAIN", ALLOWED_HOSTS[0] if ALLOWED_HOSTS else "localhost")
@@ -62,6 +63,7 @@ INSTALLED_APPS = [
     "orders",
     "analytics.apps.AnalyticsConfig",
     "security.apps.SecurityConfig",
+    "api_v2.apps.ApiV2Config",
     "core",
     "wishlist",
     "banners.apps.BannersConfig",
@@ -86,6 +88,7 @@ MIDDLEWARE += [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "core.middleware.PwaCachePolicyMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "core.middleware.RateLimitMiddleware",
     "core.middleware.ContentSecurityPolicyMiddleware",

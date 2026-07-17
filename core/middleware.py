@@ -1,10 +1,43 @@
 from django.conf import settings
 from django.core.cache import cache
 from django.http import JsonResponse
+from django.utils.cache import patch_cache_control
 import hashlib
 
 from security.models import AuditEvent
 from security.services import audit, client_ip, create_alert
+
+
+class PwaCachePolicyMiddleware:
+    """Explicitly identify anonymous HTML that is safe for the PWA page cache."""
+
+    PUBLIC_EXACT = ('/', '/home/')
+    PUBLIC_PREFIXES = (
+        '/shop/', '/product/', '/brand/', '/category/', '/marketplace/store/',
+    )
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        is_public_path = (
+            request.path in self.PUBLIC_EXACT
+            or request.path.startswith(self.PUBLIC_PREFIXES)
+        )
+        is_html = response.get('Content-Type', '').lower().startswith('text/html')
+        if request.method != 'GET' or response.status_code != 200 or not is_public_path or not is_html:
+            return response
+
+        if request.user.is_authenticated:
+            patch_cache_control(response, no_store=True, private=True)
+            return response
+
+        cache_control = response.get('Cache-Control', '').lower()
+        if not response.cookies and 'no-store' not in cache_control and 'private' not in cache_control:
+            response['X-PWA-Cacheable'] = 'public'
+            patch_cache_control(response, public=True, max_age=0, must_revalidate=True)
+        return response
 
 
 class ContentSecurityPolicyMiddleware:
@@ -46,6 +79,8 @@ class RateLimitMiddleware:
 
     def __call__(self, request):
         config = self.LIMITS.get(request.path)
+        if not config and request.path.startswith('/api/v2/'):
+            config = (120, 60, ('GET', 'HEAD')) if request.method in ('GET', 'HEAD') else (60, 60, ('POST', 'PUT', 'PATCH', 'DELETE'))
         if settings.RATE_LIMIT_ENABLED and config and request.method in config[2]:
             limit, window, _ = config
             client = client_ip(request) or "unknown"

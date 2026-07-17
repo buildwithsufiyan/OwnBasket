@@ -3,17 +3,14 @@ from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
-from django.db import transaction
-from django.db.models import F, Q
-from decimal import Decimal
+from django.db.models import Q
 from reportlab.pdfgen import canvas
 
-from .models import Order, OrderItem
+from .models import Order
+from .services import EmptyCartError, create_order_from_cart
 from cart.models import Cart, CartItem
-from products.models import CouponRedemption
 from products.pricing import build_cart_summary
-from marketplace.models import SellerNotification
-from marketing.models import EngagementDelivery, NotificationPreference
+from marketing.models import EngagementDelivery
 from marketing.services.email_service import send_branded_email
 
 
@@ -36,77 +33,20 @@ def checkout(request):
         return redirect('cart_detail')
 
     if request.method == "POST":
-        with transaction.atomic():
-            order = Order.objects.create(
-                user=request.user,
-                full_name=request.POST['full_name'],
-                email=request.POST['email'],
-                address=request.POST['address'],
-                subtotal=summary.subtotal_original,
-                discount_total=summary.total_discount,
-                shipping_amount=summary.shipping_amount,
-                payment_method=(request.POST.get('payment_method') or 'COD')[:40],
-                coupon_code=summary.applied_coupon.code if summary.applied_coupon else '',
-                total_price=summary.grand_total,
+        try:
+            order = create_order_from_cart(
+                user=request.user, cart=cart, items=list(items), summary=summary,
+                customer={
+                    'full_name': request.POST['full_name'], 'email': request.POST['email'],
+                    'address': request.POST['address'],
+                    'payment_method': request.POST.get('payment_method') or 'COD',
+                },
+                marketing_consent=request.POST.get('marketing_consent') == 'on',
             )
-
-            ordered_sellers = {}
-            for line in summary.line_items:
-                seller = line.item.product.seller
-                line_total = line.unit_final_price * line.quantity
-                commission_rate = seller.commission_rate if seller else Decimal('0.00')
-                marketplace_commission = (
-                    line_total * commission_rate / Decimal('100')
-                ).quantize(Decimal('0.01'))
-                OrderItem.objects.create(
-                    order=order,
-                    product=line.item.product,
-                    quantity=line.quantity,
-                    price=line.unit_final_price,
-                    original_price=line.unit_original_price,
-                    discount_amount=line.line_discount_total,
-                    applied_offer_name=line.pricing.source_name or line.pricing.badge_text,
-                    size=line.item.size,
-                    color=line.item.color,
-                    seller=seller,
-                    seller_name=seller.store_name if seller else '',
-                    marketplace_commission=marketplace_commission,
-                    seller_earning=line_total - marketplace_commission,
-                    cost_price=line.item.product.cost_price,
-                )
-                if seller:
-                    ordered_sellers[seller.pk] = seller
-                type(line.item.product).objects.filter(pk=line.item.product.pk).update(
-                    total_sold=F('total_sold') + line.quantity
-                )
-
-            SellerNotification.objects.bulk_create([
-                SellerNotification(
-                    seller=seller,
-                    title=f'New order #{order.pk}',
-                    message='A customer placed an order containing one or more of your products.',
-                    link='/marketplace/seller/orders/',
-                )
-                for seller in ordered_sellers.values()
-                if seller.order_notifications
-            ])
-
-            if summary.applied_coupon:
-                CouponRedemption.objects.create(
-                    coupon=summary.applied_coupon,
-                    user=request.user,
-                    order=order,
-                )
-
-            items.delete()
-            cart.is_active = False
-            cart.save(update_fields=('is_active', 'updated_at'))
-            request.session.pop('active_coupon_code', None)
-
-            if request.POST.get('marketing_consent') == 'on':
-                preferences, _ = NotificationPreference.objects.get_or_create(user=request.user)
-                preferences.promotional_emails = True
-                preferences.record_consent(True, 'checkout')
+        except EmptyCartError as exc:
+            messages.error(request, str(exc))
+            return redirect('cart_detail')
+        request.session.pop('active_coupon_code', None)
 
         send_branded_email(
             subject=f'OwnBasket order #{order.pk} confirmation', recipient=order.email,

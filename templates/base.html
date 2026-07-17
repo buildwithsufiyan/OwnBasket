@@ -9,7 +9,14 @@
     <meta name="description" content="{% block meta_description %}{{ default_meta_description }}{% endblock %}">
     <meta name="robots" content="{% block robots %}index,follow{% endblock %}">
     <link rel="canonical" href="{% block canonical_url %}{{ canonical_url }}{% endblock %}">
-    <meta name="theme-color" content="#198754">
+    <meta name="theme-color" content="#ffb800">
+    <meta name="application-name" content="OwnBasket">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="OwnBasket">
+    <link rel="manifest" href="{% url 'pwa-manifest' %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/pwa/apple-touch-icon.png' %}">
     <meta property="og:site_name" content="{{ site_name }}">
     <meta property="og:title" content="{% block og_title %}OwnBasket - Shop Smart, Live Better{% endblock %}">
     <meta property="og:description" content="{% block og_description %}{{ default_meta_description }}{% endblock %}">
@@ -43,10 +50,13 @@
     <link rel="stylesheet" href="{% static 'css/components/product_card.css' %}">
     <link rel="stylesheet" href="{% static 'css/components/product-carousel.css' %}">
     <link rel="stylesheet" href="{% static 'css/production-foundation.css' %}">
+    <link rel="stylesheet" href="{% static 'css/pwa.css' %}">
 </head>
 
 <body>
     <a class="visually-hidden-focusable position-fixed top-0 start-0 bg-white p-3" href="#main-content">Skip to content</a>
+    <div id="pwa-network-status" class="pwa-network-status" role="status" aria-live="polite" hidden></div>
+    <button id="pwa-install" class="pwa-install" type="button" hidden aria-label="Install OwnBasket app">Install app</button>
 
     {% render_header %}
 
@@ -79,6 +89,7 @@
     <script src="{% static 'js/components/product-carousel.js' %}" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
     <script src="{% static 'js/base.js' %}" defer></script>
+    <script src="{% static 'js/pwa.js' %}" defer></script>
     {% block extra_scripts %}{% endblock %}
 
 </body>
