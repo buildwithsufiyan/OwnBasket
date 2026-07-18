@@ -10,6 +10,7 @@ from .models import Cart, CartItem
 from .services import get_user_cart, touch_cart
 from products.models import Product
 from products.pricing import build_cart_summary, get_coupon_by_code, validate_coupon
+from api_v2.sync import bump_sync_state
 
 
 def _get_user_cart(user):
@@ -67,6 +68,7 @@ def add_to_cart(request, product_id):
         cart_item.quantity += 1
         cart_item.save()
     _touch_cart(cart)
+    bump_sync_state(request.user)
 
     return redirect('cart_detail')
 
@@ -96,43 +98,37 @@ def cart_detail(request):
 
 @login_required(login_url='login')
 def increase_quantity(request, item_id):
-    item = get_object_or_404(CartItem, id=item_id)
-
-    if item.cart.id != request.user.id:
-        return redirect('cart_detail')
+    item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
 
     item.quantity += 1
     item.save()
     _touch_cart(item.cart)
+    bump_sync_state(request.user)
 
     return redirect('cart_detail')
 
 
 @login_required(login_url='login')
 def decrease_quantity(request, item_id):
-    item = get_object_or_404(CartItem, id=item_id)
-
-    if item.cart.id != request.user.id:
-        return redirect('cart_detail')
+    item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
 
     if item.quantity > 1:
         item.quantity -= 1
         item.save()
         _touch_cart(item.cart)
+        bump_sync_state(request.user)
 
     return redirect('cart_detail')
 
 
 @login_required(login_url='login')
 def remove_from_cart(request, item_id):
-    item = get_object_or_404(CartItem, id=item_id)
-
-    if item.cart.id != request.user.id:
-        return redirect('cart_detail')
+    item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
 
     cart = item.cart
     item.delete()
     _touch_cart(cart)
+    bump_sync_state(request.user)
 
     return redirect('cart_detail')
 

@@ -1,7 +1,7 @@
 {% load static %}
 'use strict';
 
-const VERSION = 'ownbasket-pwa-v1';
+const VERSION = 'ownbasket-pwa-v2';
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const PAGE_CACHE = `${VERSION}-pages`;
@@ -104,10 +104,90 @@ self.addEventListener('fetch', (event) => {
 
 self.addEventListener('sync', (event) => {
   if (event.tag !== 'ownbasket-pending-sync') return;
-  event.waitUntil(self.clients.matchAll({type: 'window', includeUncontrolled: true}).then((clients) => {
-    clients.forEach((client) => client.postMessage({type: 'OWNBASKET_FLUSH_PENDING'}));
-  }));
+  event.waitUntil(flushPendingInWorker());
 });
+
+const SYNC_DB = 'ownbasket-pwa';
+const MUTATION_STORE = 'pending-mutations';
+const SYNC_META_STORE = 'sync-metadata';
+const SYNC_CONFLICT_STORE = 'sync-conflicts';
+
+function openSyncDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(SYNC_DB, 3);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(MUTATION_STORE)) request.result.createObjectStore(MUTATION_STORE, {keyPath: 'id', autoIncrement: true});
+      if (!request.result.objectStoreNames.contains(SYNC_META_STORE)) request.result.createObjectStore(SYNC_META_STORE);
+      if (!request.result.objectStoreNames.contains(SYNC_CONFLICT_STORE)) request.result.createObjectStore(SYNC_CONFLICT_STORE, {keyPath: 'clientActionId'});
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function dbRequest(request) {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function flushPendingInWorker() {
+  const db = await openSyncDb();
+  const items = (await dbRequest(db.transaction(MUTATION_STORE).objectStore(MUTATION_STORE).getAll()))
+    .filter((item) => (item.nextAttemptAt || 0) <= Date.now()).slice(0, 20);
+  if (!items.length) return;
+  const sessionResponse = await fetch('/api/v2/auth/session/', {credentials: 'same-origin', cache: 'no-store'});
+  if (!sessionResponse.ok) return;
+  const session = await sessionResponse.json();
+  if (!session.authenticated || !session.csrfToken) return;
+  let baseVersion = await dbRequest(db.transaction(SYNC_META_STORE).objectStore(SYNC_META_STORE).get('serverVersion'));
+  if (baseVersion === undefined) {
+    const capabilities = await fetch('/api/v2/sync/capabilities/', {credentials: 'same-origin', cache: 'no-store'});
+    if (!capabilities.ok) return;
+    baseVersion = Number((await capabilities.json()).serverVersion || 0);
+  }
+  const response = await fetch('/api/v2/sync/batches/', {
+    method: 'POST', credentials: 'same-origin',
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': session.csrfToken},
+    body: JSON.stringify({
+      baseVersion,
+      actions: items.map(({clientActionId, operation, payload}) => ({clientActionId, operation, payload}))
+    })
+  });
+  if (response.ok) {
+    const result = await response.json();
+    await new Promise((resolve, reject) => {
+      const stores = [MUTATION_STORE, SYNC_META_STORE, SYNC_CONFLICT_STORE];
+      const transaction = db.transaction(stores, 'readwrite');
+      for (const item of items) transaction.objectStore(MUTATION_STORE).delete(item.id);
+      transaction.objectStore(SYNC_META_STORE).put(result.serverVersion, 'serverVersion');
+      for (const conflict of result.results.filter((item) => item.status !== 'applied')) {
+        transaction.objectStore(SYNC_CONFLICT_STORE).put(conflict);
+      }
+      transaction.oncomplete = resolve;
+      transaction.onerror = () => reject(transaction.error);
+    });
+    const clients = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
+    clients.forEach((client) => client.postMessage({type: 'OWNBASKET_SYNC_COMPLETE'}));
+    return;
+  }
+  if (response.status === 429 || response.status >= 500) {
+    await new Promise((resolve, reject) => {
+      const transaction = db.transaction(MUTATION_STORE, 'readwrite');
+      for (const item of items) {
+        item.attemptCount = Math.min((item.attemptCount || 0) + 1, 10);
+        item.nextAttemptAt = Date.now() + Math.min(60000, (2 ** item.attemptCount) * 1000);
+        transaction.objectStore(MUTATION_STORE).put(item);
+      }
+      transaction.oncomplete = resolve;
+      transaction.onerror = () => reject(transaction.error);
+    });
+    throw new Error('Retryable OwnBasket sync failure');
+  }
+  const clients = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
+  clients.forEach((client) => client.postMessage({type: 'OWNBASKET_FLUSH_PENDING'}));
+}
 
 self.addEventListener('push', (event) => {
   if (!event.data) return;

@@ -1,6 +1,6 @@
 # OwnBasket Mobile API v2 and PWA
 
-Phase 15 adds a same-origin, session-authenticated mobile API and an installable progressive web app while preserving all existing website URLs and workflows. The API and offline layer are foundations for future native clients; they do not claim JWT authentication, production push delivery, or unattended background mutation delivery.
+Phase 15 adds a versioned mobile API and installable progressive web app while preserving all existing website URLs and workflows. The finalized production contract includes backward-compatible session authentication, rotating/revocable opaque mobile Bearer tokens, request idempotency, encrypted push-device lifecycle records, provider adapters, server-side offline synchronization, OpenAPI documentation, and observability. See `docs/MOBILE_API.md` for the current operational contract.
 
 ## API v2 architecture
 
@@ -18,7 +18,7 @@ Successful API responses include `API-Version: 2.0`. Errors use this shape:
 }
 ```
 
-CSRF, authentication, authorization, not-found, unsupported-method, invalid JSON, validation, and pagination failures have stable machine-readable codes. Unsafe requests use Django's CSRF protection. A client obtains a token from `GET /api/v2/auth/session/` and sends it in `X-CSRFToken`. Session cookies are same-origin credentials. JWT is explicitly reported as unavailable so clients do not infer support that does not exist.
+CSRF, authentication, authorization, not-found, unsupported-method, invalid JSON, validation, conflict, idempotency and pagination failures have stable machine-readable codes. Same-origin session clients obtain a CSRF token from `GET /api/v2/auth/session/`; native clients use short-lived opaque Bearer credentials with rotating refresh tokens. JWT is explicitly unavailable because server-revocable opaque credentials are the selected contract.
 
 ### Endpoint groups
 
@@ -32,8 +32,8 @@ CSRF, authentication, authorization, not-found, unsupported-method, invalid JSON
 | Orders | `/orders/`, `/orders/<id>/` | Paginated and owner-scoped; no cross-account IDs are exposed |
 | Wishlist | `/wishlist/`, `/wishlist/<product-id>/` | Idempotent add/remove operations suitable for queued retry |
 | Account | `/profile/`, `/seller/dashboard/` | Allowlisted profile fields and authenticated seller ownership |
-| Push foundation | `/push/devices/`, `/push/devices/<id>/` | Stores only a SHA-256 device identifier; no delivery provider is connected |
-| Sync foundation | `/sync/capabilities/` | Declares supported and explicitly excluded queued operations |
+| Push lifecycle | `/push/devices/`, `/push/devices/<id>/`, `/push/deliveries/` | Encrypted provider tokens, refresh/unregister, delivery status and retry adapter |
+| Synchronization | `/sync/capabilities/`, `/sync/batches/` | Allowlisted operations, deduplication, version conflicts and retry-safe results |
 
 List endpoints accept `page` and bounded `page_size`. Products also accept `q`, `category`, and `brand`. Catalog queries use `select_related`, prepared pricing, and narrow serializers to avoid N+1 work and prevent internal values such as cost price from entering mobile payloads. Authenticated responses and all mutation responses use `Cache-Control: no-store`.
 
@@ -53,17 +53,17 @@ The homepage is available offline after an anonymous successful visit. It is del
 
 Cache names are versioned. Activation removes older OwnBasket PWA caches, while cache trimming bounds public pages and assets. Increase the version when shell or strategy changes require immediate invalidation.
 
-## Background sync foundation
+## Background synchronization
 
 Only cart add/update/remove and wishlist add/remove may be queued in IndexedDB. Checkout, payment, profile changes, and review submission are excluded. Queued requests are validated against an operation allowlist, replayed with same-origin credentials and CSRF, removed after success or terminal client errors, and retained after server/rate-limit failures.
 
-The current service-worker sync event asks an open controlled window to flush the queue. It does not pretend to support unattended authenticated replay: CSRF and the HttpOnly session remain browser-controlled, and `/sync/capabilities/` reports the open-client requirement. A future implementation can move replay into the worker only after designing secure token rotation, conflict handling, deduplication/idempotency keys, expiry, user switching, and observable retry state.
+The service worker can flush while no window is open. It obtains a fresh CSRF token from the same-origin session endpoint into worker memory, then batches actions through `/sync/batches/`; it never persists the CSRF token or session credential. Stable action IDs, payload digests, server versions and idempotency keys provide deduplication and conflict handling. Bounded retries cover rate-limit/server failures, and non-sensitive conflict results are surfaced on the next app open. Native clients use the same contract with Bearer credentials without storing credentials inside sync payloads.
 
-## Push notification foundation
+## Push notification lifecycle
 
-The browser helper can request notification permission only in response to a user action. Authenticated users can register an opaque device identifier; the server stores its SHA-256 digest, platform, future provider enum, enabled state, and last-seen timestamp. Records are owner-scoped and auditable. `deliveryConfigured` remains false, and registrations default to disabled/provider `none`.
+The browser helper requests notification permission only in response to a user action. Authenticated users register an opaque device ID and optional Web Push/FCM/APNs provider token. Device IDs are hashed; provider tokens are Fernet-encrypted and hashed, never returned. Records support token refresh, preference disablement and unregister. Delivery rows expose queued/sending/delivered/retry/failed/cancelled states and bounded exponential retry.
 
-The service worker contains defensive push and notification-click handlers for a future trusted sender. Production delivery still requires VAPID/Web Push or Firebase credentials, encrypted subscription material, explicit opt-in UI, verified endpoint lifecycle, preference enforcement, rate limits, payload allowlisting, revocation, monitoring, and privacy documentation.
+The service worker contains defensive push and notification-click handlers. Deployment-specific sender code registers through the provider adapter boundary; VAPID/FCM/APNs credentials remain external secrets. A production environment must configure and sandbox-test the selected adapter before enabling devices.
 
 ## Responsive and performance baseline
 
@@ -86,9 +86,7 @@ The Phase 15 test suite covers version/error contracts, pagination and filtering
 
 ## Future mobile roadmap
 
-1. Publish and freeze an OpenAPI schema, then add compatibility/contract tests for independent clients.
-2. Add a separately reviewed token adapter with rotation, revocation, device binding, and scoped permissions; keep session auth supported for the PWA.
-3. Add idempotency keys and conflict/version semantics before enabling unattended offline mutations.
-4. Integrate Web Push or Firebase only after consent, preference, subscription encryption, and operational controls are complete.
-5. Add mobile observability for API latency, payload size, cache hit rate, sync failures, install conversion, and crash-free sessions without collecting sensitive request bodies.
-6. Build native Android/iOS clients against the same v2 contract, then introduce `/api/v3/` for breaking changes rather than changing v2 behavior.
+1. Build native Android/iOS clients against the published v2 OpenAPI contract.
+2. Configure and sandbox-test the selected Web Push/FCM/APNs adapter with deployment secrets.
+3. Export structured logs and metrics to the production observability platform.
+4. Add compatibility tests in each independent client and use `/api/v3/` for breaking changes.

@@ -12,6 +12,7 @@ from cart.models import Cart, CartItem
 from products.pricing import build_cart_summary
 from marketing.models import EngagementDelivery
 from marketing.services.email_service import send_branded_email
+from api_v2.sync import bump_sync_state
 
 
 
@@ -47,6 +48,7 @@ def checkout(request):
             messages.error(request, str(exc))
             return redirect('cart_detail')
         request.session.pop('active_coupon_code', None)
+        bump_sync_state(request.user)
 
         send_branded_email(
             subject=f'OwnBasket order #{order.pk} confirmation', recipient=order.email,

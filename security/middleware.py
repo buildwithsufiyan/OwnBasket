@@ -1,4 +1,4 @@
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from django.utils.cache import patch_cache_control
 
@@ -13,11 +13,17 @@ class SecurityMonitoringMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        request.security_request_id = str(uuid4())
+        try:
+            request.security_request_id = str(UUID(request.headers.get('X-Request-ID', '')))
+        except (ValueError, AttributeError):
+            request.security_request_id = str(uuid4())
         token = set_current_request(request)
         try:
             response = self.get_response(request)
-            if getattr(request, 'user', None) and request.user.is_authenticated:
+            if (
+                getattr(request, 'user', None) and request.user.is_authenticated
+                and getattr(request, 'mobile_session', None) is None
+            ):
                 touch_session(request)
         finally:
             reset_current_request(token)

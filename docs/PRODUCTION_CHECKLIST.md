@@ -38,3 +38,15 @@
 - [ ] Full test suite and migration check pass
 - [ ] Superuser access secured with a strong unique password
 - [ ] Release commit and rollback target recorded
+
+## Mobile API and PWA
+
+- [ ] Valid `MOBILE_TOKEN_ENCRYPTION_KEY` loaded from the secrets manager
+- [ ] Access/refresh/absolute session lifetimes reviewed
+- [ ] OpenAPI JSON, Swagger UI and ReDoc load on the production hostname
+- [ ] Token rotation, rotated-token replay revocation and per-device logout smoke-tested
+- [ ] Checkout idempotency replay/conflict tested against PostgreSQL
+- [ ] PWA closed-window sync, retry and stale-version conflict recovery tested
+- [ ] Selected Web Push/FCM/APNs adapter configured and sandbox delivery verified
+- [ ] `retry_push_deliveries` and `purge_mobile_api_records` scheduled once per interval
+- [ ] Shared Redis metrics/rate limits and external structured-log alerts verified

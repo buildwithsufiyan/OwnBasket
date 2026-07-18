@@ -19,6 +19,7 @@ from wishlist.models import Wishlist
 from .catalog import visible_products
 from .http import ApiError, api_endpoint, json_body, paginated, positive_int
 from .serializers import money, order_data, product_data
+from .sync import bump_sync_state
 
 
 def _cart_state(request):
@@ -70,6 +71,7 @@ def cart_items(request):
         item.quantity = min(item.quantity + quantity, 99)
         item.save(update_fields=('quantity',))
     touch_cart(user_cart)
+    bump_sync_state(request.user)
     _, items, summary = _cart_state(request)
     return {'cart': _cart_payload(request, items, summary), 'created': created}
 
@@ -86,11 +88,16 @@ def cart_item_detail(request, item_id):
         item.quantity = positive_int(payload.get('quantity'), name='quantity', maximum=99)
         item.save(update_fields=('quantity',))
         touch_cart(item.cart)
+    bump_sync_state(request.user)
     _, items, summary = _cart_state(request)
     return {'cart': _cart_payload(request, items, summary)}
 
 
-@api_endpoint(('POST',), auth=True)
+@api_endpoint(
+    ('POST',), auth=True, idempotent=True, summary='Create an order from the active cart', tags=('Commerce',),
+    request_example={'fullName': 'Mobile Buyer', 'email': 'buyer@example.com', 'address': '1 Market Road', 'paymentMethod': 'COD'},
+    response_example={'order': {'id': 123, 'status': 'Pending', 'paymentMethod': 'COD'}},
+)
 def checkout(request):
     payload = json_body(request)
     customer = {
@@ -123,6 +130,7 @@ def checkout(request):
     except EmptyCartError as exc:
         raise ApiError('cart_changed', str(exc), 409)
     request.session.pop('active_coupon_code', None)
+    bump_sync_state(request.user)
     send_branded_email(
         subject=f'OwnBasket order #{order.pk} confirmation', recipient=order.email,
         template_name='order_confirmation',
@@ -154,6 +162,7 @@ def wishlist(request):
         _, created = Wishlist.objects.get_or_create(user=request.user, product=product)
         if created:
             Product.objects.filter(pk=product.pk).update(wishlist_count=F('wishlist_count') + 1)
+            bump_sync_state(request.user)
     queryset = list(Wishlist.objects.filter(user=request.user).filter(
         models.Q(product__seller__isnull=True) | models.Q(product__seller__verification_status='approved')
     ).select_related('product', 'product__seller', 'product__brand', 'product__category'))
@@ -166,4 +175,5 @@ def wishlist_detail(request, product_id):
     deleted, _ = Wishlist.objects.filter(user=request.user, product_id=product_id).delete()
     if deleted:
         Product.objects.filter(pk=product_id, wishlist_count__gt=0).update(wishlist_count=F('wishlist_count') - 1)
+        bump_sync_state(request.user)
     return {'deleted': bool(deleted)}

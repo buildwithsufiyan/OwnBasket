@@ -1,13 +1,22 @@
 from django.urls import path
 
-from . import account, catalog, commerce, views
+from . import account, catalog, commerce, openapi, sync, views
 
 
 app_name = 'api-v2'
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('openapi.json', openapi.schema, name='openapi'),
+    path('docs/', openapi.swagger_ui, name='swagger'),
+    path('redoc/', openapi.redoc_ui, name='redoc'),
+    path('health/', views.health, name='health'),
+    path('metrics/', views.metrics, name='metrics'),
     path('auth/session/', account.session, name='session'),
+    path('auth/token/', account.token_login, name='token-login'),
+    path('auth/token/refresh/', account.token_refresh, name='token-refresh'),
+    path('auth/token/sessions/', account.token_sessions, name='token-sessions'),
+    path('auth/token/sessions/<int:session_id>/', account.token_session_detail, name='token-session-detail'),
     path('products/', catalog.products, name='products'),
     path('products/<int:product_id>/', catalog.product_detail, name='product-detail'),
     path('products/<int:product_id>/reviews/', catalog.product_reviews, name='product-reviews'),
@@ -25,5 +34,7 @@ urlpatterns = [
     path('seller/dashboard/', account.seller_dashboard, name='seller-dashboard'),
     path('push/devices/', account.push_devices, name='push-devices'),
     path('push/devices/<int:device_id>/', account.push_device_detail, name='push-device-detail'),
+    path('push/deliveries/', account.push_deliveries, name='push-deliveries'),
     path('sync/capabilities/', views.sync_capabilities, name='sync-capabilities'),
+    path('sync/batches/', sync.sync_batch, name='sync-batch'),
 ]

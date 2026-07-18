@@ -72,6 +72,10 @@ class RateLimitMiddleware:
         "/security/two-factor/opt-in/": (5, 900, ("POST",)),
         "/security/two-factor/opt-out/": (5, 900, ("POST",)),
         "/marketing/newsletter/subscribe/": (5, 600, ("POST",)),
+        "/api/v2/auth/session/": (10, 300, ("POST",)),
+        "/api/v2/auth/token/": (10, 300, ("POST",)),
+        "/api/v2/auth/token/refresh/": (30, 300, ("POST",)),
+        "/api/v2/sync/batches/": (30, 60, ("POST",)),
     }
 
     def __init__(self, get_response):
@@ -95,8 +99,16 @@ class RateLimitMiddleware:
                 audit('rate_limit_exceeded', category=AuditEvent.Category.SECURITY, request=request, success=False, metadata={'path': request.path, 'method': request.method})
                 if cache.add(f'rate-alert:{key}', 1, window):
                     create_alert('rate_limit', f'Rate limit exceeded for {request.path}')
-                response = JsonResponse({"detail": "Too many requests. Please try again shortly."}, status=429)
+                payload = (
+                    {"error": {"code": "rate_limited", "message": "Too many requests. Please try again shortly."}}
+                    if request.path.startswith('/api/v2/')
+                    else {"detail": "Too many requests. Please try again shortly."}
+                )
+                response = JsonResponse(payload, status=429)
                 response["Retry-After"] = str(window)
+                if request.path.startswith('/api/v2/'):
+                    response['API-Version'] = '2.0'
+                    response['Cache-Control'] = 'no-store'
                 return response
         return self.get_response(request)
 

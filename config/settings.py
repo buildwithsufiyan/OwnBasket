@@ -30,6 +30,21 @@ if not SECRET_KEY:
         raise RuntimeError("DJANGO_SECRET_KEY must be set when production mode is enabled.")
     SECRET_KEY = "local-development-key-never-use-in-production"
 
+MOBILE_TOKEN_ENCRYPTION_KEY = os.getenv('MOBILE_TOKEN_ENCRYPTION_KEY', '')
+if IS_PRODUCTION and not MOBILE_TOKEN_ENCRYPTION_KEY:
+    raise RuntimeError('MOBILE_TOKEN_ENCRYPTION_KEY must be set in production.')
+MOBILE_ACCESS_TOKEN_MINUTES = int(os.getenv('MOBILE_ACCESS_TOKEN_MINUTES', '15'))
+MOBILE_REFRESH_TOKEN_DAYS = int(os.getenv('MOBILE_REFRESH_TOKEN_DAYS', '30'))
+MOBILE_SESSION_MAX_DAYS = int(os.getenv('MOBILE_SESSION_MAX_DAYS', '90'))
+API_IDEMPOTENCY_HOURS = int(os.getenv('API_IDEMPOTENCY_HOURS', '24'))
+PUSH_PROVIDER_ADAPTERS = {
+    provider: path for provider, path in {
+        'web_push': os.getenv('PUSH_WEB_ADAPTER', ''),
+        'fcm': os.getenv('PUSH_FCM_ADAPTER', ''),
+        'apns': os.getenv('PUSH_APNS_ADAPTER', ''),
+    }.items() if path
+}
+
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,testserver")
 if IS_PRODUCTION and not ALLOWED_HOSTS:
     raise RuntimeError("DJANGO_ALLOWED_HOSTS must contain at least one production host.")
@@ -86,14 +101,16 @@ else:
 MIDDLEWARE += [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "api_v2.middleware.MobileTokenAuthenticationMiddleware",
+    "security.middleware.SecurityMonitoringMiddleware",
+    "api_v2.middleware.ApiObservabilityMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
     "core.middleware.PwaCachePolicyMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "core.middleware.RateLimitMiddleware",
     "core.middleware.ContentSecurityPolicyMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "security.middleware.SecurityMonitoringMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -253,6 +270,7 @@ LOGGING = {
         "orders": {"handlers": LOG_HANDLERS, "level": LOG_LEVEL, "propagate": False},
         "payments": {"handlers": LOG_HANDLERS, "level": LOG_LEVEL, "propagate": False},
         "marketing": {"handlers": LOG_HANDLERS, "level": LOG_LEVEL, "propagate": False},
+        "api_v2": {"handlers": LOG_HANDLERS, "level": LOG_LEVEL, "propagate": False},
     },
 }
 

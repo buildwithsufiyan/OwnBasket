@@ -1,9 +1,14 @@
 import json
+import hashlib
 from functools import wraps
+from datetime import timedelta
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.paginator import EmptyPage, Paginator
+from django.db import IntegrityError, transaction
 from django.http import Http404, JsonResponse
+from django.utils import timezone
 from django.utils.cache import patch_vary_headers
 from django.views.csrf import csrf_failure as django_csrf_failure
 
@@ -38,7 +43,76 @@ def csrf_failure(request, reason=''):
     return django_csrf_failure(request, reason=reason)
 
 
-def api_endpoint(methods=('GET',), *, auth=False, public_cache_seconds=0):
+def _idempotency_record(request):
+    from .models import IdempotencyRecord
+
+    raw_key = request.headers.get('Idempotency-Key', '').strip()
+    if not raw_key:
+        if getattr(request, 'mobile_session', None):
+            raise ApiError(
+                'idempotency_key_required',
+                'Bearer clients must send an Idempotency-Key for this operation.',
+                400,
+                {'Idempotency-Key': ['Use a unique value from 8 to 128 characters.']},
+            )
+        return None, None
+    if len(raw_key) < 8 or len(raw_key) > 128 or any(ord(char) < 33 or ord(char) > 126 for char in raw_key):
+        raise ApiError(
+            'invalid_idempotency_key', 'Idempotency-Key is invalid.', 400,
+            {'Idempotency-Key': ['Use 8 to 128 printable non-space ASCII characters.']},
+        )
+    key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
+    request_hash = hashlib.sha256(
+        request.method.encode() + b'\0' + request.path.encode() + b'\0' + request.body
+    ).hexdigest()
+    defaults = {
+        'method': request.method, 'path': request.path, 'request_hash': request_hash,
+        'expires_at': timezone.now() + timedelta(hours=settings.API_IDEMPOTENCY_HOURS),
+    }
+    try:
+        with transaction.atomic():
+            record, created = IdempotencyRecord.objects.get_or_create(
+                user=request.user, key_hash=key_hash, defaults=defaults,
+            )
+    except IntegrityError:
+        record, created = IdempotencyRecord.objects.get(user=request.user, key_hash=key_hash), False
+    if not created:
+        if record.request_hash != request_hash or record.path != request.path or record.method != request.method:
+            raise ApiError(
+                'idempotency_conflict',
+                'This Idempotency-Key was already used for a different request.',
+                409,
+            )
+        if record.status == IdempotencyRecord.Status.COMPLETED:
+            response = JsonResponse(record.response_body, status=record.response_status)
+            response['Idempotency-Replayed'] = 'true'
+            return record, response
+        response = error_response('idempotency_in_progress', 'The original request is still processing.', 409)
+        response['Retry-After'] = '2'
+        return record, response
+    return record, None
+
+
+def _complete_idempotency(record, response):
+    if not record:
+        return
+    from .models import IdempotencyRecord
+    try:
+        body = json.loads(response.content.decode('utf-8'))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        body = {'error': {'code': 'unreplayable_response', 'message': 'The original response was not JSON.'}}
+    IdempotencyRecord.objects.filter(pk=record.pk).update(
+        status=IdempotencyRecord.Status.COMPLETED,
+        response_status=response.status_code,
+        response_body=body,
+        completed_at=timezone.now(),
+    )
+
+
+def api_endpoint(
+    methods=('GET',), *, auth=False, public_cache_seconds=0, idempotent=False,
+    summary='', description='', tags=(), request_example=None, response_example=None,
+):
     allowed = tuple(method.upper() for method in methods)
 
     def decorator(view):
@@ -48,10 +122,24 @@ def api_endpoint(methods=('GET',), *, auth=False, public_cache_seconds=0):
                 response = error_response('method_not_allowed', 'This method is not allowed.', 405)
                 response['Allow'] = ', '.join(allowed)
                 return response
+            if auth and getattr(request, 'mobile_auth_error', None):
+                response = error_response(request.mobile_auth_error, 'Bearer token is invalid or expired.', 401)
+                response['WWW-Authenticate'] = 'Bearer realm="OwnBasket API", error="invalid_token"'
+                return response
             if auth and not request.user.is_authenticated:
-                return error_response('authentication_required', 'Sign in is required for this endpoint.', 401)
+                response = error_response('authentication_required', 'Sign in is required for this endpoint.', 401)
+                response['WWW-Authenticate'] = 'Bearer realm="OwnBasket API"'
+                return response
+            record = None
             try:
-                response = view(request, *args, **kwargs)
+                if idempotent:
+                    record, replay = _idempotency_record(request)
+                    if replay:
+                        response = replay
+                    else:
+                        response = view(request, *args, **kwargs)
+                else:
+                    response = view(request, *args, **kwargs)
             except ApiError as exc:
                 response = error_response(exc.code, exc.message, exc.status, exc.fields)
             except Http404:
@@ -61,6 +149,8 @@ def api_endpoint(methods=('GET',), *, auth=False, public_cache_seconds=0):
                 response = error_response('validation_error', 'Submitted data is invalid.', 400, fields)
             if not isinstance(response, JsonResponse):
                 response = JsonResponse(response)
+            if record and not response.has_header('Idempotency-Replayed'):
+                _complete_idempotency(record, response)
             response.setdefault('X-Content-Type-Options', 'nosniff')
             response.setdefault('API-Version', '2.0')
             if auth or request.user.is_authenticated or not public_cache_seconds:
@@ -69,6 +159,12 @@ def api_endpoint(methods=('GET',), *, auth=False, public_cache_seconds=0):
                 response['Cache-Control'] = f'public, max-age={public_cache_seconds}'
             patch_vary_headers(response, ('Accept', 'Cookie'))
             return response
+        wrapped.api_contract = {
+            'methods': allowed, 'auth': auth, 'idempotent': idempotent,
+            'summary': summary or view.__name__.replace('_', ' ').title(),
+            'description': description, 'tags': tuple(tags) or ('Mobile API',),
+            'request_example': request_example, 'response_example': response_example,
+        }
         return wrapped
     return decorator
 

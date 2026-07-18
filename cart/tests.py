@@ -42,3 +42,12 @@ class CartAuthRestrictionTests(TestCase):
     def test_anonymous_user_sees_zero_cart_count_in_context(self):
         response = self.client.get(reverse('home'))
         self.assertEqual(response.context['cart_count'], 0)
+
+    def test_cart_mutations_cannot_target_another_users_item(self):
+        other = get_user_model().objects.create_user(username='other-cart-user', password='secret123')
+        foreign_item = CartItem.objects.create(cart=Cart.objects.create(user=other), product=self.product, quantity=1)
+        self.client.login(username='tester', password='secret123')
+        response = self.client.get(reverse('increase_quantity', args=(foreign_item.pk,)))
+        self.assertEqual(response.status_code, 404)
+        foreign_item.refresh_from_db()
+        self.assertEqual(foreign_item.quantity, 1)
