@@ -80,6 +80,8 @@ docs/           Deployment, security, analytics, marketing, PWA, and API guides
 
 ## Documentation
 
+- [Release changelog](CHANGELOG.md)
+- [Version roadmap](ROADMAP.md)
 - [Production deployment](docs/PRODUCTION_DEPLOYMENT.md)
 - [Production checklist](docs/PRODUCTION_CHECKLIST.md)
 - [Security](docs/SECURITY.md)
