@@ -1,0 +1,7 @@
+from django.apps import AppConfig
+
+
+class PersonalizationConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'personalization'
+    verbose_name = 'AI Personalization'

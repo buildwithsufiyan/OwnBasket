@@ -31,6 +31,8 @@ def index(request):
             'profile': url('api-v2:profile'), 'sellerDashboard': url('api-v2:seller-dashboard'),
             'pushDevices': url('api-v2:push-devices'), 'sync': url('api-v2:sync-capabilities'),
             'syncBatch': url('api-v2:sync-batch'), 'health': url('api-v2:health'),
+            'recommendations': url('api-v2:recommendations'), 'trending': url('api-v2:trending'),
+            'intelligentSearch': url('api-v2:intelligent-search'),
         },
     }
 

@@ -86,10 +86,11 @@ docs/           Deployment, security, analytics, marketing, PWA, and API guides
 - [Analytics and reporting](docs/ANALYTICS_AND_REPORTING.md)
 - [PWA and API](docs/PWA_AND_API.md)
 - [Mobile API](docs/MOBILE_API.md)
+- [AI recommendations and intelligent search](docs/AI_RECOMMENDATIONS.md)
 
 ## Project Status
 
-Phases 9 through 15 are present on `main`. Phase 15 delivers the production mobile API and Progressive Web App platform. Phase 16 remains separate and is not part of `main`.
+Phases 9 through 16 are present on `main`. Phase 15 delivers the production mobile API and Progressive Web App platform. Phase 16 adds intelligent search, explainable recommendations, related products, behavior-based personalization, and popularity fallbacks without requiring an external paid AI service.
 
 ## Author
 

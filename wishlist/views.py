@@ -5,6 +5,8 @@ from products.models import Product
 from products.pricing import attach_pricing_to_products
 from .models import Wishlist
 from api_v2.sync import bump_sync_state
+from personalization.models import BehaviorEvent
+from personalization.services import record_behavior
 
 
 @login_required
@@ -16,6 +18,7 @@ def add_to_wishlist(request, product_id):
             wishlist_count=F("wishlist_count") + 1
         )
         bump_sync_state(request.user)
+        record_behavior(request, BehaviorEvent.EventType.WISHLIST_ADD, product=product, category=product.category, brand=product.brand)
     return redirect("wishlist:wishlist")
 
 
@@ -28,6 +31,7 @@ def remove_from_wishlist(request, product_id):
             wishlist_count=F("wishlist_count") - 1
         )
         bump_sync_state(request.user)
+        record_behavior(request, BehaviorEvent.EventType.WISHLIST_REMOVE, product=product, category=product.category, brand=product.brand)
     return redirect("wishlist:wishlist")
 
 

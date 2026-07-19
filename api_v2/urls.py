@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import account, catalog, commerce, openapi, sync, views
+from . import account, catalog, commerce, discovery, openapi, sync, views
 
 
 app_name = 'api-v2'
@@ -37,4 +37,9 @@ urlpatterns = [
     path('push/deliveries/', account.push_deliveries, name='push-deliveries'),
     path('sync/capabilities/', views.sync_capabilities, name='sync-capabilities'),
     path('sync/batches/', sync.sync_batch, name='sync-batch'),
+    path('recommendations/', discovery.recommendations, name='recommendations'),
+    path('trending/', discovery.trending, name='trending'),
+    path('search/', discovery.search, name='intelligent-search'),
+    path('products/<int:product_id>/similar/', discovery.similar, name='similar-products'),
+    path('products/<int:product_id>/bought-together/', discovery.bought_together, name='bought-together'),
 ]
