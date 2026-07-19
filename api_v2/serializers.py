@@ -54,6 +54,7 @@ def review_data(review):
     return {
         'id': review.pk, 'rating': review.rating, 'title': review.title, 'body': review.body,
         'author': review.user.first_name or 'Verified customer',
+        'verifiedPurchase': review.verified_purchase, 'helpfulCount': review.helpful_count,
         'createdAt': review.created_at.isoformat(),
     }
 

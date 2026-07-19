@@ -12,9 +12,7 @@
             <span class="product-card-discount-badge">-{{ product.discount_percentage|floatformat:0 }}%</span>
         {% endif %}
         <div class="product-card-actions">
-            <a href="{% url 'wishlist:add_to_wishlist' product.id %}" class="product-card-wishlist-btn" aria-label="Add to Wishlist">
-                <i class="bi bi-heart"></i>
-            </a>
+            {% if user.is_authenticated %}<form method="post" action="{% url 'wishlist:add_to_wishlist' product.id %}" class="d-inline">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="product-card-wishlist-btn" aria-label="Add to Wishlist"><i class="bi bi-heart"></i></button></form>{% else %}<a href="{% url 'login' %}" class="product-card-wishlist-btn" aria-label="Sign in to add to Wishlist"><i class="bi bi-heart"></i></a>{% endif %}
             <form action="{% url 'cart:add_to_cart' product.id %}" method="post" class="d-inline">
                 {% csrf_token %}
                 <input type="hidden" name="quantity" value="1">

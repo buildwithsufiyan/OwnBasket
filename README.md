@@ -13,6 +13,7 @@ OwnBasket is a production-oriented Django e-commerce platform developed by Md Su
 - Production configuration for PostgreSQL, Redis, SMTP, static files, security headers, rate limiting, and audit logging
 - Progressive Web App with install support, offline fallback, and service worker lifecycle
 - Versioned mobile API with encrypted token sessions, refresh/revocation, idempotent writes, synchronization, push-device registration, and OpenAPI documentation
+- Customer experience tools including verified reviews, shareable wishlist collections, recently viewed products, catalog comparison, advanced filters, availability labels, and configurable recommendations
 
 ## Technology Stack
 
@@ -87,10 +88,11 @@ docs/           Deployment, security, analytics, marketing, PWA, and API guides
 - [PWA and API](docs/PWA_AND_API.md)
 - [Mobile API](docs/MOBILE_API.md)
 - [AI recommendations and intelligent search](docs/AI_RECOMMENDATIONS.md)
+- [Customer experience and personalization](docs/CUSTOMER_EXPERIENCE.md)
 
 ## Project Status
 
-Phases 9 through 16 are present on `main`. Phase 15 delivers the production mobile API and Progressive Web App platform. Phase 16 adds intelligent search, explainable recommendations, related products, behavior-based personalization, and popularity fallbacks without requiring an external paid AI service.
+Phases 9 through 17 are present on `main`. Phase 15 delivers the production mobile API and Progressive Web App platform. Phase 16 adds intelligent search and explainable recommendations without a paid AI service. Phase 17 adds verified customer reviews, advanced wishlists, recently viewed products, comparison, catalog filters, dynamic labels, and configurable availability and recommendation controls.
 
 ## Author
 

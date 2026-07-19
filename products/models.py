@@ -210,6 +210,12 @@ class ProductQuerySet(models.QuerySet):
 
 
 class Product(models.Model):
+    class AvailabilityMode(models.TextChoices):
+        AUTO = 'auto', 'Automatic from stock'
+        IN_STOCK = 'in_stock', 'In stock'
+        OUT_OF_STOCK = 'out_of_stock', 'Out of stock'
+        PRE_ORDER = 'pre_order', 'Pre order'
+
     objects = ProductQuerySet.as_manager()
 
     seller = models.ForeignKey(
@@ -392,6 +398,11 @@ class Product(models.Model):
     low_stock_alert = models.PositiveIntegerField(default=5)
     out_of_stock = models.BooleanField(default=False, editable=False)
     allow_backorder = models.BooleanField(default=False)
+    availability_mode = models.CharField(
+        max_length=16, choices=AvailabilityMode.choices, default=AvailabilityMode.AUTO,
+    )
+    expected_restock_at = models.DateTimeField(blank=True, null=True)
+    availability_message = models.CharField(max_length=160, blank=True)
     warehouse = models.ForeignKey(
         Warehouse,
         on_delete=models.SET_NULL,
@@ -537,12 +548,35 @@ class Product(models.Model):
             badges.append('Cash on Delivery')
         if self.verified_product:
             badges.append('Verified Product')
+        for badge in self.custom_badges.filter(is_active=True).order_by('priority', 'label'):
+            if badge.label not in badges:
+                badges.append(badge.label)
         return badges
+
+    @property
+    def availability_label(self):
+        if self.availability_mode == self.AvailabilityMode.PRE_ORDER:
+            return self.availability_message or 'Pre order'
+        if self.availability_mode == self.AvailabilityMode.OUT_OF_STOCK:
+            return self.availability_message or 'Out of stock'
+        if self.availability_mode == self.AvailabilityMode.IN_STOCK:
+            return self.availability_message or 'In stock'
+        if self.stock <= 0:
+            if self.expected_restock_at:
+                return f'Expected restock {self.expected_restock_at:%b %d}'
+            return 'Out of stock'
+        if self.is_limited_stock:
+            return f'Only {self.stock} left'
+        return 'In stock'
+
+    @property
+    def can_purchase(self):
+        return self.availability_mode == self.AvailabilityMode.PRE_ORDER or self.stock > 0 or self.allow_backorder
 
     def refresh_review_summary(self):
         """Keep storefront rating fields in sync with approved customer reviews."""
         summary = self.reviews.filter(
-            moderation_status=ProductReview.ModerationStatus.APPROVED
+            moderation_status=ProductReview.ModerationStatus.APPROVED, is_spam=False,
         ).aggregate(average=Avg('rating'), total=models.Count('id'))
         self.rating = Decimal(str(summary['average'] or 0)).quantize(Decimal('0.1'))
         self.reviews_count = summary['total'] or 0
@@ -666,6 +700,9 @@ class ProductReview(models.Model):
     )
     title = models.CharField(max_length=160, blank=True)
     body = models.TextField()
+    verified_purchase = models.BooleanField(default=False, db_index=True)
+    helpful_count = models.PositiveIntegerField(default=0)
+    is_spam = models.BooleanField(default=False, db_index=True)
     moderation_status = models.CharField(
         max_length=12,
         choices=ModerationStatus.choices,
@@ -709,6 +746,91 @@ class ProductReview(models.Model):
         self.product.refresh_review_summary()
         if previous_product_id and previous_product_id != self.product_id:
             Product.objects.get(pk=previous_product_id).refresh_review_summary()
+
+    def delete(self, *args, **kwargs):
+        product = self.product
+        result = super().delete(*args, **kwargs)
+        product.refresh_review_summary()
+        return result
+
+
+class ProductReviewImage(models.Model):
+    review = models.ForeignKey(ProductReview, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='reviews/%Y/%m/')
+    alt_text = models.CharField(max_length=160, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('id',)
+
+
+class ReviewHelpfulVote(models.Model):
+    review = models.ForeignKey(ProductReview, on_delete=models.CASCADE, related_name='helpful_votes')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='review_helpful_votes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(fields=('review', 'user'), name='unique_helpful_vote_per_user'),
+        )
+
+
+class ProductBadge(models.Model):
+    label = models.CharField(max_length=40, unique=True)
+    color = models.CharField(max_length=20, default='#ffb800')
+    text_color = models.CharField(max_length=20, default='#131921')
+    products = models.ManyToManyField(Product, blank=True, related_name='custom_badges')
+    priority = models.PositiveSmallIntegerField(default=100)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ('priority', 'label')
+
+    def __str__(self):
+        return self.label
+
+
+class CustomerExperienceSettings(models.Model):
+    recently_viewed_limit = models.PositiveSmallIntegerField(default=12)
+    recently_viewed_retention_days = models.PositiveSmallIntegerField(default=90)
+    related_products_limit = models.PositiveSmallIntegerField(default=8)
+    similar_price_min_percent = models.PositiveSmallIntegerField(default=60)
+    similar_price_max_percent = models.PositiveSmallIntegerField(default=140)
+    bought_together_limit = models.PositiveSmallIntegerField(default=4)
+    allow_bought_together_fallback = models.BooleanField(default=True)
+    compare_limit = models.PositiveSmallIntegerField(default=4)
+    reviews_per_page = models.PositiveSmallIntegerField(default=10)
+    max_review_images = models.PositiveSmallIntegerField(default=3)
+    review_minimum_characters = models.PositiveSmallIntegerField(default=20)
+
+    class Meta:
+        verbose_name = 'Customer experience settings'
+        verbose_name_plural = 'Customer experience settings'
+
+    def clean(self):
+        super().clean()
+        bounded = {
+            'recently_viewed_limit': (4, 30), 'recently_viewed_retention_days': (7, 365),
+            'related_products_limit': (4, 24), 'bought_together_limit': (2, 12),
+            'similar_price_min_percent': (10, 100), 'similar_price_max_percent': (100, 500),
+            'compare_limit': (2, 6), 'reviews_per_page': (5, 50),
+            'max_review_images': (0, 6), 'review_minimum_characters': (10, 500),
+        }
+        errors = {}
+        for field, (minimum, maximum) in bounded.items():
+            value = getattr(self, field)
+            if not minimum <= value <= maximum:
+                errors[field] = f'Use a value from {minimum} to {maximum}.'
+        if errors:
+            raise ValidationError(errors)
+        if self.similar_price_min_percent >= self.similar_price_max_percent:
+            raise ValidationError({'similar_price_max_percent': 'Maximum price percentage must exceed the minimum.'})
+        if CustomerExperienceSettings.objects.exclude(pk=self.pk).exists():
+            raise ValidationError('Only one customer experience settings record is allowed.')
+
+    @classmethod
+    def get_solo(cls):
+        return cls.objects.order_by('pk').first() or cls()
 
     def delete(self, *args, **kwargs):
         product = self.product

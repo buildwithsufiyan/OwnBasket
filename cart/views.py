@@ -53,6 +53,9 @@ def _coupon_return_url(request):
 @login_required(login_url='login')
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product.objects.marketplace_visible(), id=product_id, is_active=True)
+    if not product.can_purchase:
+        messages.error(request, 'This product is currently unavailable.')
+        return redirect(product.get_absolute_url())
 
     size = request.POST.get('size')
     color = request.POST.get('color')

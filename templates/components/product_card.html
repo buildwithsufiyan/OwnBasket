@@ -1,9 +1,11 @@
 {% load humanize %}
 <article class="plp-card">
+  {% if product.active_badges %}<div class="plp-card-badges" aria-label="Product labels">{% for badge in product.active_badges|slice:':2' %}<span>{{ badge }}</span>{% endfor %}</div>{% endif %}
   <a class="plp-card-image" href="{{ product.get_absolute_url }}">{% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name }}" width="480" height="480" loading="lazy" decoding="async">{% else %}<i class="bi bi-image" aria-label="Image unavailable"></i>{% endif %}</a>
   <div class="plp-card-body"><p>{{ product.brand.name }}</p><h2><a href="{{ product.get_absolute_url }}">{{ product.name }}</a></h2>
   <div class="plp-card-rating">{% if product.reviews_count %}<i class="bi bi-star-fill"></i> {{ product.rating }} <span>({{ product.reviews_count }})</span>{% else %}<span>No reviews yet</span>{% endif %}</div>
   <div class="plp-card-price">{% if product.display_compare_price %}<del>₹{{ product.display_compare_price|intcomma }}</del>{% endif %}<strong>₹{{ product.display_price|intcomma }}</strong></div>
-  {% if product.out_of_stock %}<button disabled>Out of stock</button>{% else %}<form method="post" action="{% url 'add_to_cart' product.id %}">{% csrf_token %}<button type="submit">Add to cart</button></form>{% endif %}
-  <a class="plp-wishlist" href="{% if user.is_authenticated %}{% url 'wishlist:add_to_wishlist' product.id %}{% else %}{% url 'login' %}{% endif %}" aria-label="Add {{ product.name }} to wishlist"><i class="bi bi-heart"></i></a></div>
+  <p class="plp-availability">{{ product.availability_label }}</p>
+  {% if product.can_purchase %}<form method="post" action="{% url 'add_to_cart' product.id %}">{% csrf_token %}<button type="submit">Add to cart</button></form>{% else %}<button disabled>Out of stock</button>{% endif %}
+  <div class="plp-card-tools">{% if user.is_authenticated %}<form method="post" action="{% url 'wishlist:add_to_wishlist' product.id %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="plp-icon-btn" aria-label="Add {{ product.name }} to wishlist"><i class="bi bi-heart"></i></button></form>{% else %}<a class="plp-icon-btn" href="{% url 'login' %}" aria-label="Sign in to save {{ product.name }}"><i class="bi bi-heart"></i></a>{% endif %}<form method="post" action="{% url 'products:compare_add' product.id %}">{% csrf_token %}<button class="plp-icon-btn" aria-label="Compare {{ product.name }}"><i class="bi bi-columns-gap"></i></button></form></div></div>
 </article>
