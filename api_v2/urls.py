@@ -20,6 +20,7 @@ urlpatterns = [
     path('products/', catalog.products, name='products'),
     path('products/<int:product_id>/', catalog.product_detail, name='product-detail'),
     path('products/<int:product_id>/reviews/', catalog.product_reviews, name='product-reviews'),
+    path('reviews/<int:review_id>/helpful/', catalog.review_helpful, name='review-helpful'),
     path('categories/', catalog.categories, name='categories'),
     path('brands/', catalog.brands, name='brands'),
     path('cart/', commerce.cart, name='cart'),

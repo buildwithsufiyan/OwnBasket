@@ -19,10 +19,14 @@ from .models import (
     Brand,
     BrandHeroBanner,
     Product,
+    ProductBadge,
+    CustomerExperienceSettings,
     ProductListingSettings,
     ProductVariant,
     ProductImage,
     ProductReview,
+    ProductReviewImage,
+    ReviewHelpfulVote,
     ProductFeature,
     ProductSpecification,
     SubCategory,
@@ -225,6 +229,12 @@ class ProductSpecificationInline(admin.TabularInline):
     extra = 1
 
 
+class ProductReviewImageInline(admin.TabularInline):
+    model = ProductReviewImage
+    extra = 0
+    readonly_fields = ('created_at',)
+
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     form = ProductAdminForm
@@ -308,6 +318,8 @@ class ProductAdmin(admin.ModelAdmin):
         ('Inventory', {
             'fields': (
                 ('stock', 'low_stock_alert', 'out_of_stock'),
+                ('availability_mode', 'expected_restock_at'),
+                'availability_message',
                 ('allow_backorder', 'warehouse', 'is_active'),
                 ('weight', 'length_cm', 'width_cm', 'height_cm'),
             ),
@@ -527,9 +539,10 @@ def approve_reviews(modeladmin, request, queryset):
     count = 0
     for review in queryset.select_related('product'):
         review.moderation_status = ProductReview.ModerationStatus.APPROVED
+        review.is_spam = False
         review.moderated_by = request.user
         review.moderated_at = timezone.now()
-        review.save(update_fields=('moderation_status', 'moderated_by', 'moderated_at', 'updated_at'))
+        review.save(update_fields=('moderation_status', 'is_spam', 'moderated_by', 'moderated_at', 'updated_at'))
         count += 1
     modeladmin.message_user(request, f'{count} review(s) approved.')
 
@@ -549,8 +562,9 @@ def reject_reviews(modeladmin, request, queryset):
 @admin.register(ProductReview)
 class ProductReviewAdmin(admin.ModelAdmin):
     actions = (approve_reviews, reject_reviews)
-    list_display = ('product', 'customer', 'rating_display', 'moderation_status', 'created_at', 'moderated_by')
-    list_filter = ('moderation_status', 'rating', 'created_at')
+    inlines = (ProductReviewImageInline,)
+    list_display = ('product', 'customer', 'rating_display', 'verified_purchase', 'helpful_count', 'moderation_status', 'is_spam', 'created_at', 'moderated_by')
+    list_filter = ('moderation_status', 'verified_purchase', 'is_spam', 'rating', 'created_at')
     search_fields = ('product__name', 'user__username', 'user__email', 'title', 'body')
     autocomplete_fields = ('product', 'user')
     readonly_fields = ('created_at', 'updated_at', 'moderated_by', 'moderated_at')
@@ -562,7 +576,7 @@ class ProductReviewAdmin(admin.ModelAdmin):
         return request.user.has_perm('products.moderate_productreview')
 
     fieldsets = (
-        ('Customer review', {'fields': ('product', 'user', 'rating', 'title', 'body')}),
+        ('Customer review', {'fields': ('product', 'user', 'rating', 'title', 'body', 'verified_purchase', 'helpful_count', 'is_spam')}),
         ('Moderation', {'fields': ('moderation_status', 'moderation_notes', 'moderated_by', 'moderated_at')}),
         ('Timestamps', {'fields': ('created_at', 'updated_at'), 'classes': ('collapse',)}),
     )
@@ -580,3 +594,34 @@ class ProductReviewAdmin(admin.ModelAdmin):
             obj.moderated_by = request.user
             obj.moderated_at = timezone.now()
         super().save_model(request, obj, form, change)
+
+
+@admin.register(ProductBadge)
+class ProductBadgeAdmin(admin.ModelAdmin):
+    list_display = ('label', 'priority', 'is_active', 'color')
+    list_editable = ('priority', 'is_active')
+    search_fields = ('label',)
+    filter_horizontal = ('products',)
+
+
+@admin.register(CustomerExperienceSettings)
+class CustomerExperienceSettingsAdmin(admin.ModelAdmin):
+    fieldsets = (
+        ('Recently viewed', {'fields': ('recently_viewed_limit', 'recently_viewed_retention_days')}),
+        ('Recommendations', {'fields': ('related_products_limit', ('similar_price_min_percent', 'similar_price_max_percent'), 'bought_together_limit', 'allow_bought_together_fallback')}),
+        ('Reviews', {'fields': ('reviews_per_page', 'max_review_images', 'review_minimum_characters')}),
+        ('Comparison', {'fields': ('compare_limit',)}),
+    )
+
+    def has_add_permission(self, request):
+        return not CustomerExperienceSettings.objects.exists()
+
+
+@admin.register(ReviewHelpfulVote)
+class ReviewHelpfulVoteAdmin(admin.ModelAdmin):
+    list_display = ('review', 'user', 'created_at')
+    readonly_fields = ('review', 'user', 'created_at')
+    list_select_related = ('review', 'user')
+
+    def has_add_permission(self, request):
+        return False

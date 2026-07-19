@@ -4,8 +4,36 @@ from django import forms
 
 from core.admin_visual_editor import VisualEditorFormMixin
 
-from .models import Brand, BrandHeroBanner, Category, Product, SubCategory, Warehouse
+from .models import Brand, BrandHeroBanner, Category, Product, ProductReview, SubCategory, Warehouse
 from security.uploads import SecureUploadFormMixin
+
+
+class ProductReviewForm(forms.ModelForm):
+    website = forms.CharField(required=False, widget=forms.HiddenInput, label='')
+
+    class Meta:
+        model = ProductReview
+        fields = ('rating', 'title', 'body')
+        widgets = {
+            'rating': forms.Select(choices=((5, '5 - Excellent'), (4, '4 - Good'), (3, '3 - Average'), (2, '2 - Poor'), (1, '1 - Very poor'))),
+            'title': forms.TextInput(attrs={'maxlength': 160, 'placeholder': 'Summarize your experience'}),
+            'body': forms.Textarea(attrs={'rows': 5, 'maxlength': 4000, 'placeholder': 'What should other customers know?'}),
+        }
+
+    def __init__(self, *args, minimum_characters=20, **kwargs):
+        self.minimum_characters = minimum_characters
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get('website'):
+            raise forms.ValidationError('Review could not be submitted.')
+        body = (cleaned.get('body') or '').strip()
+        if len(body) < self.minimum_characters:
+            self.add_error('body', f'Please write at least {self.minimum_characters} characters.')
+        if body.count('http://') + body.count('https://') > 2:
+            self.add_error('body', 'Reviews may contain at most two links.')
+        return cleaned
 
 
 class CategoryAdminForm(SecureUploadFormMixin, forms.ModelForm):

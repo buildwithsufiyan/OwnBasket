@@ -14,7 +14,7 @@ from orders.services import EmptyCartError, create_order_from_cart
 from products.models import Product
 from products.pricing import build_cart_summary
 from products.pricing import attach_pricing_to_products
-from wishlist.models import Wishlist
+from wishlist.models import Wishlist, WishlistCollection, WishlistSettings
 from personalization.models import BehaviorEvent
 from personalization.services import record_behavior
 
@@ -62,6 +62,8 @@ def cart_items(request):
     product_id = positive_int(payload.get('productId'), name='productId')
     quantity = positive_int(payload.get('quantity'), name='quantity', default=1, maximum=99)
     product = get_object_or_404(visible_products(), pk=product_id)
+    if not product.can_purchase:
+        raise ApiError('product_unavailable', 'This product is currently unavailable.', 409)
     user_cart = get_user_cart(request.user)
     item, created = CartItem.objects.get_or_create(
         cart=user_cart, product=product,
@@ -168,7 +170,15 @@ def wishlist(request):
     if request.method == 'POST':
         payload = json_body(request)
         product = get_object_or_404(visible_products(), pk=positive_int(payload.get('productId'), name='productId'))
-        _, created = Wishlist.objects.get_or_create(user=request.user, product=product)
+        collection, _ = WishlistCollection.objects.get_or_create(user=request.user, name='Favorites')
+        Wishlist.objects.filter(user=request.user, collection__isnull=True).update(collection=collection)
+        if collection.items.count() >= WishlistSettings.get_solo().max_items_per_collection:
+            raise ApiError('wishlist_limit', 'The default wishlist collection is full.', 409)
+        current_price = product.discount_price if product.has_active_offer() else product.selling_price or product.price
+        _, created = Wishlist.objects.get_or_create(
+            user=request.user, product=product, collection=collection,
+            defaults={'price_at_add': current_price},
+        )
         if created:
             Product.objects.filter(pk=product.pk).update(wishlist_count=F('wishlist_count') + 1)
             bump_sync_state(request.user)

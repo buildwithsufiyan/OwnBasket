@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from cart.models import CartItem
 from cart.services import get_user_cart, touch_cart
 from products.models import Product
-from wishlist.models import Wishlist
+from wishlist.models import Wishlist, WishlistCollection
 
 from .catalog import visible_products
 from .http import ApiError, api_endpoint, json_body, positive_int
@@ -89,7 +89,12 @@ def _apply(user, operation, payload):
     product_id = positive_int(payload.get('productId'), name='productId')
     if operation == 'wishlist:add':
         product = get_object_or_404(visible_products(), pk=product_id)
-        _, created = Wishlist.objects.get_or_create(user=user, product=product)
+        collection, _ = WishlistCollection.objects.get_or_create(user=user, name='Favorites')
+        current_price = product.discount_price if product.has_active_offer() else product.selling_price or product.price
+        _, created = Wishlist.objects.get_or_create(
+            user=user, product=product, collection=collection,
+            defaults={'price_at_add': current_price},
+        )
         if created:
             Product.objects.filter(pk=product_id).update(wishlist_count=F('wishlist_count') + 1)
         return {'productId': product_id, 'created': created}

@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from cart.models import CartItem
 from orders.models import OrderItem
-from products.models import Brand, Category, Product
+from products.models import Brand, Category, CustomerExperienceSettings, Product
 from products.pricing import attach_pricing_to_products
 from wishlist.models import Wishlist
 
@@ -137,8 +137,10 @@ def frequently_bought_together(product, *, limit=4, minimum_orders=2):
 
 
 def similar_products(product, *, limit=8):
+    settings = CustomerExperienceSettings.get_solo()
     price = product.selling_price or product.price or Decimal('0')
-    lower, upper = price * Decimal('0.60'), price * Decimal('1.40')
+    lower = price * Decimal(settings.similar_price_min_percent) / Decimal('100')
+    upper = price * Decimal(settings.similar_price_max_percent) / Decimal('100')
     candidates = list(
         visible_products().filter(
             category=product.category,
@@ -148,6 +150,11 @@ def similar_products(product, *, limit=8):
         existing = [item.pk for item in candidates] + [product.pk]
         candidates.extend(list(
             visible_products().filter(brand=product.brand).exclude(pk__in=existing).prefetch_related('features')[:40]
+        ))
+    if not candidates:
+        existing = [item.pk for item in candidates] + [product.pk]
+        candidates.extend(list(
+            visible_products().exclude(pk__in=existing).order_by('-total_sold', '-total_views', '-created_at').prefetch_related('features')[:40]
         ))
     source_tags = {feature.feature.strip().lower() for feature in product.features.all() if feature.feature.strip()}
     scores = {}
@@ -171,11 +178,14 @@ class RecommendationService:
         self.user = request.user
         self._signals = None
 
-    def recently_viewed(self, limit=12):
+    def recently_viewed(self, limit=None):
+        settings = CustomerExperienceSettings.get_solo()
+        limit = limit or settings.recently_viewed_limit
         ids = list(self.request.session.get('recently_viewed_product_ids', []))
         if self.user.is_authenticated:
             event_ids = BehaviorEvent.objects.filter(
                 user=self.user, event_type=BehaviorEvent.EventType.PRODUCT_VIEW,
+                created_at__gte=timezone.now() - timedelta(days=settings.recently_viewed_retention_days),
             ).exclude(product__isnull=True).values_list('product_id', flat=True)[:30]
             ids.extend(event_ids)
         ordered_ids = list(dict.fromkeys(ids))[:limit]
