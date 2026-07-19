@@ -7,7 +7,7 @@ OwnBasket is a production-oriented Django e-commerce platform developed by Md Su
 - Responsive homepage, product listings, product detail pages, categories, brands, and product carousels
 - Cart, wishlist, checkout, orders, invoices, discounts, coupons, and inventory-aware commerce flows
 - Admin-managed homepage sections, banners, products, themes, fonts, and visual storefront controls
-- Multi-vendor marketplace foundation
+- Configurable single-vendor or multi-vendor marketplace with seller onboarding, storefronts, dashboards, products, inventory history, fulfillment, ratings, notifications, and commission-rule structure
 - Marketing automation and customer engagement workflows
 - Business analytics and reporting
 - Production configuration for PostgreSQL, Redis, SMTP, static files, security headers, rate limiting, and audit logging
@@ -68,7 +68,7 @@ banners/        Homepage banners and presentation controls
 cart/           Shopping-cart behavior
 core/           Shared storefront functionality and PWA endpoints
 marketing/      Engagement and automation workflows
-marketplace/    Multi-vendor marketplace foundation
+marketplace/    Marketplace settings, sellers, storefronts, inventory, fulfillment, commissions, and notifications
 orders/         Checkout, orders, and invoices
 products/       Catalog, pricing, brands, and inventory
 security/       Audit and application-security controls
@@ -91,10 +91,11 @@ docs/           Deployment, security, analytics, marketing, PWA, and API guides
 - [Mobile API](docs/MOBILE_API.md)
 - [AI recommendations and intelligent search](docs/AI_RECOMMENDATIONS.md)
 - [Customer experience and personalization](docs/CUSTOMER_EXPERIENCE.md)
+- [Marketplace and seller platform](docs/MARKETPLACE_ARCHITECTURE.md)
 
 ## Project Status
 
-Phases 9 through 17 are present on `main`. Phase 15 delivers the production mobile API and Progressive Web App platform. Phase 16 adds intelligent search and explainable recommendations without a paid AI service. Phase 17 adds verified customer reviews, advanced wishlists, recently viewed products, comparison, catalog filters, dynamic labels, and configurable availability and recommendation controls.
+Phases 9 through 18 are present on `main`. Phase 15 delivers the production mobile API and Progressive Web App platform. Phase 16 adds intelligent search and explainable recommendations without a paid AI service. Phase 17 adds verified customer reviews and advanced customer-experience controls. Phase 18 adds an enterprise seller platform while preserving the single-vendor storefront through runtime marketplace settings.
 
 ## Author
 

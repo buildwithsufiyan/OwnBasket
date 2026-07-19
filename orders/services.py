@@ -75,9 +75,11 @@ def create_order_from_cart(*, user, cart, items, summary, customer, marketing_co
         SellerNotification.objects.bulk_create([
             SellerNotification(
                 seller=seller,
+                event_type=SellerNotification.EventType.NEW_ORDER,
                 title=f'New order #{order.pk}',
                 message='A customer placed an order containing one or more of your products.',
                 link='/marketplace/seller/orders/',
+                email_status=SellerNotification.EmailStatus.QUEUED,
             )
             for seller in ordered_sellers.values() if seller.order_notifications
         ])

@@ -6,6 +6,7 @@
     <h4>{{ request.user.seller_profile.store_name|default:'Seller panel' }}</h4>
     <a href="{% url 'marketplace:dashboard' %}">Dashboard</a>
     <a href="{% url 'marketplace:products' %}">Products & inventory</a>
+    <a href="{% url 'marketplace:inventory' %}">Inventory history</a>
     <a href="{% url 'marketplace:orders' %}">Orders</a>
     <a href="{% url 'marketplace:analytics' %}">Analytics</a>
     <a href="{% url 'marketplace:payouts' %}">Earnings & payouts</a>

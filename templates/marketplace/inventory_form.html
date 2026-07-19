@@ -1,0 +1,5 @@
+{% extends 'marketplace/base.html' %}
+{% block marketplace_content %}
+<div class="market-card"><h1>Inventory: {{ product.name }}</h1><form method="post" class="market-form">{% csrf_token %}{{ form.as_p }}<button type="submit">Save inventory</button></form></div>
+<div class="market-card"><h2>Inventory history</h2><table class="market-table"><tr><th>Date</th><th>Stock change</th><th>Reserved change</th><th>After</th><th>Reason</th></tr>{% for event in history %}<tr><td>{{ event.created_at|date:'M j, Y H:i' }}</td><td>{{ event.stock_change }}</td><td>{{ event.reserved_change }}</td><td>{{ event.stock_after }} / {{ event.reserved_after }} reserved</td><td>{{ event.get_reason_display }}</td></tr>{% empty %}<tr><td colspan="5">No adjustments recorded.</td></tr>{% endfor %}</table></div>
+{% endblock %}

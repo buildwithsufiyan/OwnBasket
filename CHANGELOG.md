@@ -4,6 +4,31 @@ All notable OwnBasket changes are documented here. The project follows Conventio
 
 ## Unreleased
 
+### Phase 18 — Marketplace and Seller Platform
+
+#### Added
+
+- Singleton marketplace settings for enable/disable, single-vendor and multi-vendor modes, seller registration, global commission defaults, and low-stock notifications.
+- Seller business, contact, masked identity-reference, tax-structure, approval, rejection, suspension, document, and queued email-notification workflows.
+- Seller dashboard revenue, orders, products, inventory health, reservations, approved ratings/reviews, recent orders, and performance analytics.
+- Searchable public seller directory and storefronts with banners, logos, descriptions, contact details, policies, products, and verified ratings.
+- Seller-owned product galleries, variants, attributes, pricing, visibility, stock, and inventory audit history.
+- Seller order detail, packing and ready-to-ship states, fulfillment timelines, and seller-specific order history.
+- Extensible global, category, seller, and seller/category commission-rule configuration without executing new payment calculations.
+- Marketplace admin settings, seller review actions, suspension, stores, commission rules, inventory, fulfillment, notifications, and seller analytics.
+- Typed seller notifications for approval, rejection, new orders, low stock, and reviews, with delivery-state structure for future email workers.
+- Focused mode, ownership, inventory, fulfillment, commission, notification, integration, and backward-compatibility tests.
+
+#### Security and performance
+
+- Seller product, inventory, and order mutations are owner-scoped; unauthorized objects return 404 and admin override remains permission controlled.
+- Identity references accept only masked values or short administrative codes; uploaded seller/product media continues through secure upload validation.
+- Seller dashboards, store pages, orders, reviews, and inventory use aggregate queries, related-object loading, pagination, and bounded recent lists.
+
+#### Database
+
+- Added `marketplace.0002_marketplacesettings_sellernotification_email_status_and_more`.
+
 ### Phase 17 — Customer Experience and Personalization
 
 #### Added

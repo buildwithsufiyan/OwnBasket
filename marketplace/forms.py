@@ -1,11 +1,18 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
+from django.forms import inlineformset_factory
 from django.utils.text import slugify
 
-from products.models import Product
+from products.models import Product, ProductImage, ProductSpecification, ProductVariant
 
-from .models import SellerDocument, SellerPayoutAccount, SellerProfile
+from .models import (
+    SellerDocument,
+    SellerInventory,
+    SellerOrderFulfillment,
+    SellerPayoutAccount,
+    SellerProfile,
+)
 from security.uploads import SecureUploadFormMixin
 
 
@@ -65,8 +72,9 @@ class SellerOnboardingForm(SecureUploadFormMixin, forms.ModelForm):
     class Meta:
         model = SellerProfile
         fields = (
-            'store_name', 'legal_name', 'business_email', 'business_phone',
-            'description', 'address', 'city', 'tax_identifier', 'logo', 'banner',
+            'store_name', 'legal_name', 'contact_person', 'business_email', 'business_phone',
+            'description', 'address', 'city', 'identity_reference', 'tax_identifier',
+            'tax_registration_type', 'logo', 'banner',
             'shipping_policy', 'return_policy', 'privacy_policy',
         )
         widgets = {
@@ -81,6 +89,12 @@ class SellerOnboardingForm(SecureUploadFormMixin, forms.ModelForm):
         value = self.cleaned_data['store_name'].strip()
         if SellerProfile.objects.exclude(pk=self.instance.pk).filter(store_name__iexact=value).exists():
             raise forms.ValidationError('A store already uses this name.')
+        return value
+
+    def clean_identity_reference(self):
+        value = self.cleaned_data['identity_reference'].strip()
+        if value and not ('*' in value or len(value) <= 8):
+            raise forms.ValidationError('Use a masked identity reference or a short administrative code.')
         return value
 
     def save(self, commit=True):
@@ -126,12 +140,30 @@ class SellerProductForm(SecureUploadFormMixin, forms.ModelForm):
         return cleaned
 
 
+class SellerProductImageForm(SecureUploadFormMixin, forms.ModelForm):
+    class Meta:
+        model = ProductImage
+        fields = ('image',)
+
+
+SellerProductImageFormSet = inlineformset_factory(
+    Product, ProductImage, form=SellerProductImageForm, fields=('image',), extra=1, can_delete=True,
+)
+SellerProductVariantFormSet = inlineformset_factory(
+    Product, ProductVariant, fields=('variant_name', 'variant_value'), extra=1, can_delete=True,
+)
+SellerProductSpecificationFormSet = inlineformset_factory(
+    Product, ProductSpecification, fields=('name', 'value'), extra=1, can_delete=True,
+)
+
+
 class SellerSettingsForm(SecureUploadFormMixin, forms.ModelForm):
     class Meta:
         model = SellerProfile
         fields = (
-            'store_name', 'business_email', 'business_phone', 'description', 'logo', 'banner',
-            'address', 'city', 'shipping_policy', 'return_policy', 'privacy_policy',
+            'store_name', 'contact_person', 'business_email', 'business_phone', 'description', 'logo', 'banner',
+            'address', 'city', 'identity_reference', 'tax_identifier', 'tax_registration_type',
+            'shipping_policy', 'return_policy', 'privacy_policy',
             'order_notifications', 'inventory_notifications', 'marketing_notifications',
         )
         widgets = {
@@ -146,6 +178,12 @@ class SellerSettingsForm(SecureUploadFormMixin, forms.ModelForm):
         value = self.cleaned_data['store_name'].strip()
         if SellerProfile.objects.exclude(pk=self.instance.pk).filter(store_name__iexact=value).exists():
             raise forms.ValidationError('A store already uses this name.')
+        return value
+
+    def clean_identity_reference(self):
+        value = self.cleaned_data['identity_reference'].strip()
+        if value and not ('*' in value or len(value) <= 8):
+            raise forms.ValidationError('Use a masked identity reference or a short administrative code.')
         return value
 
     def save(self, commit=True):
@@ -173,3 +211,41 @@ class SellerPayoutAccountForm(forms.ModelForm):
         if value and not ('*' in value or len(value) <= 8):
             raise forms.ValidationError('Use a masked account number or provider reference only.')
         return value
+
+class SellerOrderStatusForm(forms.ModelForm):
+    class Meta:
+        model = SellerOrderFulfillment
+        fields = ('status', 'seller_note')
+        widgets = {'seller_note': forms.Textarea(attrs={'rows': 3, 'maxlength': 1000})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        allowed = (
+            SellerOrderFulfillment.Status.RECEIVED,
+            SellerOrderFulfillment.Status.PACKING,
+            SellerOrderFulfillment.Status.READY_TO_SHIP,
+        )
+        self.fields['status'].choices = [
+            choice for choice in SellerOrderFulfillment.Status.choices if choice[0] in allowed
+        ]
+
+
+class SellerInventoryForm(forms.ModelForm):
+    current_stock = forms.IntegerField(min_value=0)
+
+    class Meta:
+        model = SellerInventory
+        fields = ('current_stock', 'reserved_stock')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.product_id:
+            self.fields['current_stock'].initial = self.instance.product.stock
+
+    def clean(self):
+        cleaned = super().clean()
+        current = cleaned.get('current_stock')
+        reserved = cleaned.get('reserved_stock')
+        if current is not None and reserved is not None and reserved > current:
+            self.add_error('reserved_stock', 'Reserved stock cannot exceed current stock.')
+        return cleaned

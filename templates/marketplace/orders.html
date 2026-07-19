@@ -3,7 +3,7 @@
 <div class="market-card">
   <h1>Seller orders</h1>
   <form method="get" class="market-form"><p><select name="status" onchange="this.form.submit()"><option value="">All statuses</option>{% for value in status_choices %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></p></form>
-  <table class="market-table"><tr><th>Order</th><th>Customer</th><th>Product</th><th>Qty</th><th>Earning</th><th>Status</th><th>Date</th></tr>{% for item in page_obj %}<tr><td>#{{ item.order_id }}</td><td>{{ item.order.full_name }}</td><td>{{ item.product.name }}</td><td>{{ item.quantity }}</td><td>Rs. {{ item.seller_earning }}</td><td>{{ item.order.status }}</td><td>{{ item.order.created_at|date:'M j, Y' }}</td></tr>{% empty %}<tr><td colspan="7">No order lines found.</td></tr>{% endfor %}</table>
+  <table class="market-table"><tr><th>Order</th><th>Customer</th><th>Product</th><th>Qty</th><th>Earning</th><th>Status</th><th>Date</th></tr>{% for item in page_obj %}<tr><td><a href="{% url 'marketplace:order_detail' item.order_id %}">#{{ item.order_id }}</a></td><td>{{ item.order.full_name }}</td><td>{{ item.product.name }}</td><td>{{ item.quantity }}</td><td>Rs. {{ item.seller_earning }}</td><td>{{ item.order.status }}</td><td>{{ item.order.created_at|date:'M j, Y' }}</td></tr>{% empty %}<tr><td colspan="7">No order lines found.</td></tr>{% endfor %}</table>
   {% include 'marketplace/pagination.html' %}
 </div>
 {% endblock %}

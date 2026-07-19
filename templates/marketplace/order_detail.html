@@ -1,0 +1,15 @@
+{% extends 'marketplace/base.html' %}
+{% block marketplace_content %}
+<div class="market-card">
+  <h1>Order #{{ order.id }}</h1>
+  <p><strong>Customer:</strong> {{ order.full_name }} &middot; {{ order.email }}</p>
+  <p><strong>Delivery address:</strong> {{ order.address }}</p>
+  <p><strong>Store fulfillment:</strong> <span class="market-badge">{{ fulfillment.get_status_display }}</span></p>
+</div>
+<div class="market-card">
+  <h2>Your order items</h2>
+  <table class="market-table"><tr><th>Product</th><th>Quantity</th><th>Price</th><th>Earning</th></tr>{% for item in items %}<tr><td>{{ item.product.name }}</td><td>{{ item.quantity }}</td><td>Rs. {{ item.price }}</td><td>Rs. {{ item.seller_earning }}</td></tr>{% endfor %}</table>
+</div>
+<div class="market-card"><h2>Update packing status</h2><form method="post" class="market-form">{% csrf_token %}{{ form.as_p }}<button type="submit">Update status</button></form><p><small>Shipping and logistics integrations are intentionally not part of Phase 18.</small></p></div>
+<div class="market-card"><h2>Status timeline</h2><ol>{% for event in status_history %}<li><strong>{{ event.get_status_display }}</strong> &mdash; {{ event.created_at|date:'M j, Y H:i' }}{% if event.note %}<br>{{ event.note }}{% endif %}</li>{% empty %}<li>No status events.</li>{% endfor %}</ol></div>
+{% endblock %}

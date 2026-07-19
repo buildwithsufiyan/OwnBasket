@@ -3,8 +3,14 @@ from django.db.models import Count, Sum
 from django.utils import timezone
 
 from .models import (
+    CommissionRule,
+    InventoryHistory,
+    MarketplaceSettings,
     SellerDocument,
+    SellerInventory,
     SellerNotification,
+    SellerOrderFulfillment,
+    SellerOrderStatusHistory,
     SellerPayout,
     SellerPayoutAccount,
     SellerProfile,
@@ -19,9 +25,11 @@ def approve_sellers(modeladmin, request, queryset):
             seller.approve(request.user)
             SellerNotification.objects.create(
                 seller=seller,
+                event_type=SellerNotification.EventType.SELLER_APPROVED,
                 title='Store approved',
                 message='Your OwnBasket store is approved. You can now manage products and orders.',
                 link='/marketplace/seller/',
+                email_status=SellerNotification.EmailStatus.QUEUED,
             )
             count += 1
     modeladmin.message_user(request, f'{count} seller(s) approved.')
@@ -35,6 +43,14 @@ def reject_sellers(modeladmin, request, queryset):
         seller.approved_by = None
         seller.approved_at = None
         seller.save(update_fields=('verification_status', 'approved_by', 'approved_at', 'updated_at'))
+        SellerNotification.objects.create(
+            seller=seller,
+            event_type=SellerNotification.EventType.SELLER_REJECTED,
+            title='Seller application rejected',
+            message=seller.verification_notes or 'Your seller application was not approved. Contact support for details.',
+            link='/marketplace/seller/',
+            email_status=SellerNotification.EmailStatus.QUEUED,
+        )
         count += 1
     modeladmin.message_user(request, f'{count} seller(s) rejected.', messages.WARNING)
 
@@ -71,9 +87,9 @@ class SellerProfileAdmin(admin.ModelAdmin):
     list_per_page = 30
     inlines = (SellerDocumentInline,)
     fieldsets = (
-        ('Account', {'fields': ('user', 'store_name', 'slug', 'legal_name', 'business_email', 'business_phone')}),
+        ('Account', {'fields': ('user', 'store_name', 'slug', 'legal_name', 'contact_person', 'business_email', 'business_phone')}),
         ('Store', {'fields': ('description', 'logo', 'banner', 'address', 'city')}),
-        ('Verification', {'fields': ('verification_status', 'tax_identifier', 'verification_notes', 'approved_by', 'approved_at')}),
+        ('Verification', {'fields': ('verification_status', 'identity_reference', 'tax_identifier', 'tax_registration_type', 'verification_notes', 'approved_by', 'approved_at')}),
         ('Commercial', {'fields': ('commission_rate',)}),
         ('Policies', {'fields': ('shipping_policy', 'return_policy', 'privacy_policy')}),
         ('Notifications', {'fields': ('order_notifications', 'inventory_notifications', 'marketing_notifications')}),
@@ -165,8 +181,77 @@ class SellerPayoutAdmin(admin.ModelAdmin):
 
 @admin.register(SellerNotification)
 class SellerNotificationAdmin(admin.ModelAdmin):
-    list_display = ('seller', 'title', 'is_read', 'created_at')
-    list_filter = ('is_read', 'created_at')
+    list_display = ('seller', 'event_type', 'title', 'email_status', 'is_read', 'created_at')
+    list_filter = ('event_type', 'email_status', 'is_read', 'created_at')
     search_fields = ('seller__store_name', 'title', 'message')
     autocomplete_fields = ('seller',)
     list_select_related = ('seller',)
+
+
+@admin.register(MarketplaceSettings)
+class MarketplaceSettingsAdmin(admin.ModelAdmin):
+    list_display = ('enabled', 'mode', 'seller_registration_enabled', 'global_commission_rate', 'updated_at')
+
+    def has_add_permission(self, request):
+        return super().has_add_permission(request) and not MarketplaceSettings.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(CommissionRule)
+class CommissionRuleAdmin(admin.ModelAdmin):
+    list_display = ('name', 'scope_display', 'seller', 'category', 'rate', 'priority', 'is_active')
+    list_filter = ('is_active', 'category')
+    search_fields = ('name', 'seller__store_name', 'category__name')
+    autocomplete_fields = ('seller', 'category')
+    list_select_related = ('seller', 'category')
+    ordering = ('priority', 'id')
+
+    @admin.display(description='Scope')
+    def scope_display(self, obj):
+        return obj.scope.replace('_', ' ').title()
+
+
+class InventoryHistoryInline(admin.TabularInline):
+    model = InventoryHistory
+    extra = 0
+    readonly_fields = (
+        'stock_change', 'reserved_change', 'stock_after', 'reserved_after', 'reason',
+        'reference', 'note', 'created_by', 'created_at',
+    )
+    can_delete = False
+
+
+@admin.register(SellerInventory)
+class SellerInventoryAdmin(admin.ModelAdmin):
+    list_display = ('seller', 'product', 'current_stock', 'reserved_stock', 'available', 'updated_at')
+    search_fields = ('seller__store_name', 'product__name', 'product__sku')
+    autocomplete_fields = ('seller', 'product')
+    list_select_related = ('seller', 'product')
+    inlines = (InventoryHistoryInline,)
+
+    @admin.display(description='Current stock', ordering='product__stock')
+    def current_stock(self, obj):
+        return obj.product.stock
+
+    @admin.display(description='Available')
+    def available(self, obj):
+        return obj.available_stock
+
+
+class SellerOrderStatusHistoryInline(admin.TabularInline):
+    model = SellerOrderStatusHistory
+    extra = 0
+    readonly_fields = ('status', 'note', 'changed_by', 'created_at')
+    can_delete = False
+
+
+@admin.register(SellerOrderFulfillment)
+class SellerOrderFulfillmentAdmin(admin.ModelAdmin):
+    list_display = ('order', 'seller', 'status', 'ready_at', 'updated_at')
+    list_filter = ('status', 'updated_at')
+    search_fields = ('order__id', 'seller__store_name')
+    autocomplete_fields = ('seller', 'order')
+    list_select_related = ('seller', 'order')
+    inlines = (SellerOrderStatusHistoryInline,)

@@ -4,6 +4,13 @@ OwnBasket Version 1.0 is completed at Phase 20. Each phase must preserve existin
 
 ## Completed
 
+### Phase 18 — Marketplace and Seller Platform
+
+- Configurable single-vendor and multi-vendor operation with marketplace enable/disable controls
+- Seller applications, approval/rejection/suspension, business and verification structure, public stores, and ratings
+- Seller dashboards, product media/variants/attributes, inventory reservations/history, fulfillment timelines, analytics, and notifications
+- Global/category/seller commission-rule structure, enterprise admin controls, seller isolation, pagination, and query optimization
+
 ### Phase 17 — Customer Experience and Personalization
 
 - Enterprise reviews and advanced wishlist collections
@@ -12,12 +19,6 @@ OwnBasket Version 1.0 is completed at Phase 20. Each phase must preserve existin
 - Product gallery, sticky purchase controls, responsive UX, accessibility, security, and query improvements
 
 ## Planned for Version 1.0
-
-### Phase 18 — Marketplace and Seller Platform
-
-- Vendor registration, approval, profiles, and storefronts
-- Seller dashboard, products, inventory, orders, analytics, commissions, and notifications
-- Marketplace CMS controls
 
 ### Phase 19 — Enterprise CMS and Marketing Suite
 
