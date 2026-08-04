@@ -1,5 +1,6 @@
 (function () {
     const ALL_PACK_SLUG = 'all-fonts';
+    const DEFAULT_CSS_UNITS = ['px', 'rem', 'em', '%', 'vw', 'vh'];
     const ALL_DESIGNER_LIBRARY_SLUG = 'all-designer-fonts';
     let activeSearchDropdown = null;
     const fontApiCache = new Map();
@@ -14,6 +15,15 @@
             element.textContent = textContent;
         }
         return element;
+    }
+
+    function appendOptions(select, values, getLabel) {
+        values.forEach(function (value) {
+            const option = createElement('option');
+            option.value = value;
+            option.textContent = getLabel ? getLabel(value) : value;
+            select.appendChild(option);
+        });
     }
 
     function parseJson(value, fallback) {
@@ -417,8 +427,8 @@
             return Array.isArray(entry.designer_libraries) && entry.designer_libraries.includes(activeDesignerLibrary);
         }
 
-        function createRecentButton(entry) {
-            const button = createElement('button', 've-search-recent-item');
+        function createFontEntryButton(entry, className) {
+            const button = createElement('button', className);
             const title = createElement('span', 've-search-recent-item__title', entry.name);
             const meta = createElement('span', 've-search-recent-item__meta', entry.style_label || entry.category.replace('-', ' '));
 
@@ -434,69 +444,42 @@
             return button;
         }
 
-        function createFavoriteButton(entry) {
-            const button = createElement('button', 've-search-recent-item ve-search-recent-item--favorite');
-            const title = createElement('span', 've-search-recent-item__title', entry.name);
-            const meta = createElement('span', 've-search-recent-item__meta', entry.style_label || entry.category.replace('-', ' '));
+        function renderFontEntryList(query, values, list, wrap, className) {
+            if (!isFontPicker) {
+                return 0;
+            }
+            list.innerHTML = '';
 
-            button.type = 'button';
-            button.dataset.value = entry.css_name;
-            setFontFamily(title, entry.css_name, entry.category === 'serif' ? 'serif' : 'sans-serif');
-            button.appendChild(title);
-            button.appendChild(meta);
-            button.addEventListener('click', function () {
-                selectValue(entry.css_name);
-                closeDropdown({ restoreFocus: false });
+            const matchingEntries = values.map(function (value) {
+                return metadataByValue[value];
+            }).filter(function (entry) {
+                if (!entry) {
+                    return false;
+                }
+                const matchesQuery = !query || entry.name.toLowerCase().includes(query);
+                return matchesQuery && matchesPack(entry) && matchesDesignerLibrary(entry);
             });
-            return button;
+
+            matchingEntries.forEach(function (entry) {
+                list.appendChild(createFontEntryButton(entry, className));
+            });
+            wrap.hidden = matchingEntries.length === 0;
+            return matchingEntries.length;
         }
 
         function renderFavoriteFonts(query) {
             if (!isFontPicker) {
                 return 0;
             }
-            const favoriteValues = readFavoriteFonts();
-            favoriteList.innerHTML = '';
-
-            const matchingEntries = favoriteValues.map(function (value) {
-                return metadataByValue[value];
-            }).filter(function (entry) {
-                if (!entry) {
-                    return false;
-                }
-                const matchesQuery = !query || entry.name.toLowerCase().includes(query);
-                return matchesQuery && matchesPack(entry) && matchesDesignerLibrary(entry);
-            });
-
-            matchingEntries.forEach(function (entry) {
-                favoriteList.appendChild(createFavoriteButton(entry));
-            });
-            favoriteWrap.hidden = matchingEntries.length === 0;
-            return matchingEntries.length;
+            const className = 've-search-recent-item ve-search-recent-item--favorite';
+            return renderFontEntryList(query, readFavoriteFonts(), favoriteList, favoriteWrap, className);
         }
 
         function renderRecentFonts(query) {
             if (!isFontPicker) {
                 return 0;
             }
-            const recentValues = readRecentFonts();
-            recentList.innerHTML = '';
-
-            const matchingEntries = recentValues.map(function (value) {
-                return metadataByValue[value];
-            }).filter(function (entry) {
-                if (!entry) {
-                    return false;
-                }
-                const matchesQuery = !query || entry.name.toLowerCase().includes(query);
-                return matchesQuery && matchesPack(entry) && matchesDesignerLibrary(entry);
-            });
-
-            matchingEntries.forEach(function (entry) {
-                recentList.appendChild(createRecentButton(entry));
-            });
-            recentWrap.hidden = matchingEntries.length === 0;
-            return matchingEntries.length;
+            return renderFontEntryList(query, readRecentFonts(), recentList, recentWrap, 've-search-recent-item');
         }
 
         function updateTrigger() {
@@ -969,12 +952,7 @@
         advancedInput.placeholder = 'clamp(...) or calc(...)';
         toggleButton.type = 'button';
 
-        unitOptions.forEach(function (unit) {
-            const option = createElement('option');
-            option.value = unit;
-            option.textContent = unit;
-            unitSelect.appendChild(option);
-        });
+        appendOptions(unitSelect, unitOptions);
 
         numberWrap.appendChild(createElement('div', 've-builder-label', 'Value'));
         numberWrap.appendChild(numberInput);
@@ -1064,12 +1042,7 @@
             return { box: box, field: field };
         });
 
-        ['px', 'rem', 'em', '%', 'vw', 'vh'].forEach(function (unit) {
-            const option = createElement('option');
-            option.value = unit;
-            option.textContent = unit;
-            unitSelect.appendChild(option);
-        });
+        appendOptions(unitSelect, DEFAULT_CSS_UNITS);
         advancedInput.type = 'text';
         advancedInput.placeholder = '0.75rem 1.25rem';
         toggleButton.type = 'button';
@@ -1166,19 +1139,10 @@
         advancedInput.type = 'text';
         advancedInput.placeholder = 'calc(100% - 20px)';
 
-        presets.forEach(function (preset) {
-            const option = createElement('option');
-            option.value = preset;
-            option.textContent = preset === 'custom' ? 'Custom' : preset;
-            presetSelect.appendChild(option);
+        appendOptions(presetSelect, presets, function (preset) {
+            return preset === 'custom' ? 'Custom' : preset;
         });
-
-        ['px', 'rem', 'em', '%', 'vw', 'vh'].forEach(function (unit) {
-            const option = createElement('option');
-            option.value = unit;
-            option.textContent = unit;
-            unitSelect.appendChild(option);
-        });
+        appendOptions(unitSelect, DEFAULT_CSS_UNITS);
 
         presetWrap.appendChild(createElement('div', 've-builder-label', 'Preset'));
         presetWrap.appendChild(presetSelect);

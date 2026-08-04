@@ -10,7 +10,10 @@ from orders.models import Order, OrderItem, Refund
 from products.models import Brand, Category, Coupon, Product, ProductReview
 from wishlist.models import Wishlist
 
-from .revenue import MONEY, ZERO, eligible_orders, financial_summary, period_orders
+from .revenue import (
+    MONEY, ZERO, average_order_value, eligible_orders, financial_summary, gross_revenue,
+    money_sum, order_total_aggregates, period_orders,
+)
 
 
 def dashboard_summary(start, end):
@@ -33,24 +36,21 @@ def dashboard_summary(start, end):
         'total_products': Product.objects.count(),
         'low_stock_products': Product.objects.filter(stock__gt=0, stock__lte=F('low_stock_alert')).count(),
         'active_sellers': SellerProfile.objects.filter(verification_status=SellerProfile.VerificationStatus.APPROVED).count(),
-        'pending_seller_payouts': SellerPayout.objects.exclude(status__in=(SellerPayout.Status.PAID, SellerPayout.Status.FAILED)).aggregate(total=Coalesce(Sum('amount'), ZERO, output_field=MONEY))['total'],
+        'pending_seller_payouts': SellerPayout.objects.exclude(status__in=(SellerPayout.Status.PAID, SellerPayout.Status.FAILED)).aggregate(total=money_sum('amount'))['total'],
     }
 
 
 def sales_trend(start, end, granularity='daily'):
     trunc = {'daily': TruncDay, 'weekly': TruncWeek, 'monthly': TruncMonth, 'yearly': TruncYear}.get(granularity, TruncDay)
     rows = list(period_orders(start, end).annotate(period=trunc('created_at')).values('period').annotate(
-        orders=Count('id'), gross_sales=Coalesce(Sum('subtotal'), ZERO, output_field=MONEY),
-        discounts=Coalesce(Sum('discount_total'), ZERO, output_field=MONEY),
-        tax=Coalesce(Sum('tax_amount'), ZERO, output_field=MONEY),
-        shipping=Coalesce(Sum('shipping_amount'), ZERO, output_field=MONEY),
+        **order_total_aggregates()
     ).order_by('period'))
     refunds = Refund.objects.filter(created_at__gte=start, created_at__lt=end).annotate(period=trunc('created_at')).values('period').annotate(total=Sum('amount'))
     refund_map = {row['period']: row['total'] or ZERO for row in refunds}
     for row in rows:
         row['refunds'] = refund_map.get(row['period'], ZERO)
-        row['net_revenue'] = row['gross_sales'] - row['discounts'] + row['tax'] + row['shipping'] - row['refunds']
-        row['average_order_value'] = (row['net_revenue'] / row['orders']).quantize(Decimal('0.01')) if row['orders'] else ZERO
+        row['net_revenue'] = gross_revenue(row) - row['refunds']
+        row['average_order_value'] = average_order_value(row['net_revenue'], row['orders'])
     return rows
 
 
@@ -65,7 +65,7 @@ def payment_performance(start, end):
         failed=Count('id', filter=Q(payment_status=Order.PaymentStatus.FAILED)),
         pending=Count('id', filter=Q(payment_status=Order.PaymentStatus.PENDING) & ~Q(status='Delivered')),
         refunded=Count('id', filter=Q(payment_status=Order.PaymentStatus.REFUNDED)),
-        total_collected=Coalesce(Sum('total_price', filter=Q(payment_status=Order.PaymentStatus.PAID) | Q(status='Delivered')), ZERO, output_field=MONEY),
+        total_collected=money_sum('total_price', filter=Q(payment_status=Order.PaymentStatus.PAID) | Q(status='Delivered')),
         average_transaction=Coalesce(Avg('total_price', filter=Q(payment_status=Order.PaymentStatus.PAID) | Q(status='Delivered')), ZERO, output_field=MONEY),
     ).order_by('-total_collected', 'payment_method'))
 
@@ -131,7 +131,7 @@ def customer_performance(start, end):
     valid_filter = (Q(order__payment_status=Order.PaymentStatus.PAID) | Q(order__status='Delivered')) & ~Q(order__payment_status=Order.PaymentStatus.FAILED)
     return User.objects.filter(is_staff=False, is_superuser=False).annotate(
         order_count=Count('order', filter=valid_filter, distinct=True),
-        total_spend=Coalesce(Sum('order__total_price', filter=valid_filter), ZERO, output_field=MONEY),
+        total_spend=money_sum('order__total_price', filter=valid_filter),
         last_order=Max('order__created_at', filter=valid_filter),
         coupon_orders=Count('order', filter=valid_filter & Q(order__coupon_code__isnull=False) & ~Q(order__coupon_code=''), distinct=True),
     ).order_by('-total_spend', 'id')
@@ -166,8 +166,8 @@ def refund_performance(start, end):
 def coupon_performance(start, end):
     return Coupon.objects.annotate(
         usage_count=Count('redemptions', filter=Q(redemptions__used_at__gte=start, redemptions__used_at__lt=end)),
-        attributed_revenue=Coalesce(Sum('redemptions__order__total_price', filter=Q(redemptions__used_at__gte=start, redemptions__used_at__lt=end)), ZERO, output_field=MONEY),
-        attributed_discount=Coalesce(Sum('redemptions__order__discount_total', filter=Q(redemptions__used_at__gte=start, redemptions__used_at__lt=end)), ZERO, output_field=MONEY),
+        attributed_revenue=money_sum('redemptions__order__total_price', filter=Q(redemptions__used_at__gte=start, redemptions__used_at__lt=end)),
+        attributed_discount=money_sum('redemptions__order__discount_total', filter=Q(redemptions__used_at__gte=start, redemptions__used_at__lt=end)),
     ).order_by('-usage_count', 'code')
 
 

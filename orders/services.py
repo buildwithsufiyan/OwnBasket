@@ -2,10 +2,12 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import F
+from django.urls import reverse
 
 from cart.models import Cart, CartItem
 from marketplace.models import SellerNotification
-from marketing.models import NotificationPreference
+from marketing.models import EngagementDelivery, NotificationPreference
+from marketing.services.email_service import send_branded_email
 from products.models import CouponRedemption
 
 from .models import Order, OrderItem
@@ -13,6 +15,15 @@ from .models import Order, OrderItem
 
 class EmptyCartError(Exception):
     pass
+
+
+def send_order_confirmation_email(request, order):
+    return send_branded_email(
+        subject=f'OwnBasket order #{order.pk} confirmation', recipient=order.email,
+        template_name='order_confirmation',
+        context={'order': order, 'order_url': request.build_absolute_uri(reverse('order_detail', args=(order.pk,)))},
+        kind=EngagementDelivery.Kind.TRANSACTIONAL, reference=order.pk, user=request.user,
+    )
 
 
 def create_order_from_cart(*, user, cart, items, summary, customer, marketing_consent=False):

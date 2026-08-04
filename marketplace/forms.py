@@ -68,22 +68,18 @@ def unique_store_slug(name, instance=None):
     return candidate
 
 
-class SellerOnboardingForm(SecureUploadFormMixin, forms.ModelForm):
-    class Meta:
-        model = SellerProfile
-        fields = (
-            'store_name', 'legal_name', 'contact_person', 'business_email', 'business_phone',
-            'description', 'address', 'city', 'identity_reference', 'tax_identifier',
-            'tax_registration_type', 'logo', 'banner',
-            'shipping_policy', 'return_policy', 'privacy_policy',
-        )
-        widgets = {
-            'description': forms.Textarea(attrs={'rows': 4}),
-            'address': forms.Textarea(attrs={'rows': 3}),
-            'shipping_policy': forms.Textarea(attrs={'rows': 4}),
-            'return_policy': forms.Textarea(attrs={'rows': 4}),
-            'privacy_policy': forms.Textarea(attrs={'rows': 4}),
-        }
+def seller_profile_widgets():
+    return {
+        'description': forms.Textarea(attrs={'rows': 4}),
+        'address': forms.Textarea(attrs={'rows': 3}),
+        'shipping_policy': forms.Textarea(attrs={'rows': 4}),
+        'return_policy': forms.Textarea(attrs={'rows': 4}),
+        'privacy_policy': forms.Textarea(attrs={'rows': 4}),
+    }
+
+
+class SellerProfileFormMixin:
+    """Shared store-name and identity validation for seller profile forms."""
 
     def clean_store_name(self):
         value = self.cleaned_data['store_name'].strip()
@@ -96,6 +92,18 @@ class SellerOnboardingForm(SecureUploadFormMixin, forms.ModelForm):
         if value and not ('*' in value or len(value) <= 8):
             raise forms.ValidationError('Use a masked identity reference or a short administrative code.')
         return value
+
+
+class SellerOnboardingForm(SellerProfileFormMixin, SecureUploadFormMixin, forms.ModelForm):
+    class Meta:
+        model = SellerProfile
+        fields = (
+            'store_name', 'legal_name', 'contact_person', 'business_email', 'business_phone',
+            'description', 'address', 'city', 'identity_reference', 'tax_identifier',
+            'tax_registration_type', 'logo', 'banner',
+            'shipping_policy', 'return_policy', 'privacy_policy',
+        )
+        widgets = seller_profile_widgets()
 
     def save(self, commit=True):
         seller = super().save(commit=False)
@@ -157,7 +165,7 @@ SellerProductSpecificationFormSet = inlineformset_factory(
 )
 
 
-class SellerSettingsForm(SecureUploadFormMixin, forms.ModelForm):
+class SellerSettingsForm(SellerProfileFormMixin, SecureUploadFormMixin, forms.ModelForm):
     class Meta:
         model = SellerProfile
         fields = (
@@ -166,25 +174,7 @@ class SellerSettingsForm(SecureUploadFormMixin, forms.ModelForm):
             'shipping_policy', 'return_policy', 'privacy_policy',
             'order_notifications', 'inventory_notifications', 'marketing_notifications',
         )
-        widgets = {
-            'description': forms.Textarea(attrs={'rows': 4}),
-            'address': forms.Textarea(attrs={'rows': 3}),
-            'shipping_policy': forms.Textarea(attrs={'rows': 4}),
-            'return_policy': forms.Textarea(attrs={'rows': 4}),
-            'privacy_policy': forms.Textarea(attrs={'rows': 4}),
-        }
-
-    def clean_store_name(self):
-        value = self.cleaned_data['store_name'].strip()
-        if SellerProfile.objects.exclude(pk=self.instance.pk).filter(store_name__iexact=value).exists():
-            raise forms.ValidationError('A store already uses this name.')
-        return value
-
-    def clean_identity_reference(self):
-        value = self.cleaned_data['identity_reference'].strip()
-        if value and not ('*' in value or len(value) <= 8):
-            raise forms.ValidationError('Use a masked identity reference or a short administrative code.')
-        return value
+        widgets = seller_profile_widgets()
 
     def save(self, commit=True):
         seller = super().save(commit=False)

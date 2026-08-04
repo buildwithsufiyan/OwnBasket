@@ -1,5 +1,4 @@
 import json
-import re
 from decimal import Decimal
 from urllib.parse import urlencode
 
@@ -7,12 +6,10 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Case, Count, F, IntegerField, Q, Value, When
+from django.db.models import Count, F, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.utils.html import conditional_escape
-from django.utils.safestring import mark_safe
 from django.views.decorators.http import require_GET, require_POST
 
 from .forms import ProductReviewForm
@@ -21,6 +18,7 @@ from .models import (
     ProductFeature, ProductListingSettings, ProductReview, ProductReviewImage,
     ProductVariant, ReviewHelpfulVote, SubCategory,
 )
+from .highlighting import highlight_matches
 from .listing import SORT_OPTIONS, build_product_listing
 from .pricing import attach_pricing_to_products
 from personalization.models import BehaviorEvent
@@ -256,92 +254,6 @@ def _get_search_query(request):
     return request.GET.get('q', '').strip()
 
 
-def _highlight_text(text, query):
-    if not text or not query:
-        return text
-
-    pattern = re.compile(re.escape(str(query)), re.IGNORECASE)
-    source = str(text)
-    result = []
-    last_index = 0
-
-    for match in pattern.finditer(source):
-        result.append(conditional_escape(source[last_index:match.start()]))
-        result.append(
-            f"<mark class=\"search-highlight\">{conditional_escape(match.group(0))}</mark>"
-        )
-        last_index = match.end()
-
-    result.append(conditional_escape(source[last_index:]))
-    return mark_safe(''.join(result))
-
-
-def _get_search_results(query):
-    if not query:
-        return (
-            Product.objects.none(),
-            Category.objects.none(),
-            Brand.objects.none(),
-        )
-
-    product_filters = (
-        Q(name__icontains=query) |
-        Q(sku__icontains=query) |
-        Q(barcode__icontains=query) |
-        Q(short_description__icontains=query) |
-        Q(description__icontains=query) |
-        Q(brand__name__icontains=query) |
-        Q(category__name__icontains=query) |
-        Q(subcategory__name__icontains=query)
-    )
-    startswith_name = When(name__istartswith=query, then=Value(0))
-    contains_name = When(name__icontains=query, then=Value(1))
-    startswith_brand = When(brand__name__istartswith=query, then=Value(2))
-    startswith_category = When(category__name__istartswith=query, then=Value(3))
-    startswith_subcategory = When(subcategory__name__istartswith=query, then=Value(4))
-
-    products = Product.objects.marketplace_visible().select_related('seller', 'brand', 'category', 'subcategory').filter(
-        product_filters,
-        brand__is_active=True,
-        category__is_active=True,
-        is_active=True,
-    ).annotate(
-        search_rank=Case(
-            startswith_name,
-            contains_name,
-            startswith_brand,
-            startswith_category,
-            startswith_subcategory,
-            default=Value(5),
-            output_field=IntegerField(),
-        )
-    ).order_by('search_rank', 'name', 'id').distinct()
-
-    categories = Category.objects.filter(
-        is_active=True,
-        name__icontains=query,
-    ).annotate(
-        search_rank=Case(
-            When(name__istartswith=query, then=Value(0)),
-            default=Value(1),
-            output_field=IntegerField(),
-        )
-    ).order_by('search_rank', 'sort_order', 'name', 'id')
-
-    brands = Brand.objects.filter(
-        is_active=True,
-        name__icontains=query,
-    ).annotate(
-        search_rank=Case(
-            When(name__istartswith=query, then=Value(0)),
-            default=Value(1),
-            output_field=IntegerField(),
-        )
-    ).order_by('search_rank', 'display_order', 'name', 'id')
-
-    return products, categories, brands
-
-
 def search_results(request):
     query = _get_search_query(request)
     result = intelligent_search(query)
@@ -353,15 +265,15 @@ def search_results(request):
     highlight_query = result.corrected_query or query
 
     for product in products:
-        product.highlighted_name = _highlight_text(product.name, highlight_query)
-        product.highlighted_category_name = _highlight_text(product.category.name, highlight_query)
-        product.highlighted_brand_name = _highlight_text(product.brand.name, highlight_query)
+        product.highlighted_name = highlight_matches(product.name, highlight_query)
+        product.highlighted_category_name = highlight_matches(product.category.name, highlight_query)
+        product.highlighted_brand_name = highlight_matches(product.brand.name, highlight_query)
 
     for category in categories:
-        category.highlighted_name = _highlight_text(category.name, highlight_query)
+        category.highlighted_name = highlight_matches(category.name, highlight_query)
 
     for brand in brands:
-        brand.highlighted_name = _highlight_text(brand.name, highlight_query)
+        brand.highlighted_name = highlight_matches(brand.name, highlight_query)
 
     context = {
         'query': query,

@@ -5,8 +5,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from django.utils.http import url_has_allowed_host_and_scheme
 
+from core.http import safe_redirect_target
 from products.models import Product
 
 from .forms import NewsletterSubscriptionForm, NotificationPreferenceForm
@@ -49,10 +49,7 @@ def newsletter_subscribe(request):
         messages.success(request, GENERIC_SUBSCRIBE_MESSAGE)
     else:
         messages.error(request, 'Please provide a valid email address and consent choice.')
-    next_url = request.POST.get('next', '')
-    if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
-        return redirect(next_url)
-    return redirect('home')
+    return redirect(safe_redirect_target(request, request.POST.get('next', ''), 'home'))
 
 
 def newsletter_confirm(request, token):

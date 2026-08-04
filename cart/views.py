@@ -1,13 +1,19 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db import models
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
-from .models import Cart, CartItem
-from .services import get_user_cart, touch_cart
+from .models import CartItem
+from .services import (
+    clear_coupon_code,
+    get_coupon_code,
+    get_user_cart,
+    set_coupon_code,
+    touch_cart,
+    visible_cart_items,
+)
+from core.http import safe_redirect_target
 from products.models import Product
 from products.pricing import build_cart_summary, get_coupon_by_code, validate_coupon
 from api_v2.sync import bump_sync_state
@@ -15,39 +21,9 @@ from personalization.models import BehaviorEvent
 from personalization.services import record_behavior
 
 
-def _get_user_cart(user):
-    return get_user_cart(user)
-
-
-def _touch_cart(cart):
-    touch_cart(cart)
-
-
-def _get_coupon_session_key():
-    return 'active_coupon_code'
-
-
-def _set_coupon_code(request, code):
-    request.session[_get_coupon_session_key()] = (code or '').upper().strip()
-
-
-def _clear_coupon_code(request):
-    request.session.pop(_get_coupon_session_key(), None)
-
-
-def _get_coupon_code(request):
-    return request.session.get(_get_coupon_session_key(), '')
-
-
 def _coupon_return_url(request):
     return_to = request.POST.get('return_to') or request.GET.get('return_to')
-    if return_to and url_has_allowed_host_and_scheme(
-        return_to,
-        allowed_hosts={request.get_host()},
-        require_https=request.is_secure(),
-    ):
-        return return_to
-    return reverse('cart_detail')
+    return safe_redirect_target(request, return_to, reverse('cart_detail'))
 
 
 @login_required(login_url='login')
@@ -60,7 +36,7 @@ def add_to_cart(request, product_id):
     size = request.POST.get('size')
     color = request.POST.get('color')
 
-    cart = _get_user_cart(request.user)
+    cart = get_user_cart(request.user)
 
     cart_item, item_created = CartItem.objects.get_or_create(
         cart=cart,
@@ -72,7 +48,7 @@ def add_to_cart(request, product_id):
     if not item_created:
         cart_item.quantity += 1
         cart_item.save()
-    _touch_cart(cart)
+    touch_cart(cart)
     bump_sync_state(request.user)
     record_behavior(request, BehaviorEvent.EventType.CART_ADD, product=product, category=product.category, brand=product.brand)
 
@@ -81,12 +57,9 @@ def add_to_cart(request, product_id):
 
 @login_required(login_url='login')
 def cart_detail(request):
-    cart = _get_user_cart(request.user)
-    items = CartItem.objects.filter(cart=cart, product__is_active=True).filter(
-        models.Q(product__seller__isnull=True) |
-        models.Q(product__seller__verification_status='approved')
-    ).select_related('product', 'product__seller', 'product__brand', 'product__category')
-    coupon_code = _get_coupon_code(request)
+    cart = get_user_cart(request.user)
+    items = visible_cart_items(cart)
+    coupon_code = get_coupon_code(request)
     summary = build_cart_summary(items, user=request.user, coupon_code=coupon_code)
 
     return render(
@@ -108,7 +81,7 @@ def increase_quantity(request, item_id):
 
     item.quantity += 1
     item.save()
-    _touch_cart(item.cart)
+    touch_cart(item.cart)
     bump_sync_state(request.user)
     record_behavior(request, BehaviorEvent.EventType.CART_ADD, product=item.product, category=item.product.category, brand=item.product.brand)
 
@@ -122,7 +95,7 @@ def decrease_quantity(request, item_id):
     if item.quantity > 1:
         item.quantity -= 1
         item.save()
-        _touch_cart(item.cart)
+        touch_cart(item.cart)
         bump_sync_state(request.user)
         record_behavior(request, BehaviorEvent.EventType.CART_REMOVE, product=item.product, category=item.product.category, brand=item.product.brand)
 
@@ -136,7 +109,7 @@ def remove_from_cart(request, item_id):
     cart = item.cart
     product = item.product
     item.delete()
-    _touch_cart(cart)
+    touch_cart(cart)
     bump_sync_state(request.user)
     record_behavior(request, BehaviorEvent.EventType.CART_REMOVE, product=product, category=product.category, brand=product.brand)
 
@@ -147,20 +120,20 @@ def remove_from_cart(request, item_id):
 @require_POST
 def apply_coupon(request):
     code = (request.POST.get('code') or '').upper().strip()
-    cart = _get_user_cart(request.user)
+    cart = get_user_cart(request.user)
     items = CartItem.objects.filter(cart=cart).select_related('product', 'product__brand', 'product__category')
 
     if not code:
-        _clear_coupon_code(request)
+        clear_coupon_code(request)
         messages.error(request, 'Please enter a coupon code.')
         return redirect(_coupon_return_url(request))
 
     summary = build_cart_summary(items, user=request.user, coupon_code=code)
     if summary.applied_coupon:
-        _set_coupon_code(request, code)
+        set_coupon_code(request, code)
         messages.success(request, summary.coupon_message)
     else:
-        _clear_coupon_code(request)
+        clear_coupon_code(request)
         coupon = get_coupon_by_code(code)
         _, message = validate_coupon(
             coupon,
@@ -182,6 +155,6 @@ def apply_coupon(request):
 @login_required(login_url='login')
 @require_POST
 def remove_coupon(request):
-    _clear_coupon_code(request)
+    clear_coupon_code(request)
     messages.success(request, 'Coupon removed successfully.')
     return redirect(_coupon_return_url(request))
