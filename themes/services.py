@@ -1,3 +1,4 @@
+import copy
 import logging
 import json
 import os
@@ -592,7 +593,7 @@ def get_active_theme(request):
         # This creates a temporary, in-memory version of the theme
         if active_theme and preview_data and isinstance(preview_data, dict):
             # Create a copy to avoid modifying the cached object
-            theme_copy = Theme(**active_theme.__dict__)
+            theme_copy = copy.copy(active_theme)
             for key, value in preview_data.items():
                 setattr(theme_copy, key, value)
             return theme_copy

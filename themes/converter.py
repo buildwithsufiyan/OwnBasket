@@ -200,6 +200,11 @@ def analyze_html_file(theme: Theme, file_path: Path):
         if not selector:
             continue
 
+        suggested_soup = BeautifulSoup(str(target_element), "html.parser")
+        suggested_text_node = suggested_soup.find(string=PRICE_PATTERN)
+        if suggested_text_node:
+            suggested_text_node.replace_with("{{ product.price|currency }}")
+
         TemplateConversionLog.objects.create(
             theme=theme,
             file_path=str(
@@ -210,9 +215,7 @@ def analyze_html_file(theme: Theme, file_path: Path):
             status=TemplateConversionLog.Status.PENDING,
             conversion_type=TemplateConversionLog.ConversionType.VAR,
             original_html=str(target_element.prettify()),
-            suggested_code=str(
-                target_element.replace(text_node, "{{ product.price|currency }}")
-            ),
+            suggested_code=str(suggested_soup),
             confidence=confidence,
             description="Detected a potential product price. Suggest replacing with a dynamic price variable.",
         )
@@ -252,9 +255,7 @@ def analyze_html_file(theme: Theme, file_path: Path):
                 target_selector=selector,
                 status=TemplateConversionLog.Status.PENDING,
                 conversion_type=TemplateConversionLog.ConversionType.WRAP,
-                original_html=str(
-                    wrapper_element.prettify(limit=20)
-                ),  # Show the container
+                original_html=str(wrapper_element.prettify()),  # Show the container
                 suggested_code="{% for product in products %} ... {% endfor %}",
                 confidence=0.75,
                 description=f"Detected a potential product grid with {count+1} items (class: .{'.'.join(classes)}). Suggest wrapping in a for loop.",
