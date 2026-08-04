@@ -1,7 +1,7 @@
 import hashlib
 
 from django.contrib.auth import authenticate, login, logout
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.validators import validate_email
 from django.db.models import Count, Sum
 from django.middleware.csrf import get_token
@@ -46,9 +46,8 @@ def session(request):
         raise ApiError('invalid_credentials', 'Unable to sign in with these credentials.', 400)
     try:
         state = user.security_state
-    except Exception:
+    except ObjectDoesNotExist:
         state = None
-    from django.utils import timezone
     if state and state.locked_until and state.locked_until > timezone.now():
         raise ApiError('account_temporarily_locked', 'Unable to sign in. Try again later.', 423)
     login(request, user)

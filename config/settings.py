@@ -265,6 +265,9 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {"standard": {"format": "{asctime} {levelname} {name}: {message}", "style": "{"}},
     "handlers": LOGGING_HANDLERS,
+    # Without a root logger, records from apps that are not listed below
+    # (analytics, themes, core, security, fonts) would be discarded.
+    "root": {"handlers": LOG_HANDLERS, "level": LOG_LEVEL},
     "loggers": {
         "django": {"handlers": LOG_HANDLERS, "level": LOG_LEVEL, "propagate": False},
         "django.security": {"handlers": LOG_HANDLERS, "level": "WARNING", "propagate": False},

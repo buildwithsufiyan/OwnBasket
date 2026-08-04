@@ -1,5 +1,6 @@
 import json
 import hashlib
+import logging
 from functools import wraps
 from datetime import timedelta
 
@@ -12,6 +13,8 @@ from django.utils import timezone
 from django.utils.cache import patch_vary_headers
 from django.views.csrf import csrf_failure as django_csrf_failure
 
+
+logger = logging.getLogger('api_v2')
 
 MAX_BODY_BYTES = 64 * 1024
 
@@ -109,6 +112,15 @@ def _complete_idempotency(record, response):
     )
 
 
+def _release_idempotency(record):
+    """Drop a still-processing record so a failed request can be retried."""
+    from .models import IdempotencyRecord
+
+    IdempotencyRecord.objects.filter(
+        pk=record.pk, status=IdempotencyRecord.Status.PROCESSING
+    ).delete()
+
+
 def api_endpoint(
     methods=('GET',), *, auth=False, public_cache_seconds=0, idempotent=False,
     summary='', description='', tags=(), request_example=None, response_example=None,
@@ -131,12 +143,14 @@ def api_endpoint(
                 response['WWW-Authenticate'] = 'Bearer realm="OwnBasket API"'
                 return response
             record = None
+            owns_record = False
             try:
                 if idempotent:
                     record, replay = _idempotency_record(request)
                     if replay:
                         response = replay
                     else:
+                        owns_record = record is not None
                         response = view(request, *args, **kwargs)
                 else:
                     response = view(request, *args, **kwargs)
@@ -147,6 +161,14 @@ def api_endpoint(
             except ValidationError as exc:
                 fields = getattr(exc, 'message_dict', None)
                 response = error_response('validation_error', 'Submitted data is invalid.', 400, fields)
+            except Exception:
+                if owns_record:
+                    logger.warning(
+                        'Releasing in-progress idempotency record %s after an unhandled error on %s',
+                        record.pk, request.path,
+                    )
+                    _release_idempotency(record)
+                raise
             if not isinstance(response, JsonResponse):
                 response = JsonResponse(response)
             if record and not response.has_header('Idempotency-Replayed'):

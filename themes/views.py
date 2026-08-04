@@ -1,5 +1,6 @@
 import io
 import json
+import logging
 import os
 import shutil
 import zipfile
@@ -33,6 +34,8 @@ from .models import (
     ANIMATION_CHOICES,
 )
 from .services import get_theme_validation_map, scan_theme_packages, install_theme_zip
+
+logger = logging.getLogger(__name__)
 
 
 @staff_member_required
@@ -444,11 +447,19 @@ def apply_suggestion(request, log_id):
                     f"Successfully applied suggestion for {suggestion.file_path}.",
                 )
             except (FileNotFoundError, ValueError, NotImplementedError) as e:
+                logger.warning(
+                    "Could not apply suggestion %s for %s",
+                    suggestion.pk, suggestion.file_path, exc_info=e,
+                )
                 messages.error(
                     request,
                     f"Could not apply suggestion for {suggestion.file_path}: {e}",
                 )
             except Exception as e:
+                logger.exception(
+                    "Unexpected failure applying suggestion %s for %s",
+                    suggestion.pk, suggestion.file_path,
+                )
                 messages.error(
                     request,
                     f"An unexpected error occurred for {suggestion.file_path}: {e}",
@@ -526,6 +537,9 @@ def restore_backup(request, backup_id):
             f"Successfully restored '{backup_to_restore.file_path}' to version {backup_to_restore.version}.",
         )
     except Exception as e:
+        logger.exception(
+            "Restore failed for theme %s backup %s", theme.pk, backup_to_restore.pk
+        )
         messages.error(request, f"An error occurred during restore: {e}")
 
     return redirect("themes:file_history", theme_id=theme.id)

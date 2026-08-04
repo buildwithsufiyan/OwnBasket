@@ -1,12 +1,14 @@
 from datetime import timedelta
 from decimal import Decimal
+from io import StringIO
+from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.management import call_command
+from django.core.management import CommandError, call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -189,6 +191,14 @@ class ReminderTests(MarketingBase):
         response = self.client.post(reverse('marketing:stock_alert_subscribe', args=(self.product.pk,)))
         self.assertRedirects(response, self.product.get_absolute_url())
         self.assertTrue(StockAlert.objects.filter(user=self.user, product=self.product, is_active=True).exists())
+
+    def test_failed_stock_alert_batch_exits_with_an_error(self):
+        self.enable()
+        StockAlert.objects.create(user=self.user, product=self.product, email=self.user.email)
+        target = 'marketing.management.commands.process_stock_alerts.send_stock_alert'
+        with mock.patch(target, side_effect=RuntimeError('smtp down')):
+            with self.assertRaises(CommandError):
+                call_command('process_stock_alerts', limit=10, stderr=StringIO())
 
     def test_dry_run_does_not_mutate_abandoned_cart(self):
         self.enable()

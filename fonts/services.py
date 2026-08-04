@@ -1,3 +1,5 @@
+import logging
+
 from django.db.models import Prefetch, Q
 from django.urls import reverse
 
@@ -13,6 +15,8 @@ from .catalog import (
     infer_font_category,
 )
 from .models import ManagedFont, ManagedFontPack, ManagedFontPackFont
+
+logger = logging.getLogger(__name__)
 
 
 def bootstrap_typography_catalog():
@@ -178,6 +182,9 @@ def assign_default_font_packs():
             try:
                 font = ManagedFont.objects.get(name=font_name)
             except ManagedFont.DoesNotExist:
+                logger.warning(
+                    'Typography pack %s references missing font %s', pack_slug, font_name
+                )
                 continue
             link = existing_links.get((font.pk, pack.pk))
             if link is None:

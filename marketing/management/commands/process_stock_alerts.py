@@ -1,7 +1,12 @@
+import logging
+
 from django.conf import settings
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from marketing.services.reminders import send_stock_alert, stock_alert_candidates
+
+
+logger = logging.getLogger('marketing')
 
 
 class Command(BaseCommand):
@@ -22,8 +27,12 @@ class Command(BaseCommand):
             try:
                 success = send_stock_alert(alert, settings.CANONICAL_BASE_URL)
             except Exception as exc:
+                logger.warning('Stock alert delivery failed alert=%s', alert.pk, exc_info=exc)
                 self.stderr.write(f'Alert #{alert.pk}: {type(exc).__name__}')
                 success = False
             sent += int(success)
             failed += int(not success)
-        self.stdout.write(self.style.SUCCESS(f'Stock alerts processed={len(alerts)} sent={sent} failed={failed}'))
+        summary = f'Stock alerts processed={len(alerts)} sent={sent} failed={failed}'
+        if failed:
+            raise CommandError(summary)
+        self.stdout.write(self.style.SUCCESS(summary))

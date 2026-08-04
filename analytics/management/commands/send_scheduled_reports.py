@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 
 from django.core.mail import EmailMessage
@@ -9,6 +10,9 @@ from analytics.forms import validated_period
 from analytics.models import ScheduledReport
 from analytics.services.exports import csv_response, excel_response
 from analytics.views import _export_definition
+
+
+logger = logging.getLogger('analytics')
 
 
 class Command(BaseCommand):
@@ -26,7 +30,7 @@ class Command(BaseCommand):
         if options['dry_run']:
             self.stdout.write(f'DRY RUN: {len(due_ids)} scheduled report(s) due; nothing sent or updated.')
             return
-        sent = 0
+        sent = skipped = 0
         for report_id in due_ids:
             with transaction.atomic():
                 report = ScheduledReport.objects.select_for_update().get(pk=report_id)
@@ -34,17 +38,21 @@ class Command(BaseCommand):
                     continue
                 form, period = validated_period(report.filters or {'preset': 'last_30_days'})
                 if period is None:
+                    skipped += 1
                     self.stderr.write(f'Skipping report {report.pk}: invalid filters: {form.errors.as_text()}')
                     continue
                 try:
                     title, headers, rows = _export_definition(report.report_type, *period)
                 except Exception as exc:
+                    skipped += 1
+                    logger.warning('Scheduled report export failed report=%s', report.pk, exc_info=exc)
                     self.stderr.write(f'Skipping report {report.pk}: {exc}')
                     continue
                 filename = f'ownbasket-{report.report_type}-{timezone.localdate()}'
                 response = csv_response(filename, headers, rows) if report.format == ScheduledReport.Format.CSV else excel_response(filename, title, headers, rows)
                 content = b''.join(chunk.encode('utf-8') if isinstance(chunk, str) else chunk for chunk in response.streaming_content) if getattr(response, 'streaming', False) else response.content
                 if response.status_code != 200:
+                    skipped += 1
                     self.stderr.write(f'Skipping report {report.pk}: export dependency unavailable.')
                     continue
                 extension = report.format
@@ -57,4 +65,6 @@ class Command(BaseCommand):
                 report.next_run = max(report.next_run, now) + increments[report.frequency]
                 report.save(update_fields=('last_sent', 'next_run'))
                 sent += 1
+        if skipped:
+            raise CommandError(f'Sent {sent} scheduled report(s); {skipped} skipped because of errors.')
         self.stdout.write(self.style.SUCCESS(f'Sent {sent} scheduled report(s).'))

@@ -1,7 +1,12 @@
+import logging
+
 from django.conf import settings
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from marketing.services.reminders import abandoned_cart_candidates, send_abandoned_cart_reminder
+
+
+logger = logging.getLogger('marketing')
 
 
 class Command(BaseCommand):
@@ -22,8 +27,12 @@ class Command(BaseCommand):
             try:
                 success = send_abandoned_cart_reminder(cart, settings.CANONICAL_BASE_URL)
             except Exception as exc:
+                logger.warning('Abandoned cart reminder failed cart=%s', cart.pk, exc_info=exc)
                 self.stderr.write(f'Cart #{cart.pk}: {type(exc).__name__}')
                 success = False
             sent += int(success)
             failed += int(not success)
-        self.stdout.write(self.style.SUCCESS(f'Abandoned carts processed={len(carts)} sent={sent} failed={failed}'))
+        summary = f'Abandoned carts processed={len(carts)} sent={sent} failed={failed}'
+        if failed:
+            raise CommandError(summary)
+        self.stdout.write(self.style.SUCCESS(summary))

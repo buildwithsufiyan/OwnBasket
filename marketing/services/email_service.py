@@ -37,7 +37,10 @@ def send_branded_email(*, subject, recipient, template_name, context, kind, refe
         message.attach_alternative(html_body, 'text/html')
         sent = message.send(fail_silently=False)
     except Exception as exc:
-        logger.warning('Email delivery failed kind=%s reference=%s error=%s', kind, reference, type(exc).__name__)
+        logger.warning(
+            'Email delivery failed kind=%s reference=%s error=%s',
+            kind, reference, type(exc).__name__, exc_info=exc,
+        )
         EngagementDelivery.objects.create(
             **delivery, status=EngagementDelivery.Status.FAILED, error_code=type(exc).__name__[:40]
         )
