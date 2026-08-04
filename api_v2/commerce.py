@@ -1,20 +1,17 @@
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
-from django.db import models
 from django.db.models import F
 from django.shortcuts import get_object_or_404
-from django.urls import reverse
 
 from cart.models import CartItem
-from cart.services import get_user_cart, touch_cart
-from marketing.models import EngagementDelivery
-from marketing.services.email_service import send_branded_email
+from cart.services import clear_coupon_code, get_coupon_code, get_user_cart, touch_cart, visible_cart_items
 from orders.models import Order
-from orders.services import EmptyCartError, create_order_from_cart
+from orders.services import EmptyCartError, create_order_from_cart, send_order_confirmation_email
 from products.models import Product
 from products.pricing import build_cart_summary
 from products.pricing import attach_pricing_to_products
-from wishlist.models import Wishlist, WishlistCollection, WishlistSettings
+from wishlist.models import Wishlist, WishlistSettings
+from wishlist.services import add_product_to_wishlist, default_collection, visible_wishlist_items
 from personalization.models import BehaviorEvent
 from personalization.services import record_behavior
 
@@ -26,11 +23,8 @@ from .sync import bump_sync_state
 
 def _cart_state(request):
     cart = get_user_cart(request.user)
-    items = CartItem.objects.filter(cart=cart, product__is_active=True).filter(
-        models.Q(product__seller__isnull=True) |
-        models.Q(product__seller__verification_status='approved')
-    ).select_related('product', 'product__seller', 'product__brand', 'product__category')
-    summary = build_cart_summary(items, user=request.user, coupon_code=request.session.get('active_coupon_code', ''))
+    items = visible_cart_items(cart)
+    summary = build_cart_summary(items, user=request.user, coupon_code=get_coupon_code(request))
     return cart, list(items), summary
 
 
@@ -140,14 +134,9 @@ def checkout(request):
         )
     except EmptyCartError as exc:
         raise ApiError('cart_changed', str(exc), 409)
-    request.session.pop('active_coupon_code', None)
+    clear_coupon_code(request)
     bump_sync_state(request.user)
-    send_branded_email(
-        subject=f'OwnBasket order #{order.pk} confirmation', recipient=order.email,
-        template_name='order_confirmation',
-        context={'order': order, 'order_url': request.build_absolute_uri(reverse('order_detail', args=(order.pk,)))},
-        kind=EngagementDelivery.Kind.TRANSACTIONAL, reference=order.pk, user=request.user,
-    )
+    send_order_confirmation_email(request, order)
     return {'order': order_data(request, order, detail=True)}
 
 
@@ -170,22 +159,11 @@ def wishlist(request):
     if request.method == 'POST':
         payload = json_body(request)
         product = get_object_or_404(visible_products(), pk=positive_int(payload.get('productId'), name='productId'))
-        collection, _ = WishlistCollection.objects.get_or_create(user=request.user, name='Favorites')
-        Wishlist.objects.filter(user=request.user, collection__isnull=True).update(collection=collection)
+        collection = default_collection(request.user)
         if collection.items.count() >= WishlistSettings.get_solo().max_items_per_collection:
             raise ApiError('wishlist_limit', 'The default wishlist collection is full.', 409)
-        current_price = product.discount_price if product.has_active_offer() else product.selling_price or product.price
-        _, created = Wishlist.objects.get_or_create(
-            user=request.user, product=product, collection=collection,
-            defaults={'price_at_add': current_price},
-        )
-        if created:
-            Product.objects.filter(pk=product.pk).update(wishlist_count=F('wishlist_count') + 1)
-            bump_sync_state(request.user)
-            record_behavior(request, BehaviorEvent.EventType.WISHLIST_ADD, product=product, category=product.category, brand=product.brand)
-    queryset = list(Wishlist.objects.filter(user=request.user).filter(
-        models.Q(product__seller__isnull=True) | models.Q(product__seller__verification_status='approved')
-    ).select_related('product', 'product__seller', 'product__brand', 'product__category'))
+        created = add_product_to_wishlist(request, product, collection)
+    queryset = list(visible_wishlist_items(Wishlist.objects.filter(user=request.user)))
     attach_pricing_to_products([item.product for item in queryset])
     return {'results': [product_data(request, item.product) for item in queryset], **({'created': created} if request.method == 'POST' else {})}
 

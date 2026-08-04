@@ -1,35 +1,25 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Count, F, Q
+from django.db.models import Count, F
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from api_v2.sync import bump_sync_state
 from cart.models import CartItem
 from cart.services import get_user_cart, touch_cart
+from core.http import safe_redirect_target
 from personalization.models import BehaviorEvent
 from personalization.services import record_behavior
 from products.models import Product
 from products.pricing import attach_pricing_to_products
 
 from .models import Wishlist, WishlistCollection, WishlistSettings
-
-
-def _default_collection(user):
-    collection, _ = WishlistCollection.objects.get_or_create(user=user, name='Favorites')
-    Wishlist.objects.filter(user=user, collection__isnull=True).update(collection=collection)
-    return collection
+from .services import add_product_to_wishlist, default_collection, visible_wishlist_items
 
 
 def _safe_return_url(request, fallback='wishlist:wishlist'):
-    target = request.POST.get('next')
-    if target and url_has_allowed_host_and_scheme(
-        target, allowed_hosts={request.get_host()}, require_https=request.is_secure(),
-    ):
-        return target
-    return fallback
+    return safe_redirect_target(request, request.POST.get('next'), fallback)
 
 
 @login_required
@@ -38,22 +28,14 @@ def add_to_wishlist(request, product_id):
     product = get_object_or_404(Product.objects.marketplace_visible(), id=product_id, is_active=True)
     settings = WishlistSettings.get_solo()
     collection_id = request.POST.get('collection')
-    collection = WishlistCollection.objects.filter(user=request.user, pk=collection_id).first() if collection_id else _default_collection(request.user)
+    collection = WishlistCollection.objects.filter(user=request.user, pk=collection_id).first() if collection_id else default_collection(request.user)
     if not collection:
         messages.error(request, 'Select a valid wishlist collection.')
         return redirect(product.get_absolute_url())
     if collection.items.count() >= settings.max_items_per_collection:
         messages.error(request, 'This wishlist collection has reached its item limit.')
         return redirect('wishlist:wishlist')
-    current_price = product.discount_price if product.has_active_offer() else product.selling_price or product.price
-    _, created = Wishlist.objects.get_or_create(
-        user=request.user, product=product, collection=collection,
-        defaults={'price_at_add': current_price},
-    )
-    if created:
-        Product.objects.filter(pk=product.pk).update(wishlist_count=F('wishlist_count') + 1)
-        bump_sync_state(request.user)
-        record_behavior(request, BehaviorEvent.EventType.WISHLIST_ADD, product=product, category=product.category, brand=product.brand)
+    if add_product_to_wishlist(request, product, collection):
         messages.success(request, f'Added to {collection.name}.')
     return redirect(_safe_return_url(request))
 
@@ -174,23 +156,18 @@ def toggle_share(request, collection_id):
 
 def shared_wishlist(request, token):
     collection = get_object_or_404(WishlistCollection.objects.select_related('user'), share_token=token, is_public=True)
-    items = list(collection.items.filter(
-        Q(product__seller__isnull=True) | Q(product__seller__verification_status='approved'),
-        product__is_active=True,
-    ).select_related('product', 'product__brand', 'product__category'))
+    items = list(visible_wishlist_items(collection.items.filter(product__is_active=True)))
     attach_pricing_to_products([item.product for item in items])
     return render(request, 'wishlist/shared.html', {'collection': collection, 'items': items})
 
 
 @login_required
 def wishlist_view(request):
-    default = _default_collection(request.user)
+    default = default_collection(request.user)
     collections = list(WishlistCollection.objects.filter(user=request.user).annotate(item_count=Count('items')))
     selected_id = request.GET.get('collection')
     selected = next((item for item in collections if str(item.pk) == selected_id), default)
-    items = list(Wishlist.objects.filter(user=request.user, collection=selected).filter(
-        Q(product__seller__isnull=True) | Q(product__seller__verification_status='approved')
-    ).select_related('product', 'product__seller', 'product__brand', 'product__category'))
+    items = list(visible_wishlist_items(Wishlist.objects.filter(user=request.user, collection=selected)))
     attach_pricing_to_products([item.product for item in items])
     return render(request, 'wishlist/wishlist.html', {
         'items': items, 'collections': collections, 'selected_collection': selected,

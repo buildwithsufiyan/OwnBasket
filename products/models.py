@@ -204,14 +204,12 @@ class ValueDiscountMixin(models.Model):
 class ProductQuerySet(models.QuerySet):
     def marketplace_visible(self):
         from marketplace.models import MarketplaceSettings
+        from marketplace.visibility import visible_seller_q
 
         settings = MarketplaceSettings.get_solo()
         if not settings.enabled or settings.mode == MarketplaceSettings.Mode.SINGLE_VENDOR:
             return self.filter(seller__isnull=True)
-        return self.filter(
-            models.Q(seller__isnull=True) |
-            models.Q(seller__verification_status='approved')
-        )
+        return self.filter(visible_seller_q())
 
 
 class Product(models.Model):

@@ -21,33 +21,43 @@ def eligible_orders(queryset=None):
     ).exclude(payment_status=Order.PaymentStatus.FAILED)
 
 
+def money_sum(field, **kwargs):
+    return Coalesce(Sum(field, **kwargs), ZERO, output_field=MONEY)
+
+
+def order_total_aggregates():
+    """Aggregate expressions shared by period summaries and trend rows."""
+    return {
+        'orders': Count('id'),
+        'gross_sales': money_sum('subtotal'),
+        'discounts': money_sum('discount_total'),
+        'tax': money_sum('tax_amount'),
+        'shipping': money_sum('shipping_amount'),
+    }
+
+
+def gross_revenue(totals):
+    return totals['gross_sales'] - totals['discounts'] + totals['tax'] + totals['shipping']
+
+
+def average_order_value(net_revenue, orders):
+    return (net_revenue / orders).quantize(Decimal('0.01')) if orders else ZERO
+
+
 def period_orders(start, end):
     return eligible_orders().filter(created_at__gte=start, created_at__lt=end)
 
 
 def financial_summary(start, end):
     orders = period_orders(start, end)
-    totals = orders.aggregate(
-        orders=Count('id'),
-        gross_sales=Coalesce(Sum('subtotal'), ZERO, output_field=MONEY),
-        discounts=Coalesce(Sum('discount_total'), ZERO, output_field=MONEY),
-        tax=Coalesce(Sum('tax_amount'), ZERO, output_field=MONEY),
-        shipping=Coalesce(Sum('shipping_amount'), ZERO, output_field=MONEY),
-    )
+    totals = orders.aggregate(**order_total_aggregates())
     refunds = Refund.objects.filter(created_at__gte=start, created_at__lt=end).aggregate(
-        total=Coalesce(Sum('amount'), ZERO, output_field=MONEY)
+        total=money_sum('amount')
     )['total']
     totals['refunds'] = refunds
-    totals['total_revenue'] = (
-        totals['gross_sales'] - totals['discounts'] + totals['tax'] + totals['shipping']
-    )
-    totals['net_revenue'] = (
-        totals['total_revenue'] - refunds
-    )
-    totals['average_order_value'] = (
-        (totals['net_revenue'] / totals['orders']).quantize(Decimal('0.01'))
-        if totals['orders'] else ZERO
-    )
+    totals['total_revenue'] = gross_revenue(totals)
+    totals['net_revenue'] = totals['total_revenue'] - refunds
+    totals['average_order_value'] = average_order_value(totals['net_revenue'], totals['orders'])
     return totals
 
 

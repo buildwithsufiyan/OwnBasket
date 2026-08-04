@@ -10,6 +10,7 @@ from django.db.models import Q
 from cart.models import Cart, CartItem
 from marketing.models import EngagementDelivery, StockAlert
 from marketing.services.email_service import send_branded_email
+from marketplace.visibility import visible_seller_q
 from wishlist.models import Wishlist
 
 
@@ -29,10 +30,10 @@ def abandoned_cart_candidates():
     ).filter(
         Q(last_reminder_at__isnull=True) | Q(last_reminder_at__lte=cutoff),
     ).filter(
-        Q(cartitem__product__seller__isnull=True) | Q(cartitem__product__seller__verification_status='approved')
+        visible_seller_q('cartitem__product__seller')
     ).select_related('user', 'user__notification_preferences').prefetch_related(
         Prefetch('cartitem_set', queryset=CartItem.objects.select_related('product').filter(
-            Q(product__seller__isnull=True) | Q(product__seller__verification_status='approved'), product__is_active=True,
+            visible_seller_q('product__seller'), product__is_active=True,
         ))
     ).distinct().order_by('updated_at', 'pk')
 
@@ -63,11 +64,11 @@ def wishlist_candidates():
         wishlist__product__is_active=True,
         wishlist__product__stock__gt=0,
     ).filter(
-        Q(wishlist__product__seller__isnull=True) | Q(wishlist__product__seller__verification_status='approved')
+        visible_seller_q('wishlist__product__seller')
     ).distinct().order_by('pk')
     return users.prefetch_related(Prefetch(
         'wishlist_set', queryset=Wishlist.objects.select_related('product').filter(
-            Q(product__seller__isnull=True) | Q(product__seller__verification_status='approved'),
+            visible_seller_q('product__seller'),
             product__is_active=True, product__stock__gt=0, created_at__lte=cutoff,
         )
     ))
@@ -95,7 +96,7 @@ def stock_alert_candidates():
         is_active=True, product__is_active=True, product__stock__gt=0,
         user__is_active=True, user__notification_preferences__back_in_stock_alerts=True,
     ).filter(
-        Q(product__seller__isnull=True) | Q(product__seller__verification_status='approved')
+        visible_seller_q('product__seller')
     ).select_related('user', 'product').order_by('created_at', 'pk')
 
 

@@ -8,9 +8,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.db.models import F, Q, Prefetch
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
+
+from core.http import safe_redirect_target
 from products.models import Brand, Category, Product
 from products.pricing import attach_pricing_to_products
 from banners.models import (
@@ -292,17 +293,12 @@ def track_banner_click(request, banner_id):
     BannerCarousel.objects.filter(pk=banner.pk).update(
         clicks_count=F("clicks_count") + 1
     )
-    requested_url = request.GET.get("next", "")
-    configured_host = urlparse(banner.button_url or "").hostname
-    allowed_redirect_hosts = {request.get_host()}
-    if configured_host:
-        allowed_redirect_hosts.add(configured_host)
-    if requested_url and url_has_allowed_host_and_scheme(
-        requested_url, allowed_hosts=allowed_redirect_hosts, require_https=request.is_secure()
-    ):
-        target_url = requested_url
-    else:
-        target_url = banner.button_url or "/home/"
+    target_url = safe_redirect_target(
+        request,
+        request.GET.get("next", ""),
+        banner.button_url or "/home/",
+        extra_hosts=(urlparse(banner.button_url or "").hostname,),
+    )
     return redirect(target_url)
 
 

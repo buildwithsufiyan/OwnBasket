@@ -1,32 +1,22 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
-from django.db.models import Q
 from reportlab.pdfgen import canvas
 
 from .models import Order
-from .services import EmptyCartError, create_order_from_cart
-from cart.models import Cart, CartItem
+from .services import EmptyCartError, create_order_from_cart, send_order_confirmation_email
+from cart.services import clear_coupon_code, get_coupon_code, get_user_cart, visible_cart_items
 from products.pricing import build_cart_summary
-from marketing.models import EngagementDelivery
-from marketing.services.email_service import send_branded_email
 from api_v2.sync import bump_sync_state
 
 
 
 @login_required
 def checkout(request):
-    cart, _ = Cart.objects.get_or_create(id=request.user.id, defaults={'user': request.user})
-    if cart.user_id != request.user.id:
-        cart.user = request.user
-        cart.save(update_fields=('user', 'updated_at'))
-    items = CartItem.objects.filter(cart=cart, product__is_active=True).filter(
-        Q(product__seller__isnull=True) |
-        Q(product__seller__verification_status='approved')
-    ).select_related('product', 'product__seller', 'product__brand', 'product__category')
-    coupon_code = request.session.get('active_coupon_code', '')
+    cart = get_user_cart(request.user)
+    items = visible_cart_items(cart)
+    coupon_code = get_coupon_code(request)
     summary = build_cart_summary(items, user=request.user, coupon_code=coupon_code)
 
     if not items.exists():
@@ -47,15 +37,10 @@ def checkout(request):
         except EmptyCartError as exc:
             messages.error(request, str(exc))
             return redirect('cart_detail')
-        request.session.pop('active_coupon_code', None)
+        clear_coupon_code(request)
         bump_sync_state(request.user)
 
-        send_branded_email(
-            subject=f'OwnBasket order #{order.pk} confirmation', recipient=order.email,
-            template_name='order_confirmation',
-            context={'order': order, 'order_url': request.build_absolute_uri(reverse('order_detail', args=(order.pk,)))},
-            kind=EngagementDelivery.Kind.TRANSACTIONAL, reference=order.pk, user=request.user,
-        )
+        send_order_confirmation_email(request, order)
 
         messages.success(
             request,
