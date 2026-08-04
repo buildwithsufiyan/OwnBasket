@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from themes.services import scan_theme_packages
 
@@ -37,3 +37,6 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Themes Updated: {updated_count}"))
         self.stdout.write(self.style.SUCCESS(f"Invalid Themes: {invalid_count}"))
         self.stdout.write(self.style.SUCCESS("=" * 50))
+
+        if invalid_count:
+            raise CommandError(f"{invalid_count} theme package(s) failed validation.")

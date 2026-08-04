@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from django.db import connections
 import json
@@ -22,6 +24,8 @@ from banners.models import (
 from site_sections.models import HeroSection, HomepageSection
 from site_sections.services import get_carousel_products
 from personalization.services import RecommendationService, trending_products
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_HOME_FEATURES = [
     {
@@ -249,6 +253,7 @@ def health(request):
         try:
             connections["default"].ensure_connection()
         except Exception:
+            logger.exception("health check database connection failed")
             status, http_status = "degraded", 503
     return JsonResponse({"status": status}, status=http_status)
 

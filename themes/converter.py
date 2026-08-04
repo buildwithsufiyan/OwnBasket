@@ -169,7 +169,7 @@ def analyze_html_file(theme: Theme, file_path: Path):
         with file_path.open("r", encoding="utf-8", errors="ignore") as f:
             soup = BeautifulSoup(f.read(), "html.parser")
     except Exception as e:
-        logger.error(f"Could not read or parse {file_path}: {e}")
+        logger.warning("Could not read or parse %s", file_path, exc_info=e)
         return
 
     # Clear old pending suggestions for this file

@@ -1,5 +1,6 @@
 import json
 from decimal import Decimal
+from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -303,6 +304,13 @@ class IdempotencyTests(ApiV2Base):
         self.assertEqual(first.json()['order']['id'], second.json()['order']['id'])
         self.assertEqual(Order.objects.filter(user=self.user).count(), 1)
         self.assertEqual(IdempotencyRecord.objects.get().status, 'completed')
+
+    def test_unhandled_error_releases_record_so_the_request_can_be_retried(self):
+        with mock.patch('api_v2.commerce.create_order_from_cart', side_effect=RuntimeError('boom')):
+            with self.assertRaises(RuntimeError):
+                self.checkout(key='checkout-request-0003')
+        self.assertFalse(IdempotencyRecord.objects.exists())
+        self.assertEqual(self.checkout(key='checkout-request-0003').status_code, 200)
 
     def test_reused_key_with_different_request_returns_conflict(self):
         self.assertEqual(self.checkout(key='checkout-request-0002').status_code, 200)

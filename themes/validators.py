@@ -1,8 +1,11 @@
 import json
+import logging
 from pathlib import Path
 
 from django.core.exceptions import ValidationError
 from django.utils.text import slugify
+
+logger = logging.getLogger(__name__)
 
 # These are the original, strict validation constants for OwnBasket themes.
 THEME_REQUIRED_DIRS = (
@@ -63,8 +66,8 @@ def _is_js_framework_theme(theme_root: Path) -> bool:
                 return True
             if "next" in dependencies or "next" in dev_dependencies:
                 return True
-    except (json.JSONDecodeError, UnicodeDecodeError):
-        pass  # Ignore broken package.json
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        logger.warning("Ignoring unreadable %s", package_json_path, exc_info=exc)
     return False
 
 

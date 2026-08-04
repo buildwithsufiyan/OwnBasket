@@ -332,6 +332,7 @@ def _rewrite_asset_paths(theme_dir: Path, theme_folder: str, warnings: list[str]
                     f.truncate()
 
         except Exception as e:
+            logger.warning("Could not rewrite asset paths in %s", html_file, exc_info=e)
             warnings.append(f"Could not process file {html_file.name}: {e}")
 
 
@@ -394,6 +395,7 @@ def install_theme_zip(uploaded_file):
             try:
                 _rewrite_asset_paths(installed_dir, folder_name, warnings)
             except Exception as e:
+                logger.exception("Asset conversion failed for theme %s", folder_name)
                 warnings.append(f"An error occurred during asset conversion: {e}")
 
         # Re-run validation on the final installed directory to confirm structure

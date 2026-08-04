@@ -1,3 +1,5 @@
+import logging
+
 from django.urls import reverse
 from django.core.cache import cache
 from django.db import connection
@@ -5,6 +7,9 @@ from django.http import JsonResponse
 from django.utils import timezone
 
 from .http import ApiError, api_endpoint
+
+
+logger = logging.getLogger('api_v2')
 
 
 @api_endpoint(public_cache_seconds=300)
@@ -67,13 +72,13 @@ def health(request):
             cursor.execute('SELECT 1')
             checks['database'] = cursor.fetchone()[0] == 1
     except Exception:
-        pass
+        logger.exception('api health database probe failed')
     try:
         marker = f'api-health-{timezone.now().timestamp()}'
         cache.set('api-health-probe', marker, 10)
         checks['cache'] = cache.get('api-health-probe') == marker
     except Exception:
-        pass
+        logger.exception('api health cache probe failed')
     healthy = all(checks.values())
     return JsonResponse({'status': 'ok' if healthy else 'degraded', 'version': '2.0', 'checks': checks}, status=200 if healthy else 503)
 

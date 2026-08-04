@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 
 from django.db import transaction
@@ -5,6 +6,9 @@ from django.utils import timezone
 
 from .crypto import decrypt_provider_token
 from .models import PushDelivery
+
+
+logger = logging.getLogger('api_v2')
 
 
 PROVIDER_ADAPTERS = {}
@@ -52,6 +56,10 @@ def deliver_push(delivery_id):
         )
     except Exception as exc:
         code = str(exc).split(':', 1)[0][:80] or 'delivery_failed'
+        logger.warning(
+            'push delivery failed delivery=%s device=%s provider=%s attempt=%s code=%s',
+            delivery.pk, device.pk, device.provider, delivery.attempt_count, code, exc_info=exc,
+        )
         delivery.last_error_code = code
         if delivery.attempt_count >= MAX_ATTEMPTS:
             delivery.status = PushDelivery.Status.FAILED
